@@ -41,11 +41,12 @@
         <a href="#facilities">Facilities</a>
         <a href="#gallery">Gallery</a>
         <a href="#testimonials">Testimonials</a>
+        <a href="#faq">FAQ</a>
         <a href="#contact">Contact</a>
-        <a href="#admission" class="nav-cta">Enroll Now</a>
+        <a href="#admission" class="nav-cta">Enroll Now ✨</a>
       </nav>
 
-      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -55,32 +56,47 @@
 
     <!-- ===== HERO ===== -->
     <section class="hero" id="home">
-      <div class="hero-shapes">
-        <span class="shape shape-1"></span>
-        <span class="shape shape-2"></span>
-        <span class="shape shape-3"></span>
-        <span class="shape shape-4"></span>
-        <span class="shape shape-5"></span>
+      <!-- Animated blobs -->
+      <div class="hero-blobs" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+        <div class="blob blob-5"></div>
       </div>
+      <!-- Floating dots -->
+      <div class="hero-dots" aria-hidden="true">
+        <span class="dot-p d1"></span><span class="dot-p d2"></span>
+        <span class="dot-p d3"></span><span class="dot-p d4"></span>
+        <span class="dot-p d5"></span><span class="dot-p d6"></span>
+      </div>
+
       <div class="container hero-inner">
-        <div class="hero-content">
-          <span class="hero-badge">🌟 Welcome to Vedantam Play School</span>
-          <h1>Where Every Child's <span class="highlight-green">Journey</span> Begins with <span class="highlight-orange">Joy!</span></h1>
-          <p>A nurturing, creative environment where little ones explore, discover, and blossom into confident, happy learners. Admissions open for 2025–26.</p>
+        <div class="hero-content" data-reveal="left">
+          <span class="hero-badge pulse-badge">🌟 Admissions Open 2025–26</span>
+          <h1>Where Every Child's <span class="highlight-green grad-text">Journey</span> Begins with <span class="highlight-orange">Joy!</span></h1>
+          <p>A nurturing, creative environment where little ones explore, discover, and blossom into confident, happy learners.</p>
           <div class="hero-actions">
-            <a href="#admission" class="btn btn-primary">Apply for Admission</a>
-            <a href="#about" class="btn btn-outline">Explore School</a>
+            <a href="#admission" class="btn btn-primary btn-shine">Apply for Admission 🚀</a>
+            <a href="#about" class="btn btn-outline btn-glow">Explore School</a>
           </div>
           <div class="hero-stats">
-            <div class="stat"><strong>12+</strong><span>Years of Excellence</span></div>
+            <div class="stat">
+              <strong class="count-up" data-target="12">0</strong><span>Years of Excellence</span>
+            </div>
             <div class="stat-divider"></div>
-            <div class="stat"><strong>800+</strong><span>Happy Graduates</span></div>
+            <div class="stat">
+              <strong class="count-up" data-target="800">0</strong><span>Happy Graduates</span>
+            </div>
             <div class="stat-divider"></div>
-            <div class="stat"><strong>30+</strong><span>Expert Teachers</span></div>
+            <div class="stat">
+              <strong class="count-up" data-target="30">0</strong><span>Expert Teachers</span>
+            </div>
           </div>
         </div>
-        <div class="hero-visual">
+        <div class="hero-visual" data-reveal="right">
           <div class="hero-img-wrap">
+            <div class="hero-img-ring"></div>
             <img src="https://placehold.co/520x420/EBF8FF/27A9E1?text=Happy+Kids+Learning" alt="Children playing and learning" />
             <div class="floating-card card-a">🎨 Art &amp; Craft</div>
             <div class="floating-card card-b">📚 Story Time</div>
@@ -89,25 +105,27 @@
         </div>
       </div>
       <div class="wave-bottom">
-        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#ffffff"/></svg>
+        <svg viewBox="0 0 1440 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,45 C240,90 480,0 720,45 C960,90 1200,0 1440,45 L1440,90 L0,90 Z" fill="#ffffff"/>
+        </svg>
       </div>
     </section>
 
     <!-- ===== ABOUT ===== -->
     <section class="about section" id="about">
       <div class="container about-inner">
-        <div class="about-visual">
+        <div class="about-visual" data-reveal="left">
           <div class="about-img-grid">
-            <img class="ab-img ab-img1" src="https://placehold.co/280x220/FFF3E0/F9A825?text=Classroom" alt="Bright classroom" />
-            <img class="ab-img ab-img2" src="https://placehold.co/200x200/EDF7EE/5FBF3A?text=Outdoor+Play" alt="Outdoor play area" />
-            <img class="ab-img ab-img3" src="https://placehold.co/200x180/EEF6FC/27A9E1?text=Learning" alt="Children learning" />
+            <img class="ab-img ab-img1 img-hover-zoom" src="https://placehold.co/280x220/FFF3E0/F9A825?text=Classroom" alt="Bright classroom" />
+            <img class="ab-img ab-img2 img-hover-zoom" src="https://placehold.co/200x200/EDF7EE/5FBF3A?text=Outdoor+Play" alt="Outdoor play area" />
+            <img class="ab-img ab-img3 img-hover-zoom" src="https://placehold.co/200x180/EEF6FC/27A9E1?text=Learning" alt="Children learning" />
             <div class="about-badge-box">
-              <span class="big-num">12</span>
+              <span class="big-num count-up" data-target="12">0</span>
               <span>Years of<br/>Excellence</span>
             </div>
           </div>
         </div>
-        <div class="about-content">
+        <div class="about-content" data-reveal="right">
           <div class="section-label">About Us</div>
           <h2>A Place Where <span class="highlight-green">Curiosity</span> Meets <span class="highlight-blue">Care</span></h2>
           <p>Vedantam Play School was founded with a single belief — every child is unique and deserves an environment that honours their individuality. Our play-based curriculum blends structured learning with imaginative exploration.</p>
@@ -118,7 +136,7 @@
             <li><span class="check orange">✔</span> CCTV-monitored, secure campus</li>
             <li><span class="check purple">✔</span> Holistic development approach</li>
           </ul>
-          <a href="#programs" class="btn btn-primary">Explore Programs</a>
+          <a href="#programs" class="btn btn-primary btn-shine">Explore Programs →</a>
         </div>
       </div>
     </section>
@@ -128,40 +146,44 @@
       <div class="wave-top">
         <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,30 C480,60 960,0 1440,30 L1440,0 L0,0 Z" fill="#ffffff"/></svg>
       </div>
+      <div class="section-blobs" aria-hidden="true">
+        <div class="s-blob s-blob-1"></div>
+        <div class="s-blob s-blob-2"></div>
+      </div>
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" data-reveal="up">
           <div class="section-label">Why Vedantam</div>
           <h2>Built for Your Child's <span class="highlight-orange">Bright Future</span></h2>
           <p>Every detail of our school is thoughtfully designed to give children the best possible start in life.</p>
         </div>
         <div class="cards-grid">
-          <div class="feature-card" data-color="green">
-            <div class="card-icon">🎒</div>
+          <div class="feature-card" data-color="green" data-reveal="up" data-delay="0">
+            <div class="card-icon-wrap green"><div class="card-icon">🎒</div></div>
             <h3>Holistic Curriculum</h3>
             <p>Balancing academics, arts, physical education, and social-emotional learning for well-rounded development.</p>
           </div>
-          <div class="feature-card" data-color="blue">
-            <div class="card-icon">👩‍🏫</div>
+          <div class="feature-card" data-color="blue" data-reveal="up" data-delay="100">
+            <div class="card-icon-wrap blue"><div class="card-icon">👩‍🏫</div></div>
             <h3>Expert Educators</h3>
             <p>Certified, compassionate teachers trained in early childhood education with years of hands-on experience.</p>
           </div>
-          <div class="feature-card" data-color="orange">
-            <div class="card-icon">🛡️</div>
+          <div class="feature-card" data-color="orange" data-reveal="up" data-delay="200">
+            <div class="card-icon-wrap orange"><div class="card-icon">🛡️</div></div>
             <h3>Safe Environment</h3>
             <p>Child-safe infrastructure, 24/7 CCTV, GPS-tracked transport, and strict visitor protocols.</p>
           </div>
-          <div class="feature-card" data-color="purple">
-            <div class="card-icon">🎨</div>
+          <div class="feature-card" data-color="purple" data-reveal="up" data-delay="0">
+            <div class="card-icon-wrap purple"><div class="card-icon">🎨</div></div>
             <h3>Creative Learning</h3>
             <p>Art, craft, music, dance, and drama integrated into daily lessons to spark imagination and expression.</p>
           </div>
-          <div class="feature-card" data-color="orange">
-            <div class="card-icon">🌿</div>
+          <div class="feature-card" data-color="orange" data-reveal="up" data-delay="100">
+            <div class="card-icon-wrap orange"><div class="card-icon">🌿</div></div>
             <h3>Nature Integration</h3>
             <p>Garden-based learning, eco-projects, and outdoor play keep children connected with the natural world.</p>
           </div>
-          <div class="feature-card" data-color="green">
-            <div class="card-icon">📊</div>
+          <div class="feature-card" data-color="green" data-reveal="up" data-delay="200">
+            <div class="card-icon-wrap green"><div class="card-icon">📊</div></div>
             <h3>Progress Tracking</h3>
             <p>Regular parent meetings, detailed progress reports, and a dedicated parent app keep you always informed.</p>
           </div>
@@ -175,14 +197,14 @@
     <!-- ===== PROGRAMS ===== -->
     <section class="programs section" id="programs">
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" data-reveal="up">
           <div class="section-label">Our Programs</div>
           <h2>Programs Designed for <span class="highlight-green">Every Stage</span></h2>
           <p>Age-appropriate programs that respect each child's development milestone and learning pace.</p>
         </div>
         <div class="programs-grid">
-          <div class="program-card">
-            <div class="program-img">
+          <div class="program-card" data-reveal="up" data-delay="0">
+            <div class="program-img img-hover-zoom">
               <img src="https://placehold.co/380x200/FFF3E0/F9A825?text=Playgroup+(1.5–2.5+yrs)" alt="Playgroup" />
               <span class="program-tag orange">Age 1.5 – 2.5 yrs</span>
             </div>
@@ -194,12 +216,12 @@
                 <li>🎨 Sensory Art</li>
                 <li>📖 Story Circles</li>
               </ul>
-              <a href="#admission" class="btn btn-sm btn-orange">Enroll Now</a>
+              <a href="#admission" class="btn btn-sm btn-orange btn-shine">Enroll Now</a>
             </div>
           </div>
-          <div class="program-card featured">
-            <div class="popular-badge">Most Popular</div>
-            <div class="program-img">
+          <div class="program-card featured" data-reveal="up" data-delay="100">
+            <div class="popular-badge">⭐ Most Popular</div>
+            <div class="program-img img-hover-zoom">
               <img src="https://placehold.co/380x200/EDF7EE/5FBF3A?text=Nursery+(2.5–3.5+yrs)" alt="Nursery" />
               <span class="program-tag green">Age 2.5 – 3.5 yrs</span>
             </div>
@@ -211,11 +233,11 @@
                 <li>🔢 Early Numeracy</li>
                 <li>🌿 Nature Exploration</li>
               </ul>
-              <a href="#admission" class="btn btn-sm btn-green">Enroll Now</a>
+              <a href="#admission" class="btn btn-sm btn-green btn-shine">Enroll Now</a>
             </div>
           </div>
-          <div class="program-card">
-            <div class="program-img">
+          <div class="program-card" data-reveal="up" data-delay="200">
+            <div class="program-img img-hover-zoom">
               <img src="https://placehold.co/380x200/EEF6FC/27A9E1?text=LKG+(3.5–4.5+yrs)" alt="LKG" />
               <span class="program-tag blue">Age 3.5 – 4.5 yrs</span>
             </div>
@@ -227,11 +249,11 @@
                 <li>🧩 Logical Thinking</li>
                 <li>🖼️ Visual Arts</li>
               </ul>
-              <a href="#admission" class="btn btn-sm btn-blue">Enroll Now</a>
+              <a href="#admission" class="btn btn-sm btn-blue btn-shine">Enroll Now</a>
             </div>
           </div>
-          <div class="program-card">
-            <div class="program-img">
+          <div class="program-card" data-reveal="up" data-delay="300">
+            <div class="program-img img-hover-zoom">
               <img src="https://placehold.co/380x200/F5EEF8/8E44AD?text=UKG+(4.5–5.5+yrs)" alt="UKG" />
               <span class="program-tag purple">Age 4.5 – 5.5 yrs</span>
             </div>
@@ -243,7 +265,7 @@
                 <li>➕ Arithmetic</li>
                 <li>🔬 Science Curiosity</li>
               </ul>
-              <a href="#admission" class="btn btn-sm btn-purple">Enroll Now</a>
+              <a href="#admission" class="btn btn-sm btn-purple btn-shine">Enroll Now</a>
             </div>
           </div>
         </div>
@@ -256,48 +278,48 @@
         <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,30 C480,60 960,0 1440,30 L1440,0 L0,0 Z" fill="#ffffff"/></svg>
       </div>
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" data-reveal="up">
           <div class="section-label">Our Facilities</div>
           <h2>World-Class Facilities for <span class="highlight-blue">Little Champions</span></h2>
           <p>Thoughtfully designed spaces that inspire creativity, ensure safety, and support active learning every day.</p>
         </div>
         <div class="facilities-grid">
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="0">
             <div class="fac-icon green">🏫</div>
             <h4>Spacious Classrooms</h4>
             <p>Bright, airy rooms with child-sized furniture, reading nooks, and activity zones.</p>
           </div>
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="80">
             <div class="fac-icon blue">🖥️</div>
             <h4>Smart Learning Lab</h4>
             <p>Interactive whiteboards and age-appropriate digital tools for tech-integrated learning.</p>
           </div>
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="160">
             <div class="fac-icon orange">🛝</div>
             <h4>Outdoor Play Area</h4>
             <p>Safe, cushioned play equipment, sandpit, and open field for physical activity and free play.</p>
           </div>
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="240">
             <div class="fac-icon purple">🎭</div>
             <h4>Activity Hall</h4>
             <p>Multipurpose hall for dance, drama, yoga, and school events and celebrations.</p>
           </div>
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="0">
             <div class="fac-icon green">📚</div>
             <h4>Mini Library</h4>
             <p>A cosy reading corner stocked with picture books, board books, and story collections.</p>
           </div>
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="80">
             <div class="fac-icon blue">🍱</div>
             <h4>Nutrition Kitchen</h4>
             <p>Hygienic in-house kitchen providing fresh, home-style, balanced meals and snacks daily.</p>
           </div>
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="160">
             <div class="fac-icon orange">🚌</div>
             <h4>GPS School Bus</h4>
             <p>Safe, AC buses with GPS tracking and trained attendants for door-to-door service.</p>
           </div>
-          <div class="facility-item">
+          <div class="facility-item" data-reveal="up" data-delay="240">
             <div class="fac-icon purple">🩺</div>
             <h4>Health &amp; Wellness</h4>
             <p>On-campus nurse, regular health check-ups, and emergency medical protocols in place.</p>
@@ -312,7 +334,7 @@
     <!-- ===== GALLERY ===== -->
     <section class="gallery section" id="gallery">
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" data-reveal="up">
           <div class="section-label">Gallery</div>
           <h2>A Peek into Our <span class="highlight-orange">Vibrant World</span></h2>
           <p>Moments of joy, learning, and laughter from our everyday school life.</p>
@@ -324,37 +346,37 @@
           <button class="filter-btn" data-filter="events">Events</button>
         </div>
         <div class="gallery-grid" id="galleryGrid">
-          <div class="gallery-item" data-cat="classroom">
+          <div class="gallery-item" data-cat="classroom" data-lightbox data-title="Art Class" data-reveal="up" data-delay="0">
             <img src="https://placehold.co/400x300/EDF7EE/5FBF3A?text=Art+Class" alt="Art Class" />
-            <div class="gallery-overlay"><span>Art Class</span></div>
+            <div class="gallery-overlay"><span>🎨 Art Class</span><span class="gallery-zoom">🔍</span></div>
           </div>
-          <div class="gallery-item tall" data-cat="activity">
+          <div class="gallery-item tall" data-cat="activity" data-lightbox data-title="Story Time" data-reveal="up" data-delay="80">
             <img src="https://placehold.co/400x500/EEF6FC/27A9E1?text=Story+Time" alt="Story Time" />
-            <div class="gallery-overlay"><span>Story Time</span></div>
+            <div class="gallery-overlay"><span>📚 Story Time</span><span class="gallery-zoom">🔍</span></div>
           </div>
-          <div class="gallery-item" data-cat="events">
+          <div class="gallery-item" data-cat="events" data-lightbox data-title="Annual Day" data-reveal="up" data-delay="160">
             <img src="https://placehold.co/400x300/FFF3E0/F9A825?text=Annual+Day" alt="Annual Day" />
-            <div class="gallery-overlay"><span>Annual Day</span></div>
+            <div class="gallery-overlay"><span>🎉 Annual Day</span><span class="gallery-zoom">🔍</span></div>
           </div>
-          <div class="gallery-item" data-cat="activity">
+          <div class="gallery-item" data-cat="activity" data-lightbox data-title="Outdoor Play" data-reveal="up" data-delay="240">
             <img src="https://placehold.co/400x300/F5EEF8/8E44AD?text=Outdoor+Play" alt="Outdoor Play" />
-            <div class="gallery-overlay"><span>Outdoor Play</span></div>
+            <div class="gallery-overlay"><span>🛝 Outdoor Play</span><span class="gallery-zoom">🔍</span></div>
           </div>
-          <div class="gallery-item wide" data-cat="classroom">
+          <div class="gallery-item wide" data-cat="classroom" data-lightbox data-title="Science Exploration" data-reveal="up" data-delay="0">
             <img src="https://placehold.co/700x300/EDF7EE/5FBF3A?text=Science+Exploration" alt="Science" />
-            <div class="gallery-overlay"><span>Science Exploration</span></div>
+            <div class="gallery-overlay"><span>🔬 Science Exploration</span><span class="gallery-zoom">🔍</span></div>
           </div>
-          <div class="gallery-item" data-cat="events">
+          <div class="gallery-item" data-cat="events" data-lightbox data-title="Sports Day" data-reveal="up" data-delay="80">
             <img src="https://placehold.co/400x300/FFF3E0/F9A825?text=Sports+Day" alt="Sports Day" />
-            <div class="gallery-overlay"><span>Sports Day</span></div>
+            <div class="gallery-overlay"><span>🏃 Sports Day</span><span class="gallery-zoom">🔍</span></div>
           </div>
-          <div class="gallery-item" data-cat="classroom">
+          <div class="gallery-item" data-cat="classroom" data-lightbox data-title="Music Class" data-reveal="up" data-delay="160">
             <img src="https://placehold.co/400x300/EEF6FC/27A9E1?text=Music+Class" alt="Music Class" />
-            <div class="gallery-overlay"><span>Music Class</span></div>
+            <div class="gallery-overlay"><span>🎵 Music Class</span><span class="gallery-zoom">🔍</span></div>
           </div>
-          <div class="gallery-item" data-cat="activity">
+          <div class="gallery-item" data-cat="activity" data-lightbox data-title="Craft Activity" data-reveal="up" data-delay="240">
             <img src="https://placehold.co/400x300/F5EEF8/8E44AD?text=Craft+Activity" alt="Craft" />
-            <div class="gallery-overlay"><span>Craft Activity</span></div>
+            <div class="gallery-overlay"><span>✂️ Craft Activity</span><span class="gallery-zoom">🔍</span></div>
           </div>
         </div>
       </div>
@@ -365,8 +387,12 @@
       <div class="wave-top">
         <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,30 C480,60 960,0 1440,30 L1440,0 L0,0 Z" fill="#ffffff"/></svg>
       </div>
+      <div class="section-blobs" aria-hidden="true">
+        <div class="s-blob s-blob-3"></div>
+        <div class="s-blob s-blob-4"></div>
+      </div>
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" data-reveal="up">
           <div class="section-label">Testimonials</div>
           <h2>What <span class="highlight-green">Parents</span> Say About Us</h2>
           <p>Hear from the families who have trusted us with their most precious little ones.</p>
@@ -374,8 +400,9 @@
         <div class="testimonials-slider" id="testimonialsSlider">
           <div class="testimonials-track" id="testimonialsTrack">
             <div class="testimonial-card">
+              <div class="quote-icon">❝</div>
               <div class="stars">★★★★★</div>
-              <p>"Vedantam transformed my shy daughter into a confident, curious learner. The teachers here genuinely care for each child. Best decision we ever made!"</p>
+              <p>Vedantam transformed my shy daughter into a confident, curious learner. The teachers here genuinely care for each child. Best decision we ever made!</p>
               <div class="reviewer">
                 <div class="reviewer-avatar green">P</div>
                 <div>
@@ -385,8 +412,9 @@
               </div>
             </div>
             <div class="testimonial-card">
+              <div class="quote-icon">❝</div>
               <div class="stars">★★★★★</div>
-              <p>"The holistic approach at Vedantam is remarkable. My son loves going to school every single day — the creativity and play make learning so joyful."</p>
+              <p>The holistic approach at Vedantam is remarkable. My son loves going to school every single day — the creativity and play make learning so joyful.</p>
               <div class="reviewer">
                 <div class="reviewer-avatar blue">R</div>
                 <div>
@@ -396,8 +424,9 @@
               </div>
             </div>
             <div class="testimonial-card">
+              <div class="quote-icon">❝</div>
               <div class="stars">★★★★★</div>
-              <p>"Safety and communication are top-notch. The parent app keeps me updated throughout the day, and the teachers are always reachable. Truly world-class!"</p>
+              <p>Safety and communication are top-notch. The parent app keeps me updated throughout the day, and the teachers are always reachable. Truly world-class!</p>
               <div class="reviewer">
                 <div class="reviewer-avatar orange">S</div>
                 <div>
@@ -407,8 +436,9 @@
               </div>
             </div>
             <div class="testimonial-card">
+              <div class="quote-icon">❝</div>
               <div class="stars">★★★★★</div>
-              <p>"We switched from another school and the difference was night and day. Vedantam's teachers are warm, patient, and incredibly skilled with young children."</p>
+              <p>We switched from another school and the difference was night and day. Vedantam's teachers are warm, patient, and incredibly skilled with young children.</p>
               <div class="reviewer">
                 <div class="reviewer-avatar purple">A</div>
                 <div>
@@ -418,8 +448,9 @@
               </div>
             </div>
             <div class="testimonial-card">
+              <div class="quote-icon">❝</div>
               <div class="stars">★★★★★</div>
-              <p>"The facilities are outstanding and the curriculum is perfectly structured. My twins love the outdoor play and story time sessions. Highly recommended!"</p>
+              <p>The facilities are outstanding and the curriculum is perfectly structured. My twins love the outdoor play and story time sessions. Highly recommended!</p>
               <div class="reviewer">
                 <div class="reviewer-avatar green">D</div>
                 <div>
@@ -441,49 +472,137 @@
       </div>
     </section>
 
+    <!-- ===== FAQ ===== -->
+    <section class="faq section" id="faq">
+      <div class="container">
+        <div class="section-header" data-reveal="up">
+          <div class="section-label">FAQ</div>
+          <h2>Frequently Asked <span class="highlight-purple">Questions</span></h2>
+          <p>Everything you need to know before enrolling your little one at Vedantam.</p>
+        </div>
+        <div class="faq-grid">
+          <div class="faq-item" data-reveal="up" data-delay="0">
+            <button class="faq-question" aria-expanded="false">
+              <span>What is the age group for admission?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>We welcome children from 1.5 to 5.5 years across our four programs: Playgroup (1.5–2.5 yrs), Nursery (2.5–3.5 yrs), Lower KG (3.5–4.5 yrs), and Upper KG (4.5–5.5 yrs).</p>
+            </div>
+          </div>
+          <div class="faq-item" data-reveal="up" data-delay="80">
+            <button class="faq-question" aria-expanded="false">
+              <span>What are the school timings?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>School hours are Monday to Friday, 8:00 AM to 1:00 PM. The administrative office remains open from 8:00 AM to 5:00 PM for parent queries and admissions.</p>
+            </div>
+          </div>
+          <div class="faq-item" data-reveal="up" data-delay="160">
+            <button class="faq-question" aria-expanded="false">
+              <span>Do you provide transportation?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Yes! We operate GPS-tracked, air-conditioned school buses with trained female attendants on each route. Routes cover major areas across the city, and parents receive live location updates.</p>
+            </div>
+          </div>
+          <div class="faq-item" data-reveal="up" data-delay="240">
+            <button class="faq-question" aria-expanded="false">
+              <span>What curriculum does Vedantam follow?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>We follow a play-based, activity-driven curriculum aligned with early childhood development principles. It integrates language, numeracy, arts, physical education, and social-emotional learning in a balanced, holistic way.</p>
+            </div>
+          </div>
+          <div class="faq-item" data-reveal="up" data-delay="0">
+            <button class="faq-question" aria-expanded="false">
+              <span>How do you ensure child safety?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Child safety is our top priority. We have 24/7 CCTV surveillance, biometric entry, verified staff with background checks, a no-stranger policy, and a dedicated on-campus nurse. Parents are notified instantly of any incidents.</p>
+            </div>
+          </div>
+          <div class="faq-item" data-reveal="up" data-delay="80">
+            <button class="faq-question" aria-expanded="false">
+              <span>Is mid-day meal provided?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Yes, we provide a nutritious mid-day meal and morning snack prepared fresh in our on-campus kitchen. The menu is planned by a nutritionist and rotates weekly, covering a variety of healthy, home-style dishes.</p>
+            </div>
+          </div>
+          <div class="faq-item" data-reveal="up" data-delay="160">
+            <button class="faq-question" aria-expanded="false">
+              <span>How do parents track their child's progress?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>We share detailed monthly progress reports, conduct parent-teacher meetings each term, and provide a dedicated parent app with daily activity updates, photos, and teacher messages.</p>
+            </div>
+          </div>
+          <div class="faq-item" data-reveal="up" data-delay="240">
+            <button class="faq-question" aria-expanded="false">
+              <span>What documents are needed for admission?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Required documents include: child's birth certificate, recent passport-sized photographs, parent/guardian ID proof, address proof, and immunisation records. Our team will guide you through the complete process.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== ADMISSION PROCESS ===== -->
     <section class="admission section" id="admission">
+      <div class="wave-top">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,30 C480,60 960,0 1440,30 L1440,0 L0,0 Z" fill="#ffffff"/></svg>
+      </div>
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" data-reveal="up">
           <div class="section-label">Admissions 2025–26</div>
           <h2>Simple Steps to <span class="highlight-blue">Join Our Family</span></h2>
           <p>We've made the admission process simple and transparent, so you can focus on what matters most — your child.</p>
         </div>
         <div class="admission-steps">
-          <div class="step">
+          <div class="step" data-reveal="up" data-delay="0">
             <div class="step-num green">01</div>
             <div class="step-content">
               <h3>Enquire</h3>
-              <p>Fill out the enquiry form or call us to know more about programs, fees, and availability.</p>
+              <p>Fill the form or call us to know more about programs, fees, and availability.</p>
             </div>
           </div>
-          <div class="step-arrow">→</div>
-          <div class="step">
+          <div class="step-arrow" aria-hidden="true">→</div>
+          <div class="step" data-reveal="up" data-delay="100">
             <div class="step-num blue">02</div>
             <div class="step-content">
               <h3>Campus Visit</h3>
-              <p>Schedule a school tour, meet our teachers, and experience our facilities firsthand.</p>
+              <p>Schedule a tour, meet our teachers, and experience our facilities firsthand.</p>
             </div>
           </div>
-          <div class="step-arrow">→</div>
-          <div class="step">
+          <div class="step-arrow" aria-hidden="true">→</div>
+          <div class="step" data-reveal="up" data-delay="200">
             <div class="step-num orange">03</div>
             <div class="step-content">
               <h3>Register</h3>
-              <p>Complete the registration form and submit the required documents for your child's admission.</p>
+              <p>Complete the registration form and submit the required documents.</p>
             </div>
           </div>
-          <div class="step-arrow">→</div>
-          <div class="step">
+          <div class="step-arrow" aria-hidden="true">→</div>
+          <div class="step" data-reveal="up" data-delay="300">
             <div class="step-num purple">04</div>
             <div class="step-content">
               <h3>Welcome!</h3>
-              <p>Pay the fee, collect the welcome kit, and get ready to begin a wonderful journey at Vedantam!</p>
+              <p>Pay the fee, collect the welcome kit, and begin a wonderful journey!</p>
             </div>
           </div>
         </div>
-        <div class="admission-form-wrap">
-          <h3>Request a Callback</h3>
+        <div class="admission-form-wrap" data-reveal="up">
+          <h3>📋 Request a Callback</h3>
           <form class="admission-form" id="admissionForm" novalidate>
             <div class="form-row">
               <div class="form-group">
@@ -515,13 +634,14 @@
               <label for="message">Message (optional)</label>
               <textarea id="message" name="message" rows="3" placeholder="Any questions or specific requirements…"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary full-width">Send Enquiry 🚀</button>
-            <p class="form-note">We'll get back to you within 24 hours.</p>
+            <button type="submit" class="btn btn-primary full-width btn-shine">Send Enquiry 🚀</button>
+            <p class="form-note">✅ We'll get back to you within 24 hours.</p>
           </form>
           <div class="form-success" id="formSuccess" hidden>
             <div class="success-icon">🎉</div>
             <h4>Thank You!</h4>
             <p>We've received your enquiry and will call you back within 24 hours.</p>
+            <a href="#home" class="btn btn-primary btn-shine" style="margin-top:16px">Back to Home</a>
           </div>
         </div>
       </div>
@@ -529,44 +649,38 @@
 
     <!-- ===== CONTACT ===== -->
     <section class="contact section" id="contact">
-      <div class="wave-top">
-        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,30 C480,60 960,0 1440,30 L1440,0 L0,0 Z" fill="#ffffff"/></svg>
-      </div>
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" data-reveal="up">
           <div class="section-label">Get in Touch</div>
           <h2>We'd Love to <span class="highlight-orange">Hear From You</span></h2>
         </div>
         <div class="contact-inner">
           <div class="contact-cards">
-            <div class="contact-card">
+            <div class="contact-card" data-reveal="up" data-delay="0">
               <div class="contact-icon green">📍</div>
               <h4>Visit Us</h4>
               <p>Vedantam Play School,<br/>123, Garden View Road,<br/>Hyderabad – 500001</p>
             </div>
-            <div class="contact-card">
+            <div class="contact-card" data-reveal="up" data-delay="80">
               <div class="contact-icon blue">📞</div>
               <h4>Call Us</h4>
               <p><a href="tel:+919876543210">+91 98765 43210</a><br/><a href="tel:+914023456789">+91 40 2345 6789</a></p>
             </div>
-            <div class="contact-card">
+            <div class="contact-card" data-reveal="up" data-delay="160">
               <div class="contact-icon orange">✉️</div>
               <h4>Email Us</h4>
               <p><a href="mailto:info@vedantamplayschool.com">info@vedantamplayschool.com</a><br/><a href="mailto:admissions@vedantamplayschool.com">admissions@vedantamplayschool.com</a></p>
             </div>
-            <div class="contact-card">
+            <div class="contact-card" data-reveal="up" data-delay="240">
               <div class="contact-icon purple">🕐</div>
               <h4>School Hours</h4>
               <p>Monday – Friday<br/>8:00 AM – 1:00 PM<br/><small>Office: 8 AM – 5 PM</small></p>
             </div>
           </div>
-          <div class="map-placeholder">
-            <img src="https://placehold.co/800x300/EDF7EE/5FBF3A?text=Map+Location+-+Vedantam+Play+School" alt="Map showing school location" />
+          <div class="map-placeholder" data-reveal="up">
+            <img src="https://placehold.co/1100x300/EDF7EE/5FBF3A?text=📍+Vedantam+Play+School+-+Hyderabad" alt="Map showing school location" />
           </div>
         </div>
-      </div>
-      <div class="wave-bottom">
-        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#f0faf8"/></svg>
       </div>
     </section>
 
@@ -574,9 +688,14 @@
 
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
+    <div class="footer-wave">
+      <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,30 C360,60 1080,0 1440,30 L1440,0 L0,0 Z" fill="#ffffff"/>
+      </svg>
+    </div>
     <div class="container footer-inner">
       <div class="footer-brand">
-        <div class="nav-logo footer-logo">
+        <a href="#home" class="nav-logo footer-logo">
           <div class="logo-icon">
             <svg viewBox="0 0 60 60" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
               <circle cx="30" cy="30" r="9" fill="#F9A825"/>
@@ -588,16 +707,16 @@
             </svg>
           </div>
           <div class="logo-text">
-            <span class="logo-name">Vedantam</span>
+            <span class="logo-name footer-logo-name">Vedantam</span>
             <span class="logo-tagline">Play · Learn · Grow</span>
           </div>
-        </div>
+        </a>
         <p>A nurturing space where every child's potential is celebrated, and every day is an adventure in learning.</p>
         <div class="social-links">
-          <a href="#" aria-label="Facebook" class="social-btn">f</a>
+          <a href="#" aria-label="Facebook"  class="social-btn">f</a>
           <a href="#" aria-label="Instagram" class="social-btn">in</a>
-          <a href="#" aria-label="YouTube" class="social-btn">▶</a>
-          <a href="#" aria-label="WhatsApp" class="social-btn">W</a>
+          <a href="#" aria-label="YouTube"   class="social-btn">▶</a>
+          <a href="#" aria-label="WhatsApp"  class="social-btn">W</a>
         </div>
       </div>
       <div class="footer-col">
@@ -607,8 +726,8 @@
           <li><a href="#programs">Our Programs</a></li>
           <li><a href="#facilities">Facilities</a></li>
           <li><a href="#gallery">Gallery</a></li>
+          <li><a href="#faq">FAQ</a></li>
           <li><a href="#admission">Admissions</a></li>
-          <li><a href="#contact">Contact</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -636,7 +755,28 @@
     </div>
   </footer>
 
-  <a href="#home" class="back-to-top" id="backToTop" aria-label="Back to top">↑</a>
+  <!-- ===== LIGHTBOX ===== -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer" hidden>
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+    <button class="lightbox-nav lb-prev" id="lbPrev" aria-label="Previous image">&#8592;</button>
+    <div class="lightbox-content">
+      <img src="" alt="" id="lightboxImg" />
+      <p class="lightbox-caption" id="lightboxCaption"></p>
+    </div>
+    <button class="lightbox-nav lb-next" id="lbNext" aria-label="Next image">&#8594;</button>
+  </div>
+
+  <!-- ===== FLOATING WHATSAPP ===== -->
+  <a href="https://wa.me/919876543210?text=Hello!%20I%20am%20interested%20in%20admissions%20at%20Vedantam%20Play%20School."
+     class="whatsapp-btn" id="whatsappBtn" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+    <svg viewBox="0 0 32 32" width="28" height="28" fill="white" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 0C7.164 0 0 7.163 0 16c0 2.82.736 5.463 2.018 7.762L0 32l8.468-2.004A15.93 15.93 0 0016 32c8.836 0 16-7.164 16-16S24.836 0 16 0zm0 29.333a13.258 13.258 0 01-6.746-1.839l-.484-.287-4.998 1.184 1.213-4.857-.317-.5A13.261 13.261 0 012.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.273-9.924c-.397-.198-2.348-1.158-2.712-1.29-.364-.132-.63-.198-.895.199-.265.396-1.028 1.289-1.26 1.555-.232.265-.463.298-.86.1-.398-.2-1.68-.619-3.2-1.975-1.183-1.055-1.98-2.358-2.213-2.755-.232-.397-.025-.61.175-.808.18-.18.398-.463.597-.694.2-.232.265-.397.397-.662.133-.265.067-.497-.033-.695-.1-.199-.895-2.158-1.226-2.954-.323-.775-.65-.67-.895-.683-.231-.012-.497-.015-.762-.015-.265 0-.695.1-1.06.497-.364.397-1.39 1.36-1.39 3.315 0 1.955 1.424 3.843 1.623 4.108.199.265 2.8 4.274 6.784 5.993.948.41 1.688.654 2.265.837.953.304 1.82.261 2.506.158.765-.114 2.348-.96 2.68-1.887.33-.927.33-1.723.23-1.888-.099-.165-.364-.264-.762-.463z"/>
+    </svg>
+    <span class="wa-tooltip">Chat with us!</span>
+  </a>
+
+  <!-- ===== BACK TO TOP ===== -->
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
 
   <script src="js/script.js"></script>
 </body>
