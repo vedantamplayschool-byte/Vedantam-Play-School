@@ -1,0 +1,165 @@
+/* ===================================================
+   VEDANTAM PLAY SCHOOL – responsive.css
+   =================================================== */
+
+/* ---- Large desktops (1200px+) already handled by style.css ---- */
+
+/* ---- Medium desktops / small laptops (< 1100px) ---- */
+@media (max-width: 1100px) {
+  .programs-grid   { grid-template-columns: repeat(2, 1fr); }
+  .facilities-grid { grid-template-columns: repeat(2, 1fr); }
+  .cards-grid      { grid-template-columns: repeat(2, 1fr); }
+  .footer-inner    { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .testimonial-card { min-width: calc(50% - 12px); }
+}
+
+/* ---- Tablets (< 900px) ---- */
+@media (max-width: 900px) {
+  .section { padding: 70px 0; }
+
+  /* Navbar */
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 72px; left: 0; right: 0;
+    background: #fff;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 24px 32px;
+    gap: 4px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    z-index: 999;
+    border-top: 1px solid #f0f0f0;
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { width: 100%; padding: 12px 16px; border-radius: 10px; }
+  .nav-cta { width: auto; align-self: flex-start; margin-top: 8px; }
+  .hamburger { display: flex; }
+
+  /* Hero */
+  .hero-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 50px 0 80px;
+    text-align: center;
+  }
+  .hero-content h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); }
+  .hero-content p  { margin: 0 auto 32px; }
+  .hero-actions    { justify-content: center; }
+  .hero-stats      { justify-content: center; }
+  .hero-visual     { max-width: 480px; margin: 0 auto; }
+
+  /* About */
+  .about-inner { grid-template-columns: 1fr; gap: 48px; }
+  .about-visual { order: -1; }
+  .about-img-grid { max-width: 520px; margin: 0 auto; }
+
+  /* Gallery */
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Contact */
+  .contact-cards { grid-template-columns: repeat(2, 1fr); }
+
+  /* Admission steps */
+  .admission-steps { flex-direction: column; align-items: center; }
+  .step-arrow { transform: rotate(90deg); padding: 0 0 10px; }
+
+  /* Admission form */
+  .admission-form-wrap { padding: 36px 28px; }
+
+  /* Footer */
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+
+  /* Testimonials */
+  .testimonial-card { min-width: calc(50% - 12px); }
+}
+
+/* ---- Mobile (< 640px) ---- */
+@media (max-width: 640px) {
+  .section { padding: 56px 0; }
+
+  /* Hero */
+  .hero-inner { padding: 40px 0 70px; gap: 32px; }
+  .floating-card { display: none; }
+  .hero-badge { font-size: 0.8rem; }
+  .hero-actions { flex-direction: column; align-items: center; }
+  .hero-stats { gap: 12px; }
+  .stat strong { font-size: 1.5rem; }
+
+  /* Section headers */
+  .section-header { margin-bottom: 40px; }
+  .section-header h2 { font-size: 1.7rem; }
+
+  /* Cards */
+  .cards-grid { grid-template-columns: 1fr; gap: 18px; }
+
+  /* Programs */
+  .programs-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+
+  /* Facilities */
+  .facilities-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+  /* Gallery */
+  .gallery-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 160px;
+  }
+  .gallery-item.wide  { grid-column: span 2; }
+  .gallery-item.tall  { grid-row: span 1; }
+
+  /* Gallery filter scroll */
+  .gallery-filter { gap: 8px; }
+  .filter-btn { padding: 8px 16px; font-size: 0.85rem; }
+
+  /* Testimonials single card */
+  .testimonial-card { min-width: 100%; }
+
+  /* Contact */
+  .contact-cards { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
+
+  /* Admission form */
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+  .admission-form-wrap { padding: 28px 20px; }
+
+  /* About image grid */
+  .about-img-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Footer */
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 48px 0 32px;
+  }
+  .footer-brand { text-align: center; }
+  .footer-brand .social-links { justify-content: center; }
+  .footer-col h5::after { left: 50%; transform: translateX(-50%); }
+  .footer-col { text-align: center; }
+
+  /* Navbar */
+  .nav-inner { height: 64px; }
+  .nav-links { top: 64px; }
+
+  /* Back to top */
+  .back-to-top { bottom: 20px; right: 20px; width: 40px; height: 40px; font-size: 1rem; }
+
+  /* Step arrows */
+  .step-arrow { font-size: 1.4rem; }
+
+  /* Logo */
+  .logo-name { font-size: 1.15rem; }
+}
+
+/* ---- Small mobile (< 380px) ---- */
+@media (max-width: 380px) {
+  .facilities-grid { grid-template-columns: 1fr; }
+  .gallery-grid    { grid-template-columns: 1fr; }
+  .gallery-item.wide  { grid-column: span 1; }
+  .hero-content h1 { font-size: 1.6rem; }
+}
+
+/* ---- Print ---- */
+@media print {
+  .navbar, .back-to-top, .wave-top, .wave-bottom { display: none; }
+  .hero { min-height: auto; padding-top: 20px; }
+  body { font-size: 12pt; }
+}
