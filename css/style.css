@@ -1640,3 +1640,47 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   opacity: 1;
   transform: translate(0);
 }
+
+/* ---- Verified-content placeholders and official logo ---- */
+.logo-icon img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
+.footer-logo .logo-icon img {
+  width: 54px;
+  height: 54px;
+}
+
+.content-notice,
+.empty-state {
+  background: rgba(255,255,255,0.78);
+  border: 2px dashed rgba(39,169,225,0.28);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-weight: 800;
+  line-height: 1.7;
+  padding: 22px 26px;
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-state {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.about-logo-card {
+  background: #fff;
+  border-radius: 32px;
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
+}
+
+.about-logo-card img,
+.hero-img-wrap img[src$="vedantam-logo.svg"] {
+  background: #f3f6fb;
+  object-fit: contain;
+}
