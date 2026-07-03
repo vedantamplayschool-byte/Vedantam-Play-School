@@ -172,3 +172,10 @@
   .hero { min-height: auto; padding-top: 20px; }
   body { font-size: 12pt; }
 }
+
+@media (max-width: 640px) {
+  .logo-icon img { width: 48px; height: 48px; }
+  .logo-name { font-size: 1.05rem; }
+  .logo-tagline { font-size: 0.58rem; letter-spacing: 1px; }
+  .content-notice, .empty-state { padding: 18px; }
+}
