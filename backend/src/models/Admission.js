@@ -1,0 +1,3 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({studentName:{type:String,required:true,trim:true,index:true},parentName:{type:String,required:true,trim:true},phone:{type:String,required:true,trim:true,index:true},email:{type:String,trim:true,lowercase:true},age:{type:String,required:true,trim:true},program:{type:String,required:true,enum:['Play Group','Nursery','LKG','UKG']},message:{type:String,trim:true,maxlength:1000},status:{type:String,enum:['Pending','Approved','Rejected'],default:'Pending',index:true},notes:{type:String,trim:true,maxlength:1000}},{timestamps:true});
+schema.index({createdAt:-1});export default mongoose.model('Admission',schema);

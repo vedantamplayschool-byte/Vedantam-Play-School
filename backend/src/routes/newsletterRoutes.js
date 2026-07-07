@@ -1,0 +1,2 @@
+import {Router} from 'express';import {subscribe,listSubscriptions,deleteSubscription} from '../controllers/newsletterController.js';import {protect} from '../middleware/auth.js';import {validate} from '../middleware/validate.js';import {idParam,newsletterRules,pagination} from '../validators/common.js';
+const r=Router();r.post('/',newsletterRules,validate,subscribe);r.use(protect);r.get('/',pagination,validate,listSubscriptions);r.delete('/:id',idParam,validate,deleteSubscription);export default r;

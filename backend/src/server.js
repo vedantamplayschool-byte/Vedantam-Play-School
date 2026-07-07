@@ -1,0 +1,2 @@
+import app from './app.js';import {connectDB} from './config/db.js';import {env,validateEnv} from './config/env.js';
+const start=async()=>{validateEnv();await connectDB();const server=app.listen(env.port,()=>console.log(`Vedantam API running on port ${env.port}`));process.on('unhandledRejection',err=>{console.error(err);server.close(()=>process.exit(1))});process.on('SIGTERM',()=>server.close(()=>process.exit(0)))};start();

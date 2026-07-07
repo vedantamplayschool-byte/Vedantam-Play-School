@@ -1,0 +1,1 @@
+{"name":"vedantam-play-school","version":"1.0.0","private":true,"description":"Vedantam Play School website with Express/MongoDB backend","scripts":{"start":"npm --prefix backend start","backend:dev":"npm --prefix backend run dev","backend:lint":"npm --prefix backend run lint","serve:frontend":"python3 -m http.server 5000"}}

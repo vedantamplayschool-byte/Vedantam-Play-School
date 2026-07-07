@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({title:{type:String,required:true,trim:true,index:true},description:{type:String,required:true,trim:true},eventDate:{type:Date,required:true,index:true},location:{type:String,trim:true},imageUrl:String,publicId:String,isFeatured:{type:Boolean,default:false,index:true},isPublished:{type:Boolean,default:true,index:true}},{timestamps:true});export default mongoose.model('Event',schema);
