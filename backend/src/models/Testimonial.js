@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({parentName:{type:String,required:true,trim:true},studentName:{type:String,trim:true},message:{type:String,required:true,trim:true,maxlength:1000},rating:{type:Number,min:1,max:5,default:5},photoUrl:String,isPublished:{type:Boolean,default:true,index:true},displayOrder:{type:Number,default:0,index:true}},{timestamps:true});export default mongoose.model('Testimonial',schema);

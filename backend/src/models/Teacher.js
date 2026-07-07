@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({name:{type:String,required:true,trim:true,index:true},photoUrl:String,qualification:{type:String,required:true,trim:true},experience:{type:String,trim:true},description:{type:String,trim:true,maxlength:1200},socialLinks:{facebook:String,instagram:String,linkedin:String},isActive:{type:Boolean,default:true,index:true},displayOrder:{type:Number,default:0,index:true}},{timestamps:true});export default mongoose.model('Teacher',schema);

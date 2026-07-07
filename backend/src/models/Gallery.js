@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({title:{type:String,required:true,trim:true,index:true},description:{type:String,trim:true,maxlength:800},category:{type:String,required:true,trim:true,index:true},imageUrl:{type:String,required:true},publicId:String,isFeatured:{type:Boolean,default:false,index:true},displayOrder:{type:Number,default:0,index:true}},{timestamps:true});schema.index({createdAt:-1});export default mongoose.model('Gallery',schema);

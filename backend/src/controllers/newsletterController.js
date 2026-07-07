@@ -1,0 +1,3 @@
+import Newsletter from '../models/Newsletter.js';import {asyncHandler} from '../utils/asyncHandler.js';import {ok} from '../utils/apiResponse.js';import {list,remove} from './factoryController.js';
+export const subscribe=asyncHandler(async(req,res)=>{const doc=await Newsletter.findOneAndUpdate({email:req.body.email},{email:req.body.email,isActive:true,source:req.body.source||'website'},{upsert:true,new:true,setDefaultsOnInsert:true});ok(res,{status:201,message:'Newsletter subscription saved',data:doc})});
+export const listSubscriptions=list(Newsletter,['email']);export const deleteSubscription=remove(Newsletter);

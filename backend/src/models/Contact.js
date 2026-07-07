@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({name:{type:String,required:true,trim:true},email:{type:String,trim:true,lowercase:true},phone:{type:String,required:true,trim:true,index:true},subject:{type:String,trim:true},message:{type:String,required:true,trim:true,maxlength:1500},status:{type:String,enum:['New','Read','Archived'],default:'New',index:true}},{timestamps:true});schema.index({createdAt:-1});export default mongoose.model('Contact',schema);

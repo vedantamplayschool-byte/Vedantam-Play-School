@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({admission:{type:mongoose.Schema.Types.ObjectId,ref:'Admission'},studentName:{type:String,required:true,trim:true,index:true},parentName:{type:String,required:true,trim:true},phone:{type:String,required:true,trim:true},program:{type:String,required:true,enum:['Play Group','Nursery','LKG','UKG']},dateOfBirth:Date,address:String,isActive:{type:Boolean,default:true,index:true}},{timestamps:true});export default mongoose.model('Student',schema);

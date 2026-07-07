@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({name:{type:String,required:true,trim:true},phone:{type:String,required:true,trim:true,index:true},email:{type:String,trim:true,lowercase:true},program:{type:String,enum:['Play Group','Nursery','LKG','UKG','General'],default:'General'},message:{type:String,trim:true,maxlength:1000},status:{type:String,enum:['New','Contacted','Closed'],default:'New',index:true}},{timestamps:true});export default mongoose.model('Enquiry',schema);

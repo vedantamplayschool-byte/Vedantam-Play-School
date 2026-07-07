@@ -1,0 +1,2 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({title:{type:String,required:true,trim:true,index:true},body:{type:String,required:true,trim:true},priority:{type:String,enum:['Low','Normal','High'],default:'Normal',index:true},isPublished:{type:Boolean,default:true,index:true},publishDate:{type:Date,default:Date.now,index:true},expiresAt:Date},{timestamps:true});export default mongoose.model('Notice',schema);
