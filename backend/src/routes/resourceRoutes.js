@@ -8,8 +8,9 @@ import { list, getOne, create, update, remove } from '../controllers/factoryCont
 
 export const crudRouter = (Model, publicFilter = {}, searchFields = ['title', 'name']) => {
   const r = Router();
-  r.get('/', optionalAuth, pagination, validate, (req, res, next) => list(Model, searchFields, req.admin ? {} : publicFilter)(req, res, next));
-  r.get('/:id', idParam, validate, getOne(Model));
+  const visibleFilter = req => (req.admin ? {} : publicFilter);
+  r.get('/', optionalAuth, pagination, validate, (req, res, next) => list(Model, searchFields, visibleFilter(req))(req, res, next));
+  r.get('/:id', optionalAuth, idParam, validate, (req, res, next) => getOne(Model, visibleFilter(req))(req, res, next));
   r.use(protect);
   r.post('/', upload.single('image'), validate, create(Model));
   r.put('/:id', upload.single('image'), idParam, validate, update(Model));
