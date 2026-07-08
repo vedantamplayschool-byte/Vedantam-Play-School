@@ -139,6 +139,17 @@
           <article class="contact-card reveal"><h3>✉️ Email</h3><p><a href="mailto:vedantamplayschool@gmail.com">vedantamplayschool@gmail.com</a></p></article>
           <article class="contact-card reveal"><h3>📸 Instagram</h3><p><a href="https://www.instagram.com/vedantamplayschool" target="_blank" rel="noopener">@vedantamplayschool</a></p></article>
         </div>
+        <div class="contact-form-wrap reveal">
+          <form class="contact-form" id="contactForm" novalidate>
+            <h3>Send us a message</h3>
+            <label>Name <input name="name" required placeholder="Your name" /></label>
+            <label>Phone <input name="phone" type="tel" required pattern="[0-9+\-() ]{7,20}" placeholder="Phone number" /></label>
+            <label>Email <input name="email" type="email" placeholder="Email address" /></label>
+            <label>Subject <input name="subject" placeholder="Subject" /></label>
+            <label class="wide">Message <textarea name="message" rows="4" required placeholder="How can we help?" ></textarea></label>
+            <button class="btn primary wide" type="submit">Send Message</button>
+          </form>
+        </div>
         <div class="map-placeholder reveal">Map location placeholder — Google Map will be embedded when available.</div>
       </div>
         <form class="newsletter-form reveal" id="newsletterForm" novalidate><label>Subscribe for school updates <input name="email" type="email" required placeholder="Parent email address" /></label><button class="btn primary" type="submit">Subscribe</button><span id="newsletterStatus" role="status"></span></form>
@@ -155,6 +166,7 @@
   </footer>
   <a class="floating-cta" href="#enquiry">Admission Open</a>
   <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+  <script src="js/api-config.js"></script>
   <script src="js/script.js"></script>
 </body>
 </html>

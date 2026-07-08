@@ -3,3 +3,4 @@
 @media (max-width:620px){.nav-inner{height:74px}.nav-links{top:74px}.brand small{display:none}.brand img{width:50px;height:50px}.hero{padding-top:100px}.hero h1{font-size:2.35rem}.hero-actions .btn{width:100%}.hero-card{min-height:360px;border-radius:34px}.logo-orbit{width:280px}.mini-card{font-size:.84rem;padding:10px 12px}.four,.facilities-grid,.contact-grid,.footer-grid{grid-template-columns:1fr}.program-card,.facility,.contact-card,.principal-card,.enquiry-form{border-radius:24px;padding:22px}.enquiry-form{grid-template-columns:1fr}.floating-cta{right:14px;bottom:82px;padding:11px 16px}.back-to-top{right:16px;bottom:20px}.section-head h2,.principal h2,.enquiry h2{font-size:2rem}}
 @media (max-width:1050px){.dynamic-grid{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:760px){.dynamic-grid,.dynamic-columns{grid-template-columns:1fr}.newsletter-form{display:grid;align-items:stretch}}
+@media (max-width:760px){.contact-form{grid-template-columns:1fr}}
