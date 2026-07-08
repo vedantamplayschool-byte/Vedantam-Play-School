@@ -59,7 +59,8 @@ npm run dev
 Create the first admin once with `POST /auth/bootstrap`, then use `POST /auth/login`.
 Protected routes require `Authorization: Bearer <token>` or the secure `token` cookie.
 
-- Auth: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
+- Auth: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `PATCH /auth/profile`, `PATCH /auth/change-password`
+- Dashboard: `GET /dashboard/stats`
 - Admins: `GET|POST /admins`, `GET|PUT|PATCH|DELETE /admins/:id`
 - Admissions: `GET /admissions`, `GET /admissions/:id`, `PATCH /admissions/:id/status`, `DELETE /admissions/:id`
 - Contacts: `GET /contacts`, `GET|PUT|PATCH|DELETE /contacts/:id`

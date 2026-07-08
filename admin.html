@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | Vedantam Play School</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="logo.png" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+  <main class="login-shell" id="loginView">
+    <form class="login-card" id="loginForm">
+      <img src="logo.png" alt="Vedantam Play School logo" width="82" height="82" />
+      <h1>Admin Login</h1><p>Secure school management dashboard</p>
+      <label>Email<input type="email" name="email" required autocomplete="username" /></label>
+      <label>Password<input type="password" name="password" required autocomplete="current-password" /></label>
+      <button type="submit">Login</button><div id="loginMessage" role="status"></div>
+    </form>
+  </main>
+  <div class="admin-shell hidden" id="adminView">
+    <aside class="sidebar">
+      <a class="brand" href="#dashboard"><img src="logo.png" alt="" width="46" height="46" /><span>Vedantam Admin</span></a>
+      <nav id="adminNav" aria-label="Admin navigation"></nav>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </aside>
+    <section class="workspace">
+      <header class="topbar"><button id="menuBtn" aria-label="Toggle sidebar">☰</button><div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Production management console</p></div><div class="profile" id="profileBox"></div></header>
+      <section class="content" id="content" aria-live="polite"></section>
+    </section>
+  </div>
+  <script src="js/api-config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
