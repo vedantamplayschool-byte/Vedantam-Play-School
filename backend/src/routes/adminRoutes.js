@@ -1,0 +1,11 @@
+import {Router} from 'express';
+import {body} from 'express-validator';
+import Admin from '../models/Admin.js';
+import {protect} from '../middleware/auth.js';
+import {validate} from '../middleware/validate.js';
+import {idParam,pagination} from '../validators/common.js';
+import {list,getOne,remove} from '../controllers/factoryController.js';
+import {asyncHandler} from '../utils/asyncHandler.js';
+import {ok} from '../utils/apiResponse.js';
+const adminPayload=[body('name').optional().trim().notEmpty().isLength({max:80}),body('email').optional().isEmail().normalizeEmail(),body('password').optional().isLength({min:8}),body('role').optional().isIn(['super_admin','admin']),body('isActive').optional().isBoolean()];
+const r=Router();r.use(protect);r.get('/',pagination,validate,list(Admin,['name','email']));r.get('/:id',idParam,validate,getOne(Admin));r.post('/',adminPayload,validate,asyncHandler(async(req,res)=>{const doc=await Admin.create(req.body);ok(res,{status:201,message:'Admin created successfully',data:{id:doc._id,name:doc.name,email:doc.email,role:doc.role,isActive:doc.isActive}})}));r.put('/:id',[...idParam,...adminPayload],validate,asyncHandler(async(req,res)=>{const doc=await Admin.findById(req.params.id);if(!doc){const e=new Error('Admin not found');e.status=404;throw e}Object.assign(doc,req.body);await doc.save();ok(res,{message:'Admin updated successfully',data:{id:doc._id,name:doc.name,email:doc.email,role:doc.role,isActive:doc.isActive}})}));r.patch('/:id',[...idParam,...adminPayload],validate,asyncHandler(async(req,res)=>{const doc=await Admin.findById(req.params.id);if(!doc){const e=new Error('Admin not found');e.status=404;throw e}Object.assign(doc,req.body);await doc.save();ok(res,{message:'Admin updated successfully',data:{id:doc._id,name:doc.name,email:doc.email,role:doc.role,isActive:doc.isActive}})}));r.delete('/:id',idParam,validate,remove(Admin));export default r;
