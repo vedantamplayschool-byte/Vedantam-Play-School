@@ -1,6 +1,6 @@
 'use strict';
 window.VedantamAPIConfig=Object.freeze({
-  baseUrl: window.VEDANTAM_API_BASE || document.querySelector('meta[name="vedantam-api-base"]')?.content || 'http://localhost:5000/api/v1',
+  baseUrl: window.VEDANTAM_API_BASE || document.querySelector('meta[name="vedantam-api-base"]')?.content || 'https://vedantam-play-school.onrender.com',
   endpoints: Object.freeze({
     admissions: '/admissions',
     contacts: '/contacts',
