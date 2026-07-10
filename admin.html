@@ -4,31 +4,230 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard | Vedantam Play School</title>
-  <meta name="robots" content="noindex,nofollow" />
+  <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
   <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
-  <main class="login-shell" id="loginView">
-    <form class="login-card" id="loginForm">
-      <img src="logo.png" alt="Vedantam Play School logo" width="82" height="82" />
-      <h1>Admin Login</h1><p>Secure school management dashboard</p>
-      <label>Email<input type="email" name="email" required autocomplete="username" /></label>
-      <label>Password<input type="password" name="password" required autocomplete="current-password" /></label>
-      <button type="submit">Login</button><div id="loginMessage" role="status"></div>
-    </form>
-  </main>
-  <div class="admin-shell hidden" id="adminView">
-    <aside class="sidebar">
-      <a class="brand" href="#dashboard"><img src="logo.png" alt="" width="46" height="46" /><span>Vedantam Admin</span></a>
-      <nav id="adminNav" aria-label="Admin navigation"></nav>
-      <button class="logout" id="logoutBtn">Logout</button>
+
+  <!-- ============================================================
+       LOGIN PAGE
+       ============================================================ -->
+  <section id="loginPage" class="page" aria-label="Admin Login">
+    <div class="login-scene">
+
+      <div class="login-decor" aria-hidden="true">
+        <div class="decor-bubbles">
+          <div class="bubble b1"></div>
+          <div class="bubble b2"></div>
+          <div class="bubble b3"></div>
+          <div class="bubble b4"></div>
+          <div class="bubble b5"></div>
+        </div>
+        <div class="decor-content">
+          <img src="logo.png" alt="" class="decor-logo" />
+          <h2 class="decor-name">Vedantam Play School</h2>
+          <p class="decor-tag">Management System v2.0</p>
+          <div class="decor-features">
+            <div class="feat-item">
+              <span class="material-icons-round">verified_user</span>
+              Secure JWT Authentication
+            </div>
+            <div class="feat-item">
+              <span class="material-icons-round">dashboard</span>
+              Complete Management Dashboard
+            </div>
+            <div class="feat-item">
+              <span class="material-icons-round">cloud_done</span>
+              Cloudinary Media Storage
+            </div>
+            <div class="feat-item">
+              <span class="material-icons-round">phone_android</span>
+              Fully Mobile Responsive
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-panel">
+        <div class="login-card">
+          <div class="login-logo-wrap">
+            <img src="logo.png" alt="Vedantam Play School" class="login-logo" />
+          </div>
+          <h1 class="login-title">Welcome Back</h1>
+          <p class="login-sub">Sign in to your admin panel</p>
+
+          <form id="loginForm" novalidate autocomplete="on">
+            <div class="field-group">
+              <label for="loginEmail" class="field-label">Email Address</label>
+              <div class="input-wrap">
+                <span class="material-icons-round field-icon">email</span>
+                <input
+                  id="loginEmail"
+                  name="email"
+                  type="email"
+                  class="field-input"
+                  placeholder="admin@vedantam.edu.in"
+                  autocomplete="username"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="loginPassword" class="field-label">Password</label>
+              <div class="input-wrap">
+                <span class="material-icons-round field-icon">lock</span>
+                <input
+                  id="loginPassword"
+                  name="password"
+                  type="password"
+                  class="field-input"
+                  placeholder="Enter your password"
+                  autocomplete="current-password"
+                  required
+                />
+                <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password">
+                  <span class="material-icons-round" id="pwToggleIcon">visibility</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="login-row">
+              <label class="check-label">
+                <input type="checkbox" id="rememberMe" name="remember" />
+                <span class="check-box"></span>
+                <span>Remember me</span>
+              </label>
+              <button type="button" class="link-btn" id="forgotBtn">Forgot password?</button>
+            </div>
+
+            <div id="loginError" class="alert alert-error" style="display:none" role="alert"></div>
+
+            <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+              <span id="loginBtnText">Sign In</span>
+              <span id="loginSpinner" class="btn-loader" style="display:none">
+                <span class="spin"></span>
+              </span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FORCE CHANGE PASSWORD PAGE
+       ============================================================ -->
+  <section id="forceChangePage" class="page page-center" style="display:none" aria-label="Set New Password">
+    <div class="login-card force-card">
+      <div class="login-logo-wrap">
+        <img src="logo.png" alt="Vedantam Play School" class="login-logo" />
+      </div>
+      <div class="alert alert-warning">
+        <span class="material-icons-round">security</span>
+        <span>Security Notice: You must set a new password before accessing the dashboard.</span>
+      </div>
+      <h1 class="login-title">Set New Password</h1>
+      <p class="login-sub">Your temporary password must be changed to continue.</p>
+
+      <form id="forceChangeForm" novalidate>
+        <div class="field-group">
+          <label for="fcCurrent" class="field-label">Current Password</label>
+          <div class="input-wrap">
+            <span class="material-icons-round field-icon">lock</span>
+            <input id="fcCurrent" name="currentPassword" type="password" class="field-input" placeholder="Your current/temporary password" autocomplete="current-password" required />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="fcNew" class="field-label">New Password</label>
+          <div class="input-wrap">
+            <span class="material-icons-round field-icon">lock_open</span>
+            <input id="fcNew" name="newPassword" type="password" class="field-input" placeholder="Minimum 8 characters" minlength="8" autocomplete="new-password" required />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="fcConfirm" class="field-label">Confirm New Password</label>
+          <div class="input-wrap">
+            <span class="material-icons-round field-icon">lock_open</span>
+            <input id="fcConfirm" name="confirmPassword" type="password" class="field-input" placeholder="Repeat new password" autocomplete="new-password" required />
+          </div>
+        </div>
+        <div id="forceChangeError" class="alert alert-error" style="display:none" role="alert"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="forceChangeBtn">
+          <span id="fcBtnText">Set Password &amp; Continue</span>
+          <span id="fcSpinner" class="btn-loader" style="display:none"><span class="spin"></span></span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ADMIN SHELL
+       ============================================================ -->
+  <div id="adminShell" class="admin-shell" style="display:none">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-head">
+        <a href="#dashboard" class="sidebar-brand" id="sidebarBrand">
+          <img src="logo.png" alt="" class="sidebar-logo" />
+          <div>
+            <div class="sidebar-school">Vedantam</div>
+            <div class="sidebar-sub">Play School</div>
+          </div>
+        </a>
+        <button class="sidebar-close-btn" id="sidebarClose" aria-label="Close navigation">
+          <span class="material-icons-round">close</span>
+        </button>
+      </div>
+
+      <div class="sidebar-scroll">
+        <nav id="sidebarNav" class="sidebar-nav" aria-label="Main menu"></nav>
+      </div>
+
+      <div class="sidebar-foot">
+        <div class="sidebar-user" id="sidebarUser"></div>
+        <button class="sidebar-logout-btn" id="logoutBtn">
+          <span class="material-icons-round">logout</span>
+          <span>Sign Out</span>
+        </button>
+      </div>
     </aside>
-    <section class="workspace">
-      <header class="topbar"><button id="menuBtn" aria-label="Toggle sidebar">☰</button><div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Production management console</p></div><div class="profile" id="profileBox"></div></header>
-      <section class="content" id="content" aria-live="polite"></section>
-    </section>
+
+    <!-- MOBILE BACKDROP -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop" style="display:none" aria-hidden="true"></div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-wrap">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-btn" id="menuBtn" aria-label="Open navigation">
+            <span class="material-icons-round">menu</span>
+          </button>
+          <div class="topbar-title" id="pageTitle">Dashboard</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-avatar" id="topbarAvatar" title="My Profile" role="button" tabindex="0"></div>
+        </div>
+      </header>
+
+      <div id="contentArea" class="content-area" role="main" aria-live="polite" aria-atomic="false">
+        <div class="loader-center">
+          <span class="spin spin-lg"></span>
+        </div>
+      </div>
+    </main>
   </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <script src="js/api-config.js"></script>
   <script src="js/admin.js"></script>
 </body>
