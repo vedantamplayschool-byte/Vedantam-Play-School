@@ -32,3 +32,12 @@ waitForPort = 5000
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+CLIENT_ORIGINS = "https://vedantamplayschool-byte.github.io"
+JWT_COOKIE_EXPIRES_DAYS = "7"
+JWT_EXPIRES_IN = "7d"
+MAX_FILE_SIZE_MB = "5"
+NODE_ENV = "production"
