@@ -21,6 +21,12 @@ import notificationRoutes      from './notificationRoutes.js';
 import certificateRoutes       from './certificateRoutes.js';
 import qrRoutes                from './qrRoutes.js';
 import adminTeacherPortalRoutes from './adminTeacherPortalRoutes.js';
+/* v3.0 ── enterprise modules */
+import parentAuthRoutes        from './parentAuthRoutes.js';
+import parentPortalRoutes      from './parentPortalRoutes.js';
+import adminParentPortalRoutes from './adminParentPortalRoutes.js';
+import storageRoutes           from './storageRoutes.js';
+import archiveRoutes           from './archiveRoutes.js';
 /* CMS */
 import { crudRouter }  from './resourceRoutes.js';
 import Teacher         from '../models/Teacher.js';
@@ -34,7 +40,7 @@ import Enquiry         from '../models/Enquiry.js';
 const r = Router();
 
 r.get('/health', (req, res) =>
-  res.json({ success: true, message: 'Vedantam Play School API is healthy ✅', data: { time: new Date().toISOString(), version: '2.5' } })
+  res.json({ success: true, message: 'Vedantam Play School API is healthy ✅', data: { time: new Date().toISOString(), version: '3.0' } })
 );
 
 /* ── Core ──────────────────────────────────────────────────────────── */
@@ -63,6 +69,13 @@ r.use('/notifications',         notificationRoutes);
 r.use('/certificates',          certificateRoutes);
 r.use('/qr',                    qrRoutes);
 r.use('/teacher-admin',         adminTeacherPortalRoutes);
+
+/* ── ERP v3.0 Enterprise ───────────────────────────────────────────── */
+r.use('/parent-auth',            parentAuthRoutes);
+r.use('/parent-portal',          parentPortalRoutes);
+r.use('/admin-parent-portal',    adminParentPortalRoutes);
+r.use('/storage',                storageRoutes);
+r.use('/archive',                archiveRoutes);
 
 /* ── CMS resources (existing crudRouter — unchanged) ─────────────── */
 r.use('/teachers',     crudRouter(Teacher,     { isActive: true }, ['name', 'qualification']));

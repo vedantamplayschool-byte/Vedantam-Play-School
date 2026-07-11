@@ -1,4 +1,10 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+
+/* ------------------------------------------------------------------
+   Enterprise v3.0 — Parent Portal auth fields added.
+   All new fields are optional so existing documents are safe.
+   ------------------------------------------------------------------ */
 
 const schema = new mongoose.Schema(
   {
@@ -38,12 +44,32 @@ const schema = new mongoose.Schema(
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student' }],
 
     isActive: { type: Boolean, default: true, index: true },
-    notes:    { type: String, trim: true, maxlength: 1000 }
+    notes:    { type: String, trim: true, maxlength: 1000 },
+
+    /* ── v3.0: Parent Portal Auth ─────────────────────────────────── */
+    // portalEmail is the login credential for the parent portal.
+    // Admin sets this when activating portal access.
+    portalEmail:        { type: String, trim: true, lowercase: true, sparse: true, index: true },
+    password:           { type: String, select: false },
+    mustChangePassword: { type: Boolean, default: true },
+    lastLoginAt:        { type: Date },
+    isPortalActive:     { type: Boolean, default: false, index: true }
   },
   { timestamps: true }
 );
 
 // Full-text search helper index
 schema.index({ fatherName: 'text', motherName: 'text', fatherPhone: 1, motherPhone: 1 });
+
+/* ── Password hashing ─────────────────────────────────────────────── */
+schema.pre('save', async function (next) {
+  if (!this.isModified('password') || !this.password) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+schema.methods.comparePassword = function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 export default mongoose.model('Parent', schema);

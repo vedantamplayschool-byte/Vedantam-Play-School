@@ -1,109 +1,105 @@
-# Vedantam Play School — Website + Admin Panel
+# Vedantam Play School — School Management ERP v3.0
 
-A modern preschool website with a full-featured admin dashboard. Built with pure HTML/CSS/JS frontend and a Node.js/Express/MongoDB backend.
+## Overview
+Full-featured MERN-stack school management system for Vedantam Play School. The Express backend serves the static HTML/JS/CSS frontend from the repository root. Production-ready with JWT authentication, MongoDB Atlas, and Cloudinary media storage.
 
-## Stack
+## Architecture
+- **Backend:** Node.js + Express (ESM modules) in `backend/`
+- **Frontend:** Static HTML/JS/CSS served from repository root
+- **Database:** MongoDB Atlas (via `MONGODB_URI` secret)
+- **Media:** Cloudinary (via `CLOUDINARY_*` secrets)
+- **Auth:** JWT cookies — `token` (admin), `teacher_token` (teacher), `parent_token` (parent)
 
-| Layer     | Technology                                         |
-|-----------|----------------------------------------------------|
-| Frontend  | HTML5, CSS3, Vanilla JS — no frameworks            |
-| Admin SPA | `admin.html` + `css/admin.css` + `js/admin.js`     |
-| Backend   | Node.js 20 + Express 5 + Mongoose (ESM)            |
-| Database  | MongoDB Atlas                                      |
-| Media     | Cloudinary (image upload)                          |
-| Auth      | JWT (Bearer + HttpOnly cookie) + bcrypt            |
-| Hosting   | Render (API) + GitHub Pages / Replit (frontend)    |
-
-## Project Structure
-
+## Running the Application
+```bash
+cd backend && npm start
 ```
-index.html              Public website
-admin.html              Admin SPA (login → dashboard)
-css/
-  style.css             Public site styles
-  responsive.css        Public site responsive
-  admin.css             Admin panel design system
-js/
-  script.js             Public site JS
-  admin.js              Admin SPA logic
-  api-config.js         API base URL config (optional override)
-images/                 Static images & logo
-backend/
-  src/
-    server.js           Express app entry + bootstrap()
-    config/env.js       Environment variable config
-    models/             Mongoose models (Admin, Settings, …)
-    controllers/        Route handlers
-    routes/             API route definitions
-    middleware/         auth, upload, validate, error
-    services/           uploadService (Cloudinary)
-    utils/              asyncHandler, apiResponse
-```
+The app runs on port 5000. The workflow "Start application" manages this.
 
-## API Base URL Configuration
+## Portals
+| Portal | URL | Auth |
+|--------|-----|------|
+| Public Website | `/` | None |
+| Admin ERP | `/admin.html` | Admin JWT (`token`) |
+| Teacher Portal | `/teacher.html` | Teacher JWT (`teacher_token`) |
+| Parent Portal | `/parent.html` | Parent JWT (`parent_token`) |
 
-The admin SPA reads the API endpoint from (in priority order):
-1. `window.VedantamAPIConfig.baseUrl` — set this in `js/api-config.js`
-2. Falls back to `http://localhost:5000/api/v1`
+## Key Features (v3.0 Enterprise)
 
-For production, create/update `js/api-config.js`:
-```js
-window.VedantamAPIConfig = { baseUrl: 'https://your-render-app.onrender.com/api/v1' };
-```
-and include it **before** `admin.js` in `admin.html`.
+### Core ERP (v2.0)
+- Student management (admission, profiles, documents)
+- Parent records with parent portal auth fields
+- Fee management with receipts and payment tracking
+- Attendance (student and teacher)
+- Reports and analytics
+- Academic session management
+- CMS: gallery, notices, events, testimonials, hero slides
 
-## Admin v2.0 — Key Features
+### Teacher Portal (v2.5)
+- Teacher authentication (JWT, force-change-password)
+- Self check-in/out with GPS and device info
+- Homework assignment
+- Leave requests with admin approval
+- Notifications system
+- Certificates with QR codes
 
-- **Secure JWT auth** — login, force-password-change on first login, remember-me
-- **Role system** — `super_admin`, `admin`, `principal`, `office_staff`, `teacher`
-- **Auto-bootstrap** — first admin created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars
-- **Dashboard** — 8 stat cards, activity feed, recent admissions, quick actions
-- **CRUD resources** — Students, Admissions, Enquiries, Gallery, Teachers, Events, Notices, Hero Slides, Testimonials, Newsletter, Contact Messages
-- **Settings** — school info, social links, logo upload
-- **Profile** — photo upload, name/email edit, change password
+### Parent Portal (v3.0 NEW)
+- Secure parent login (via email, father phone, or mother phone)
+- View children: profiles, photos, class details
+- Real-time attendance history
+- Homework by child/class
+- Fee details and payment history
+- School notices and events
+- Gallery access
+- Force-change-password on first login
+- Admin management: activate/deactivate/reset parent portal access
 
-## Running Locally
+### Storage Monitor (v3.0 NEW)
+- MongoDB Atlas usage: `dbStats` — used/free MB, collections, documents, indexes
+- Cloudinary usage via API
+- Color-coded health levels: ok / caution / warning / danger / critical
+- Capacity estimator: students/teachers/records remaining, estimated months to limit
+- Per-collection breakdown
+- Smart recommendations
 
-```
-npx serve -l 5000 .
-```
-Then open `http://localhost:5000` (public site) or `http://localhost:5000/admin.html`.
+### Archive Manager (v3.0 NEW)
+- Export collections to JSON/Excel/CSV and download
+- Optional: delete archived records from DB and Cloudinary
+- `ArchiveManifest` model tracks all archive events
+- Admin: list archives, see deletion state
 
-Backend:
-```
-cd backend && npm install && npm run dev
-```
+### Backup & Export (v3.0 NEW)
+- One-click CSV reports: students, admissions, fees, teachers, attendance
+- Quick JSON exports of any collection via Archive API
 
-## Environment Variables (backend)
+## API Route Groups
+| Prefix | Purpose |
+|--------|---------|
+| `/api/v1/auth` | Admin authentication |
+| `/api/v1/teacher-auth` | Teacher authentication |
+| `/api/v1/parent-auth` | Parent authentication |
+| `/api/v1/teacher-portal` | Teacher portal data |
+| `/api/v1/parent-portal` | Parent portal data (read-only) |
+| `/api/v1/teacher-admin` | Admin → teacher portal management |
+| `/api/v1/admin-parent-portal` | Admin → parent portal management |
+| `/api/v1/storage` | Storage health stats |
+| `/api/v1/archive` | Archive create/list/purge |
+| `/api/v1/students` | Student CRUD |
+| `/api/v1/parents` | Parent CRUD |
+| `/api/v1/fees` | Fee records |
+| `/api/v1/attendance` | Student attendance |
+| `/api/v1/reports` | CSV/data exports |
 
-| Variable             | Required | Purpose                        |
-|----------------------|----------|--------------------------------|
-| `MONGODB_URI`        | ✅       | MongoDB Atlas connection string |
-| `JWT_SECRET`         | ✅       | JWT signing secret              |
-| `CLOUDINARY_NAME`    | ✅       | Cloudinary cloud name           |
-| `CLOUDINARY_KEY`     | ✅       | Cloudinary API key              |
-| `CLOUDINARY_SECRET`  | ✅       | Cloudinary API secret           |
-| `ADMIN_EMAIL`        | ✅       | Seed admin email                |
-| `ADMIN_PASSWORD`     | ✅       | Seed admin password             |
-| `SESSION_SECRET`     | optional | Express session secret          |
-| `NODE_ENV`           | optional | `production` for secure cookies |
-| `PORT`               | optional | Default 5000                    |
-
-## Design Theme
-
-| Token      | Hex       | Usage                         |
-|------------|-----------|-------------------------------|
-| Green      | `#5FBF3A` | Primary, CTAs, nav active     |
-| Sky Blue   | `#27A9E1` | Secondary accents             |
-| Orange     | `#F9A825` | Highlights, badges            |
-| Purple     | `#8E44AD` | Accent variety                |
-
-Font: **Nunito** (Google Fonts CDN) — public site  
-Icons: **Material Icons Round** (Google CDN) — admin panel
+## Secrets Required
+- `MONGODB_URI` — MongoDB Atlas connection string
+- `JWT_SECRET` — shared JWT signing secret (all portals)
+- `SESSION_SECRET` — Express session secret
+- `CLOUDINARY_CLOUD_NAME` — Cloudinary cloud name
+- `CLOUDINARY_API_KEY` — Cloudinary API key
+- `CLOUDINARY_API_SECRET` — Cloudinary API secret
 
 ## User Preferences
-
-- Pure HTML/CSS/JS only — no React, Bootstrap, Tailwind, jQuery, or any framework
-- Colors: Green `#5FBF3A`, Sky Blue `#27A9E1`, Orange `#F9A825`, Purple `#8E44AD`
-- Font: Nunito (Google Fonts)
-- Existing public API routes must never break — all admin changes are additive
+- Existing APIs and collections must never be removed — all changes are additive
+- Parent portal is read-only (no uploads, no edits from parents)
+- Portal login identifier for parents: email OR father phone OR mother phone
+- Admin must explicitly activate parent portal per family (`isPortalActive: true`)

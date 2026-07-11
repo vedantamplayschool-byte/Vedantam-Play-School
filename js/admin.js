@@ -157,6 +157,20 @@ const NAV_GROUPS = [
     ]
   },
   {
+    label: 'Parent Portal',
+    items: [
+      { key: 'parent-portal-admin', label: 'Parent Accounts', icon: 'family_restroom', admin: true }
+    ]
+  },
+  {
+    label: 'System',
+    items: [
+      { key: 'storage-monitor', label: 'Storage Monitor',  icon: 'storage',   admin: true },
+      { key: 'archive',         label: 'Archive Manager',  icon: 'archive',   admin: true },
+      { key: 'backup',          label: 'Backup & Export',  icon: 'backup',    admin: true }
+    ]
+  },
+  {
     label: 'More',
     items: [
       { key: 'slides',       label: 'Hero Slides',  icon: 'slideshow',   admin: true },
@@ -253,9 +267,13 @@ function navigate(key) {
     'qr-cards':        qrCardsPage,
     certificates:      certificatesPage,
     notifications:     notificationsPage,
-    'teacher-portal':  teacherPortalPage,
-    'leave-requests':  leaveRequestsPage,
-    'teacher-checkin': teacherCheckInPage,
+    'teacher-portal':      teacherPortalPage,
+    'leave-requests':      leaveRequestsPage,
+    'teacher-checkin':     teacherCheckInPage,
+    'parent-portal-admin': parentPortalAdminPage,
+    'storage-monitor':     storageMonitorPage,
+    archive:               archivePage,
+    backup:                backupPage,
     students:          () => resourcePage(RESOURCES.students),
     admissions:        () => resourcePage(RESOURCES.admissions),
     enquiries:         () => resourcePage(RESOURCES.enquiries),
@@ -3084,6 +3102,557 @@ async function loadCheckIns() {
   } catch (err) { toast(err.message, 'error'); }
 }
 window.loadCheckIns = loadCheckIns;
+
+// ── 30. PARENT PORTAL ADMIN ───────────────────────────────────────
+async function parentPortalAdminPage() {
+  const area = document.getElementById('contentArea');
+  try {
+    const { data: parents } = await api('/admin-parent-portal');
+    const active   = parents.filter(p => p.isPortalActive).length;
+    const inactive = parents.length - active;
+
+    area.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">👨‍👩‍👧 Parent Portal Accounts</h2>
+          <div style="font-size:12px;color:var(--txt-sm)">${active} active · ${inactive} not activated</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="search" id="ppSearch" placeholder="Search parents…" style="padding:7px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;width:200px" oninput="filterPortalParents(this.value)">
+        </div>
+      </div>
+
+      <div class="alert alert-info" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span class="material-icons-round">info</span>
+        Set a portal email and temporary password to activate a parent's portal access. Parents must change their password on first login.
+      </div>
+
+      <div class="card" id="ppList">
+        ${renderPortalParentList(parents)}
+      </div>`;
+
+    window._ppParents = parents;
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
+  }
+}
+
+function renderPortalParentList(parents) {
+  if (!parents.length) return `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">family_restroom</span><p class="empty-title">No parents found</p></div>`;
+  return parents.map(p => {
+    const name     = esc(p.fatherName || p.motherName || 'Unknown');
+    const children = (p.students || []).map(s => esc(s.studentName)).join(', ') || '—';
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bg)" data-ppname="${(p.fatherName||p.motherName||'').toLowerCase()}" data-ppemail="${(p.portalEmail||'').toLowerCase()}">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#f97316,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">
+        ${(p.fatherName||p.motherName||'P').charAt(0).toUpperCase()}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px">${name}</div>
+        <div style="font-size:11px;color:var(--txt-sm)">${esc(p.fatherPhone||p.motherPhone||'')} · Children: ${children}</div>
+        ${p.portalEmail ? `<div style="font-size:11px;color:var(--txt-sm);font-family:monospace">📧 ${esc(p.portalEmail)}</div>` : ''}
+        ${p.lastLoginAt ? `<div style="font-size:10px;color:var(--txt-sm)">Last login: ${fmtDate(p.lastLoginAt)}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <span class="badge ${p.isPortalActive ? 'badge-active' : 'badge-inactive'}">${p.isPortalActive ? 'Active' : 'Not Activated'}</span>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px" onclick="activateParentPortal('${p._id}','${name}')">
+            <span class="material-icons-round" style="font-size:13px">key</span>Set Access
+          </button>
+          ${p.isPortalActive ? `
+          <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px" onclick="resetParentPassword('${p._id}','${name}')">
+            <span class="material-icons-round" style="font-size:13px">lock_reset</span>Reset
+          </button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;color:var(--err)" onclick="deactivateParentPortal('${p._id}','${name}')">
+            <span class="material-icons-round" style="font-size:13px">block</span>Revoke
+          </button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterPortalParents(q) {
+  const rows = document.querySelectorAll('#ppList [data-ppname]');
+  const lq   = q.toLowerCase();
+  rows.forEach(r => {
+    const match = r.dataset.ppname.includes(lq) || r.dataset.ppemail.includes(lq);
+    r.style.display = match ? '' : 'none';
+  });
+}
+window.filterPortalParents = filterPortalParents;
+
+async function activateParentPortal(id, name) {
+  const email = prompt(`Set portal email for ${name}:`);
+  if (!email) return;
+  const pw = prompt(`Set temporary password for ${name}:\n(min 6 characters)`);
+  if (!pw) return;
+  if (pw.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+  try {
+    await api(`/admin-parent-portal/${id}/activate`, { method: 'POST', body: JSON.stringify({ portalEmail: email, password: pw }) });
+    toast(`Portal access set for ${name}. Share credentials securely.`, 'success');
+    parentPortalAdminPage();
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.activateParentPortal = activateParentPortal;
+
+async function resetParentPassword(id, name) {
+  const pw = prompt(`Set new temporary password for ${name}:\n(min 6 characters)`);
+  if (!pw) return;
+  if (pw.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+  try {
+    await api(`/admin-parent-portal/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ newPassword: pw }) });
+    toast(`Password reset for ${name}. Share the new password securely.`, 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.resetParentPassword = resetParentPassword;
+
+async function deactivateParentPortal(id, name) {
+  if (!confirm(`Revoke portal access for ${name}? They will not be able to log in.`)) return;
+  try {
+    await api(`/admin-parent-portal/${id}/deactivate`, { method: 'POST' });
+    toast(`Portal access revoked for ${name}`, 'success');
+    parentPortalAdminPage();
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.deactivateParentPortal = deactivateParentPortal;
+
+// ── 31. STORAGE MONITOR ───────────────────────────────────────────
+async function storageMonitorPage() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = '<div class="loader-center"><span class="spin spin-lg"></span></div>';
+  try {
+    const { data: d } = await api('/storage/stats');
+
+    const progBar = (pct, level) => {
+      const colors = { ok:'var(--green)', caution:'var(--teal)', warning:'var(--amber)', danger:'var(--err)', critical:'#9b2c2c' };
+      const color  = colors[level] || 'var(--green)';
+      return `<div style="height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin:6px 0">
+        <div style="width:${Math.min(100,pct)}%;height:100%;border-radius:6px;background:${color};transition:width .5s"></div>
+      </div>`;
+    };
+
+    const levelBadge = l => {
+      const map = { ok:'badge-active', caution:'badge-approved', warning:'badge-pending', danger:'badge-absent', critical:'badge-absent' };
+      const lbl = { ok:'Good', caution:'Caution', warning:'Warning', danger:'Danger', critical:'Critical' };
+      return `<span class="badge ${map[l]||'badge-default'}">${lbl[l]||l}</span>`;
+    };
+
+    const mg  = d.mongo      || {};
+    const cl  = d.cloudinary || {};
+    const cnt = d.counts     || {};
+    const cap = d.capacity   || {};
+
+    const recHtml = (d.recommendations || []).map(r => `
+      <div class="alert alert-${r.level==='danger'?'error':r.level==='warning'?'warning':'info'}" style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
+        <span class="material-icons-round">${r.level==='danger'?'error':r.level==='warning'?'warning':'info'}</span>
+        ${esc(r.text)}
+      </div>`).join('');
+
+    area.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <h2 style="font-size:17px;font-weight:700">💾 Storage Monitor</h2>
+        <button class="btn btn-secondary" onclick="storageMonitorPage()"><span class="material-icons-round" style="font-size:15px">refresh</span>Refresh</button>
+      </div>
+
+      ${recHtml ? `<div style="margin-bottom:16px">${recHtml}</div>` : ''}
+
+      <div class="row-2" style="margin-bottom:16px">
+        <!-- MongoDB -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🗄️ MongoDB Atlas</span>
+            ${mg.level ? levelBadge(mg.level) : ''}
+          </div>
+          <div class="card-body">
+            ${mg.error ? `<div class="alert alert-error">${esc(mg.error)}</div>` : `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div><div style="font-size:22px;font-weight:700">${mg.usedMB}MB</div><div style="font-size:11px;color:var(--txt-sm)">Used</div></div>
+              <div><div style="font-size:22px;font-weight:700">${mg.freeMB}MB</div><div style="font-size:11px;color:var(--txt-sm)">Free</div></div>
+            </div>
+            ${progBar(mg.usedPct, mg.level)}
+            <div style="font-size:12px;color:var(--txt-sm);margin-top:4px">${mg.usedPct}% of ${mg.totalMB}MB free tier used</div>
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
+              <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center">
+                <div style="font-weight:700">${mg.objects||0}</div><div style="color:var(--txt-sm)">Documents</div>
+              </div>
+              <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center">
+                <div style="font-weight:700">${mg.collections||0}</div><div style="color:var(--txt-sm)">Collections</div>
+              </div>
+              <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center">
+                <div style="font-weight:700">${mg.indexes||0}</div><div style="color:var(--txt-sm)">Indexes</div>
+              </div>
+            </div>`}
+          </div>
+        </div>
+
+        <!-- Cloudinary -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">☁️ Cloudinary</span>
+            ${cl.level ? levelBadge(cl.level) : ''}
+          </div>
+          <div class="card-body">
+            ${cl.error ? `<div class="alert alert-warning" style="font-size:12px"><span class="material-icons-round" style="font-size:14px">warning</span> ${esc(cl.error)}</div>` : `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div><div style="font-size:22px;font-weight:700">${cl.usedMB}MB</div><div style="font-size:11px;color:var(--txt-sm)">Used</div></div>
+              <div><div style="font-size:22px;font-weight:700">${cl.freeMB}MB</div><div style="font-size:11px;color:var(--txt-sm)">Free</div></div>
+            </div>
+            ${progBar(cl.usedPct, cl.level)}
+            <div style="font-size:12px;color:var(--txt-sm);margin-top:4px">${cl.usedPct}% of ${cl.totalMB}MB free tier used</div>
+            <div style="margin-top:12px;font-size:12px">
+              <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bg)"><span style="color:var(--txt-sm)">Total Resources</span><strong>${cl.totalResources||0}</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bg)"><span style="color:var(--txt-sm)">Plan</span><strong>${esc(cl.plan||'Free')}</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:var(--txt-sm)">Credits Used</span><strong>${cl.creditsUsed||0}</strong></div>
+            </div>`}
+          </div>
+        </div>
+      </div>
+
+      <!-- Record Counts -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><span class="card-title">📊 Record Counts</span></div>
+        <div class="card-body">
+          <div class="stats-grid">
+            ${[
+              ['Students',    cnt.totalStudents,    'child_care',    'stat-blue'],
+              ['Teachers',    cnt.totalTeachers,    'school',        'stat-green'],
+              ['Parents',     cnt.totalParents,     'family_restroom','stat-purple'],
+              ['Admissions',  cnt.totalAdmissions,  'assignment',    'stat-amber'],
+              ['Gallery',     cnt.totalGallery,     'photo_library', 'stat-teal'],
+              ['Student Docs',cnt.totalStudentDocs,'description',   'stat-orange'],
+              ['Attendance',  cnt.totalAttendance,  'how_to_reg',    'stat-red'],
+              ['Fee Records', cnt.totalFeePayments, 'payments',      'stat-blue']
+            ].map(([l,v,ic,c]) => `
+              <div class="stat-card ${c}" style="padding:12px 16px">
+                <div><div class="stat-label">${l}</div><div class="stat-value">${v||0}</div></div>
+                <div class="stat-icon"><span class="material-icons-round">${ic}</span></div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Capacity Estimator -->
+      ${cap.studentsRemaining !== undefined ? `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><span class="card-title">📈 Capacity Estimator</span><span style="font-size:12px;color:var(--txt-sm)">${esc(cap.note||'')}</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+            ${[
+              ['Students Remaining',   cap.studentsRemaining,   'child_care',    '#dbeafe','#1e40af'],
+              ['Teachers Remaining',   cap.teachersRemaining,   'school',        '#dcfce7','#166534'],
+              ['Attendance Records',   cap.attendanceRemaining, 'how_to_reg',    '#fef9c3','#854d0e'],
+              ['Fee Records',          cap.feeRecordsRemaining, 'payments',      '#f3e8ff','#7e22ce'],
+              ['Months Left (est.)',   cap.estimatedMonthsLeft === 999 ? '∞' : cap.estimatedMonthsLeft, 'schedule','#ffedd5','#9a3412']
+            ].map(([l,v,ic,bg,c]) => `
+              <div style="background:${bg};border-radius:10px;padding:14px;text-align:center">
+                <span class="material-icons-round" style="color:${c};font-size:22px;margin-bottom:4px;display:block">${ic}</span>
+                <div style="font-size:20px;font-weight:700;color:${c}">${typeof v === 'number' ? v.toLocaleString('en-IN') : v}</div>
+                <div style="font-size:11px;color:var(--txt-sm);margin-top:3px">${l}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>` : ''}
+
+      <!-- Collections breakdown -->
+      ${d.collections && d.collections.length ? `
+      <div class="card">
+        <div class="card-head"><span class="card-title">🗂️ Collections Breakdown</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Collection</th><th>Documents</th><th>Storage</th><th>Avg Size</th></tr></thead>
+            <tbody>
+              ${d.collections.map(c => `
+                <tr>
+                  <td><div class="td-main">${esc(c.name)}</div></td>
+                  <td>${c.count.toLocaleString('en-IN')}</td>
+                  <td>${(c.storageBytes/1024).toFixed(1)} KB</td>
+                  <td>${c.avgObjBytes ? (c.avgObjBytes/1024).toFixed(2)+' KB' : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>` : ''}
+
+      <div style="font-size:11px;color:var(--txt-sm);margin-top:12px;text-align:right">Last updated: ${new Date(d.timestamp||Date.now()).toLocaleString('en-IN')}</div>`;
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error"><span class="material-icons-round">error</span>${esc(err.message)}</div></div>`;
+  }
+}
+
+// ── 32. ARCHIVE MANAGER ───────────────────────────────────────────
+async function archivePage() {
+  const area = document.getElementById('contentArea');
+  try {
+    const { data: archives } = await api('/archive');
+
+    area.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">🗄️ Archive Manager</h2>
+          <div style="font-size:12px;color:var(--txt-sm)">${archives.length} archive${archives.length===1?'':'s'} created</div>
+        </div>
+        <button class="btn btn-primary" onclick="showArchiveForm()">
+          <span class="material-icons-round" style="font-size:15px">add</span>New Archive
+        </button>
+      </div>
+
+      <div class="alert alert-warning" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span class="material-icons-round">warning</span>
+        Archive exports data for download. Deletion from database is irreversible — always verify the export first.
+      </div>
+
+      <div id="archiveFormWrap" style="display:none" class="card" style="margin-bottom:16px">
+        <div class="card-head"><span class="card-title">Create Archive</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="form-group"><label class="form-label">Archive Name *</label><input type="text" id="archName" class="form-input" placeholder="e.g. Session 2024-25 Attendance"></div>
+            <div class="form-group"><label class="form-label">Collection *</label>
+              <select id="archColl" class="form-input">
+                <option value="">Select collection</option>
+                <option value="attendance">Student Attendance</option>
+                <option value="teacher_attendance">Teacher Attendance</option>
+                <option value="fees">Fee Payments</option>
+                <option value="gallery">Gallery Images</option>
+                <option value="students">Students (caution!)</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Export Format</label>
+              <select id="archFmt" class="form-input">
+                <option value="json">JSON</option>
+                <option value="excel">Excel (.xlsx)</option>
+                <option value="csv">CSV</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Archive Before Date (optional)</label><input type="date" id="archBefore" class="form-input"></div>
+          </div>
+          <div class="form-group" style="margin-top:8px"><label class="form-label">Description</label><input type="text" id="archDesc" class="form-input" placeholder="Optional description"></div>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button class="btn btn-primary" onclick="runArchive()"><span class="material-icons-round" style="font-size:15px">download</span>Export Archive</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('archiveFormWrap').style.display='none'">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        ${!archives.length
+          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">archive</span><p class="empty-title">No archives yet</p><p class="empty-sub">Create your first archive to back up and export data.</p></div>`
+          : archives.map(a => `
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bg)">
+            <span class="material-icons-round" style="color:${a.status==='Deleted'?'var(--err)':a.status==='Ready'?'var(--green)':'var(--amber)'};margin-top:2px">
+              ${a.status==='Deleted'?'delete':'archive'}
+            </span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13px">${esc(a.name)}</div>
+              <div style="font-size:11px;color:var(--txt-sm);margin-top:2px">
+                ${a.collections?.map(c=>esc(c.name)+' ('+c.count+')')?.join(', ')||''}
+                · ${fmtDate(a.archivedAt)}
+                ${a.exportSizeKB ? '· '+a.exportSizeKB+'KB' : ''}
+                ${a.archivedBy ? '· by '+esc(a.archivedBy.name||'') : ''}
+              </div>
+              ${a.deletedFromDB ? `<div style="font-size:10px;color:var(--err);margin-top:2px">Records deleted from database ${fmtDate(a.deletedAt)}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0">
+              <span class="badge badge-${a.status==='Ready'?'approved':a.status==='Deleted'?'inactive':'pending'}">${esc(a.status)}</span>
+              ${!a.deletedFromDB && a.status==='Ready' ? `
+              <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;color:var(--err);margin-left:4px" onclick="purgeArchive('${a._id}','${esc(a.name)}')">
+                <span class="material-icons-round" style="font-size:13px">delete_forever</span>Delete Records
+              </button>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
+  }
+}
+
+function showArchiveForm() {
+  const el = document.getElementById('archiveFormWrap');
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+window.showArchiveForm = showArchiveForm;
+
+async function runArchive() {
+  const name   = document.getElementById('archName')?.value?.trim();
+  const coll   = document.getElementById('archColl')?.value;
+  const fmt    = document.getElementById('archFmt')?.value || 'json';
+  const before = document.getElementById('archBefore')?.value;
+  const desc   = document.getElementById('archDesc')?.value?.trim();
+
+  if (!name || !coll) { toast('Archive name and collection are required', 'error'); return; }
+
+  const body = { name, collectionName: coll, description: desc, formats: [fmt] };
+  if (before) body.filter = { before };
+
+  try {
+    toast('Creating archive… this may take a moment', 'info');
+    const res = await fetch(API + '/archive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(S.token ? { Authorization: `Bearer ${S.token}` } : {}) },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.message || 'Archive failed');
+    }
+    // Trigger download
+    const blob  = await res.blob();
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    const cd    = res.headers.get('Content-Disposition') || '';
+    const match = cd.match(/filename="([^"]+)"/);
+    a.href     = url;
+    a.download = match ? match[1] : `archive-${coll}-${Date.now()}.${fmt}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Archive exported successfully!', 'success');
+    setTimeout(archivePage, 1000);
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.runArchive = runArchive;
+
+async function purgeArchive(id, name) {
+  const confirmed = prompt(`Type "DELETE" to permanently delete archived records for "${name}" from the database.\n\nThis cannot be undone.`);
+  if (confirmed !== 'DELETE') { toast('Deletion cancelled', 'info'); return; }
+  try {
+    const { data } = await api(`/archive/${id}/purge`, { method: 'DELETE', body: JSON.stringify({ confirm: 'DELETE' }) });
+    toast(`Deleted ${data.deletedCount} records and ${data.cloudDeleted} Cloudinary files`, 'success');
+    archivePage();
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.purgeArchive = purgeArchive;
+
+// ── 33. BACKUP & EXPORT PAGE ──────────────────────────────────────
+async function backupPage() {
+  const area = document.getElementById('contentArea');
+
+  area.innerHTML = `
+    <div style="margin-bottom:16px">
+      <h2 style="font-size:17px;font-weight:700">💾 Backup & Export</h2>
+      <div style="font-size:12px;color:var(--txt-sm)">One-click data exports for backup and reporting</div>
+    </div>
+
+    <div class="alert alert-info" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+      <span class="material-icons-round">info</span>
+      These exports generate CSV/Excel files from live data. For archiving and deletion, use the Archive Manager.
+    </div>
+
+    <div class="row-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">📋 Quick Reports</span></div>
+        <div class="card-body" style="display:grid;gap:10px">
+          ${[
+            ['Students List',     '/reports/students',     'child_care',    'All active students with parent & contact details'],
+            ['Admissions List',   '/reports/admissions',   'assignment',    'All admission applications with status'],
+            ['Fee Collection',    '/reports/fees',         'payments',      'All fee payment records'],
+            ['Teachers List',     '/reports/teachers',     'school',        'All active teacher records']
+          ].map(([lbl, ep, ic, desc]) => `
+            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:10px">
+              <span class="material-icons-round" style="color:var(--blue)">${ic}</span>
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:13px">${lbl}</div>
+                <div style="font-size:11px;color:var(--txt-sm)">${desc}</div>
+              </div>
+              <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="downloadReport('${ep}','${lbl.toLowerCase().replace(/ /g,'-')}')">
+                <span class="material-icons-round" style="font-size:14px">download</span>CSV
+              </button>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">📅 Attendance Report</span></div>
+        <div class="card-body">
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">From Date</label>
+            <input type="date" id="attFrom" class="form-input" value="${new Date(Date.now()-30*86400000).toISOString().split('T')[0]}">
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label class="form-label">To Date</label>
+            <input type="date" id="attTo" class="form-input" value="${new Date().toISOString().split('T')[0]}">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Program (optional)</label>
+            <select id="attProg" class="form-input">
+              <option value="">All Programs</option>
+              ${['Play Group','Nursery','LKG','UKG'].map(p=>`<option>${p}</option>`).join('')}
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="downloadAttReport()">
+            <span class="material-icons-round" style="font-size:15px">download</span>Download Attendance CSV
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><span class="card-title">🗃️ Full Data Export (JSON)</span></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--txt-sm);margin-bottom:14px">Export individual collections as JSON archives for full backup. Use Archive Manager for scheduled backups with deletion support.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          ${[
+            ['Students',    'students',           'child_care'],
+            ['Teachers',    'teachers',           'school'],
+            ['Attendance',  'attendance',         'how_to_reg'],
+            ['Fee Records', 'fees',               'payments'],
+            ['Gallery',     'gallery',            'photo_library']
+          ].map(([l,c,ic]) => `
+            <button class="btn btn-secondary" onclick="quickArchiveExport('${c}','${l}')">
+              <span class="material-icons-round" style="font-size:14px">${ic}</span>${l}
+            </button>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+async function downloadReport(endpoint, filename) {
+  try {
+    const res = await fetch(API + endpoint, {
+      headers: { ...(S.token ? { Authorization: `Bearer ${S.token}` } : {}) },
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Export failed');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a'); a.href = url; a.download = `${filename}-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast('Download started', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.downloadReport = downloadReport;
+
+async function downloadAttReport() {
+  const from = document.getElementById('attFrom')?.value;
+  const to   = document.getElementById('attTo')?.value;
+  const prog = document.getElementById('attProg')?.value;
+  if (!from || !to) { toast('Please select both from and to dates', 'error'); return; }
+  let ep = `/reports/attendance?from=${from}&to=${to}`;
+  if (prog) ep += `&program=${encodeURIComponent(prog)}`;
+  await downloadReport(ep, 'attendance');
+}
+window.downloadAttReport = downloadAttReport;
+
+async function quickArchiveExport(coll, label) {
+  const body = { name: `${label} export ${new Date().toLocaleDateString('en-IN')}`, collectionName: coll, formats: ['json'] };
+  try {
+    toast(`Exporting ${label}…`, 'info');
+    const res = await fetch(API + '/archive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(S.token ? { Authorization: `Bearer ${S.token}` } : {}) },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) { const j = await res.json().catch(()=>({})); throw new Error(j.message||'Export failed'); }
+    const blob  = await res.blob();
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href      = url; a.download = `${coll}-${Date.now()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    toast(`${label} exported!`, 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.quickArchiveExport = quickArchiveExport;
 
 // ── 24. INIT ──────────────────────────────────────────────────────
 function init() {

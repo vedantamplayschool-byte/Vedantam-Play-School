@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Portal — Vedantam Play School</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="logo.png">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:   #f97316;
+      --primary-dk:#ea6c0a;
+      --green:     #22c55e;
+      --green-dk:  #16a34a;
+      --amber:     #f59e0b;
+      --red:       #ef4444;
+      --blue:      #3b82f6;
+      --purple:    #8b5cf6;
+      --teal:      #14b8a6;
+      --bg:        #faf9f7;
+      --surface:   #ffffff;
+      --bd:        #e5e7eb;
+      --txt:       #111827;
+      --txt-sm:    #6b7280;
+      --radius:    12px;
+      --shadow:    0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--txt); font-size: 14px; line-height: 1.5; }
+
+    /* ── LOGIN ───────────────────────────────────────────────────── */
+    #loginPage {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f97316 0%, #ef4444 50%, #8b5cf6 100%);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .login-card {
+      background: #fff; border-radius: 20px; padding: 40px 36px;
+      width: 100%; max-width: 400px; box-shadow: 0 24px 64px rgba(0,0,0,.2);
+    }
+    .login-logo { text-align: center; margin-bottom: 28px; }
+    .login-logo img { width: 72px; height: 72px; border-radius: 50%; box-shadow: 0 4px 16px rgba(249,115,22,.35); }
+    .login-logo h1 { font-size: 20px; font-weight: 700; margin-top: 12px; color: var(--txt); }
+    .login-logo p  { font-size: 13px; color: var(--txt-sm); margin-top: 3px; }
+    .badge-portal {
+      display: inline-block; background: linear-gradient(135deg,#f97316,#8b5cf6);
+      color:#fff; font-size:10px; font-weight:600; padding:3px 12px; border-radius:20px;
+      letter-spacing:1px; text-transform:uppercase; margin-top:6px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--txt-sm); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+    .form-group input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--bd); border-radius: 10px; font-size: 14px; font-family: inherit; transition: border-color .2s; }
+    .form-group input:focus { outline: none; border-color: var(--primary); }
+    .btn-primary { width: 100%; padding: 13px; background: linear-gradient(135deg, #f97316, #ef4444); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+    .btn-primary:hover { opacity: .92; }
+    .btn-primary:disabled { opacity: .6; cursor: default; }
+    .alert-err { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 8px; padding: 10px 14px; font-size: 13px; display: none; margin-bottom: 14px; }
+    .spin { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .back-link { text-align: center; margin-top: 20px; font-size: 12px; color: var(--txt-sm); }
+    .back-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+    /* ── FORCE CHANGE PASSWORD ───────────────────────────────────── */
+    #forceChangePage {
+      display: none; min-height: 100vh;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+
+    /* ── SHELL ────────────────────────────────────────────────────── */
+    #parentShell { display: none; min-height: 100vh; }
+
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--bd);
+      height: 58px; display: flex; align-items: center; padding: 0 16px; gap: 10px;
+      position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 8px; }
+    .topbar-brand img { width: 32px; height: 32px; border-radius: 50%; }
+    .topbar-name { font-weight: 700; font-size: 14px; color: var(--primary); }
+    .topbar-name span { font-weight: 400; color: var(--txt-sm); font-size: 11px; display: block; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #f97316, #8b5cf6);
+      color: #fff; font-weight: 700; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; overflow: hidden; flex-shrink: 0;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; color: var(--txt-sm); border-radius: 8px; padding: 7px; }
+    .btn-icon:hover { background: var(--bg); color: var(--txt); }
+
+    /* ── BOTTOM NAV ───────────────────────────────────────────────── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 62px;
+      background: var(--surface); border-top: 1px solid var(--bd);
+      display: flex; z-index: 99;
+    }
+    .bnav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; background: none; border: none; cursor: pointer; color: var(--txt-sm);
+      font-size: 9px; font-weight: 500; font-family: inherit; padding: 4px 2px; transition: color .15s;
+    }
+    .bnav-btn .material-icons-round { font-size: 22px; }
+    .bnav-btn.active { color: var(--primary); }
+    .bnav-btn.active .material-icons-round { color: var(--primary); }
+
+    .content { padding: 16px 16px 80px; max-width: 720px; margin: 0 auto; }
+
+    /* ── CARDS ─────────────────────────────────────────────────────── */
+    .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 0; }
+    .card-title { font-weight: 600; font-size: 14px; }
+    .card-body { padding: 14px 16px; }
+
+    /* ── STAT STRIP ─────────────────────────────────────────────────── */
+    .stat-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
+    .stat-item { background: var(--surface); border-radius: 10px; padding: 14px; box-shadow: var(--shadow); }
+    .stat-val { font-size: 24px; font-weight: 700; }
+    .stat-lbl { font-size: 11px; color: var(--txt-sm); margin-top: 2px; }
+
+    /* ── STATUS BADGES ─────────────────────────────────────────────── */
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .badge-present  { background: #dcfce7; color: #166534; }
+    .badge-absent   { background: #fee2e2; color: #991b1b; }
+    .badge-late     { background: #fef9c3; color: #854d0e; }
+    .badge-leave    { background: #dbeafe; color: #1e40af; }
+    .badge-paid     { background: #dcfce7; color: #166534; }
+    .badge-pending  { background: #fef9c3; color: #854d0e; }
+    .badge-partial  { background: #ffedd5; color: #9a3412; }
+    .badge-high     { background: #fee2e2; color: #991b1b; }
+    .badge-normal   { background: #dbeafe; color: #1e40af; }
+    .badge-low      { background: #f3f4f6; color: var(--txt-sm); }
+
+    /* ── LIST ITEMS ─────────────────────────────────────────────────── */
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--bg); }
+    .list-item:last-child { border-bottom: none; }
+    .list-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; flex-shrink: 0; }
+    .list-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .list-main { flex: 1; min-width: 0; }
+    .list-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-sub  { font-size: 11px; color: var(--txt-sm); margin-top: 2px; }
+    .list-end  { text-align: right; flex-shrink: 0; }
+
+    /* ── FILTER BAR ─────────────────────────────────────────────────── */
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-bar select, .filter-bar input {
+      padding: 8px 12px; border: 1.5px solid var(--bd); border-radius: 8px;
+      font-size: 13px; font-family: inherit; background: var(--surface);
+    }
+    .filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--primary); }
+
+    /* ── PROFILE HEADER ─────────────────────────────────────────────── */
+    .profile-header { display: flex; flex-direction: column; align-items: center; padding: 24px 16px 16px; }
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg,#f97316,#8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; font-weight: 700; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(249,115,22,.3); }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-name { font-size: 18px; font-weight: 700; text-align: center; }
+    .profile-role { font-size: 12px; color: var(--txt-sm); margin-top: 2px; }
+    .info-row { display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg); align-items: flex-start; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .material-icons-round { font-size: 18px; color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+    .info-label { font-size: 11px; color: var(--txt-sm); }
+    .info-value { font-size: 13px; font-weight: 500; margin-top: 2px; }
+
+    /* ── TOAST ─────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%) translateY(16px);
+      background: #111827; color: #fff; padding: 10px 18px; border-radius: 8px;
+      font-size: 13px; z-index: 9999; opacity: 0; transition: all .25s;
+      white-space: nowrap; display: flex; align-items: center; gap: 8px; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.success { background: #166534; }
+    #toast.error   { background: #991b1b; }
+
+    /* ── EMPTY ─────────────────────────────────────────────────────── */
+    .empty { text-align: center; padding: 32px 16px; color: var(--txt-sm); }
+    .empty .material-icons-round { font-size: 40px; color: var(--bd); margin-bottom: 8px; display: block; }
+    .empty p { font-size: 13px; }
+
+    /* ── CHANGE PASSWORD FORM ───────────────────────────────────────── */
+    .pw-form { max-width: 400px; }
+    .pw-form .form-group { margin-bottom: 14px; }
+    .pw-form .form-group label { font-size: 11px; font-weight: 600; color: var(--txt-sm); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+    .pw-form .form-group input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--bd); border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .pw-form .form-group input:focus { outline: none; border-color: var(--primary); }
+
+    /* ── GALLERY GRID ───────────────────────────────────────────────── */
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 14px 16px; }
+    .gallery-item { border-radius: 10px; overflow: hidden; aspect-ratio: 1; background: var(--bg); position: relative; }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-item .gallery-lbl { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,.6), transparent); color: #fff; font-size: 10px; padding: 8px 6px 4px; }
+
+    @media (min-width: 640px) {
+      .stat-strip { grid-template-columns: repeat(4, 1fr); }
+      .content { padding: 20px 20px 24px; }
+      .bottom-nav { display: none; }
+      #parentShell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      .sidebar-nav {
+        background: var(--surface); border-right: 1px solid var(--bd);
+        padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      }
+      .sidebar-brand { padding: 0 16px 20px; display: flex; align-items: center; gap: 10px; }
+      .sidebar-brand img { width: 40px; height: 40px; border-radius: 50%; }
+      .sidebar-brand-name { font-weight: 700; font-size: 13px; color: var(--primary); line-height: 1.2; }
+      .sidebar-brand-sub { font-size: 10px; color: var(--txt-sm); }
+      .snav-btn {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        padding: 10px 16px; background: none; border: none; font-family: inherit;
+        font-size: 13px; color: var(--txt-sm); cursor: pointer; text-align: left;
+        border-radius: 0; transition: background .15s, color .15s;
+      }
+      .snav-btn:hover { background: var(--bg); color: var(--txt); }
+      .snav-btn.active { background: #fff7ed; color: var(--primary); font-weight: 600; border-right: 3px solid var(--primary); }
+      .snav-btn .material-icons-round { font-size: 20px; }
+      .sidebar-foot { position: absolute; bottom: 0; left: 0; width: 220px; padding: 16px; border-top: 1px solid var(--bd); background: var(--surface); }
+      .main-col { display: flex; flex-direction: column; min-width: 0; }
+      .main-col .topbar { position: sticky; top: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN ──────────────────────────────────────────────────────── -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="logo.png" alt="Vedantam Play School" onerror="this.style.display='none'">
+      <h1>Parent Portal</h1>
+      <p>Vedantam Play School</p>
+      <span class="badge-portal">Secure Parent Login</span>
+    </div>
+    <div class="alert-err" id="loginError"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email / Phone</label>
+        <input type="text" name="identifier" placeholder="Enter registered email or phone" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-primary" id="loginBtn">
+        <span id="loginBtnText">Sign In</span>
+        <span class="spin" id="loginSpin" style="display:none"></span>
+      </button>
+    </form>
+    <div class="back-link">
+      <p>Contact school to activate portal access.</p>
+      <p style="margin-top:8px"><a href="/">← Back to School Website</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ── FORCE CHANGE PASSWORD ──────────────────────────────────────── -->
+<div id="forceChangePage" style="display:none;min-height:100vh;background:linear-gradient(135deg,#f97316,#8b5cf6);align-items:center;justify-content:center;padding:24px;">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>Set Your Password</h1>
+      <p>Please create a new password to continue</p>
+    </div>
+    <div class="alert-err" id="fcError"></div>
+    <form id="forceChangeForm">
+      <div class="form-group">
+        <label>Current (Temporary) Password</label>
+        <input type="password" name="currentPassword" required autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" name="newPassword" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" name="confirmPassword" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-primary" id="fcBtn">
+        <span id="fcBtnText">Set Password</span>
+        <span class="spin" id="fcSpin" style="display:none"></span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ── PARENT SHELL ────────────────────────────────────────────────── -->
+<div id="parentShell">
+
+  <!-- Desktop sidebar -->
+  <nav class="sidebar-nav" id="sidebarNav" style="display:none">
+    <div class="sidebar-brand">
+      <img src="logo.png" alt="">
+      <div>
+        <div class="sidebar-brand-name">Vedantam Play School</div>
+        <div class="sidebar-brand-sub">Parent Portal</div>
+      </div>
+    </div>
+    <button class="snav-btn active" data-page="dashboard"><span class="material-icons-round">dashboard</span>Dashboard</button>
+    <button class="snav-btn" data-page="children"><span class="material-icons-round">child_care</span>My Children</button>
+    <button class="snav-btn" data-page="attendance"><span class="material-icons-round">how_to_reg</span>Attendance</button>
+    <button class="snav-btn" data-page="homework"><span class="material-icons-round">assignment</span>Homework</button>
+    <button class="snav-btn" data-page="fees"><span class="material-icons-round">payments</span>Fee Details</button>
+    <button class="snav-btn" data-page="notices"><span class="material-icons-round">campaign</span>Notices</button>
+    <button class="snav-btn" data-page="events"><span class="material-icons-round">event</span>Events</button>
+    <button class="snav-btn" data-page="gallery"><span class="material-icons-round">photo_library</span>Gallery</button>
+    <button class="snav-btn" data-page="profile"><span class="material-icons-round">person</span>Profile</button>
+    <div class="sidebar-foot" id="sidebarFoot">
+      <button class="snav-btn" id="logoutBtnSidebar"><span class="material-icons-round">logout</span>Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Main column -->
+  <div class="main-col">
+    <div class="topbar">
+      <div class="topbar-brand">
+        <img src="logo.png" alt="" onerror="this.style.display='none'">
+        <div class="topbar-name">Parent Portal <span>Vedantam Play School</span></div>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="topAvatar"></div>
+        <button class="btn-icon" id="logoutBtn" title="Sign out">
+          <span class="material-icons-round">logout</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content" id="contentArea">
+      <div style="text-align:center;padding:48px">
+        <span class="spin" style="width:32px;height:32px;border-width:3px;border-color:var(--bd);border-top-color:var(--primary)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bnav-btn active" data-page="dashboard"><span class="material-icons-round">dashboard</span>Home</button>
+    <button class="bnav-btn" data-page="children"><span class="material-icons-round">child_care</span>Children</button>
+    <button class="bnav-btn" data-page="attendance"><span class="material-icons-round">how_to_reg</span>Attend.</button>
+    <button class="bnav-btn" data-page="fees"><span class="material-icons-round">payments</span>Fees</button>
+    <button class="bnav-btn" data-page="profile"><span class="material-icons-round">person</span>Profile</button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/api-config.js"></script>
+<script src="js/parent.js"></script>
+</body>
+</html>
