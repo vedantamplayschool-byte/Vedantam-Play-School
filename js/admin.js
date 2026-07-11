@@ -107,10 +107,12 @@ const NAV_GROUPS = [
   {
     label: 'Students',
     items: [
-      { key: 'students',   label: 'All Students', icon: 'child_care' },
-      { key: 'parents',    label: 'Parents',       icon: 'family_restroom' },
-      { key: 'admissions', label: 'Admissions',   icon: 'assignment' },
-      { key: 'enquiries',  label: 'Enquiries',    icon: 'forum' }
+      { key: 'students',     label: 'All Students',   icon: 'child_care' },
+      { key: 'parents',      label: 'Parents',         icon: 'family_restroom' },
+      { key: 'admissions',   label: 'Admissions',      icon: 'assignment' },
+      { key: 'enquiries',    label: 'Enquiries',       icon: 'forum' },
+      { key: 'qr-cards',     label: 'QR & ID Cards',  icon: 'badge' },
+      { key: 'certificates', label: 'Certificates',    icon: 'workspace_premium' }
     ]
   },
   {
@@ -138,6 +140,20 @@ const NAV_GROUPS = [
     label: 'Reports',
     items: [
       { key: 'reports', label: 'Reports & Export', icon: 'assessment', admin: true }
+    ]
+  },
+  {
+    label: 'Teacher Portal',
+    items: [
+      { key: 'teacher-portal', label: 'Teacher Accounts', icon: 'manage_accounts', admin: true },
+      { key: 'leave-requests', label: 'Leave Requests',   icon: 'event_busy',       admin: true },
+      { key: 'teacher-checkin',label: 'Check-In Monitor', icon: 'fingerprint',      admin: true }
+    ]
+  },
+  {
+    label: 'Notifications',
+    items: [
+      { key: 'notifications', label: 'Notifications', icon: 'notifications', admin: true }
     ]
   },
   {
@@ -229,22 +245,28 @@ function navigate(key) {
     dashboard,
     settings,
     profile,
-    sessions:     sessionsPage,
-    fees:         feesPage,
-    attendance:   attendancePage,
-    reports:      reportsPage,
-    parents:      parentsPage,
-    students:     () => resourcePage(RESOURCES.students),
-    admissions:   () => resourcePage(RESOURCES.admissions),
-    enquiries:    () => resourcePage(RESOURCES.enquiries),
-    gallery:      () => resourcePage(RESOURCES.gallery),
-    teachers:     () => resourcePage(RESOURCES.teachers),
-    events:       () => resourcePage(RESOURCES.events),
-    notices:      () => resourcePage(RESOURCES.notices),
-    slides:       () => resourcePage(RESOURCES.slides),
-    testimonials: () => resourcePage(RESOURCES.testimonials),
-    newsletter:   () => resourcePage(RESOURCES.newsletter),
-    contacts:     () => resourcePage(RESOURCES.contacts)
+    sessions:          sessionsPage,
+    fees:              feesPage,
+    attendance:        attendancePage,
+    reports:           reportsPage,
+    parents:           parentsPage,
+    'qr-cards':        qrCardsPage,
+    certificates:      certificatesPage,
+    notifications:     notificationsPage,
+    'teacher-portal':  teacherPortalPage,
+    'leave-requests':  leaveRequestsPage,
+    'teacher-checkin': teacherCheckInPage,
+    students:          () => resourcePage(RESOURCES.students),
+    admissions:        () => resourcePage(RESOURCES.admissions),
+    enquiries:         () => resourcePage(RESOURCES.enquiries),
+    gallery:           () => resourcePage(RESOURCES.gallery),
+    teachers:          () => resourcePage(RESOURCES.teachers),
+    events:            () => resourcePage(RESOURCES.events),
+    notices:           () => resourcePage(RESOURCES.notices),
+    slides:            () => resourcePage(RESOURCES.slides),
+    testimonials:      () => resourcePage(RESOURCES.testimonials),
+    newsletter:        () => resourcePage(RESOURCES.newsletter),
+    contacts:          () => resourcePage(RESOURCES.contacts)
   };
 
   Promise.resolve((pages[key] || dashboard)()).catch(err => {
@@ -2513,6 +2535,555 @@ function bootAdmin() {
   const startPage = (location.hash || '').slice(1) || 'dashboard';
   navigate(startPage);
 }
+
+// ── 24. QR & ID CARDS PAGE ───────────────────────────────────────
+async function qrCardsPage() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = `
+    <div class="form-card">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:16px">🪪 QR Codes & ID Cards</h2>
+
+      <div class="row-2">
+        <!-- Student ID Card -->
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+            <span class="material-icons-round" style="color:var(--primary)">badge</span>Student ID Card
+          </h3>
+          <p style="font-size:13px;color:var(--txt-sm);margin-bottom:12px">
+            Select a student to generate a print-ready photo ID card with QR code.
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:1;min-width:200px">
+              <label style="font-size:11px;font-weight:600;color:var(--txt-sm);text-transform:uppercase;display:block;margin-bottom:4px">Admission Number</label>
+              <input type="text" id="studentIdInput" placeholder="e.g. VPS/2024/00001" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+            </div>
+            <button class="btn btn-primary" onclick="genStudentIdCard()">
+              <span class="material-icons-round" style="font-size:16px">badge</span>Generate
+            </button>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--txt-sm)">Or search by name:</div>
+          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:1;min-width:200px">
+              <input type="text" id="studentNameSearch" placeholder="Student name…" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+            </div>
+            <button class="btn btn-secondary" onclick="searchStudentForId()">Search</button>
+          </div>
+          <div id="studentSearchResults" style="margin-top:8px"></div>
+        </div>
+
+        <!-- Teacher ID Card -->
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+            <span class="material-icons-round" style="color:var(--green)">badge</span>Teacher / Staff ID Card
+          </h3>
+          <p style="font-size:13px;color:var(--txt-sm);margin-bottom:12px">
+            Generate a print-ready staff ID card with QR code for any teacher.
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:1;min-width:200px">
+              <input type="text" id="teacherNameSearch" placeholder="Teacher name…" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+            </div>
+            <button class="btn btn-secondary" onclick="searchTeacherForId()">Search</button>
+          </div>
+          <div id="teacherSearchResults" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* Fetch an HTML print URL with auth and open it as a blob in a new tab */
+async function openPrintUrl(apiPath) {
+  try {
+    const res = await fetch(API + apiPath, {
+      headers: S.token ? { Authorization: `Bearer ${S.token}` } : {},
+      credentials: 'include'
+    });
+    if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.message || 'Failed to generate'); }
+    const html = await res.text();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank');
+    if (win) setTimeout(() => URL.revokeObjectURL(url), 10000);
+    else toast('Pop-up blocked — please allow pop-ups for this site', 'warning');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.openPrintUrl = openPrintUrl;
+
+async function genStudentIdCard(id) {
+  const idVal = id || document.getElementById('studentIdInput')?.value?.trim();
+  if (!idVal) { toast('Enter an admission number or search above', 'warning'); return; }
+  try {
+    let studentId = idVal;
+    if (idVal.startsWith('VPS/') || isNaN(idVal)) {
+      const { data } = await api(`/students?admissionNumber=${encodeURIComponent(idVal)}&limit=1`);
+      if (!data?.length) { toast('Student not found', 'error'); return; }
+      studentId = data[0]._id;
+    }
+    await openPrintUrl(`/qr/student/${studentId}/id-card`);
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.genStudentIdCard = genStudentIdCard;
+
+async function searchStudentForId() {
+  const q = document.getElementById('studentNameSearch')?.value?.trim();
+  if (!q) return;
+  try {
+    const { data } = await api(`/students?search=${encodeURIComponent(q)}&limit=5`);
+    const el = document.getElementById('studentSearchResults');
+    if (!el) return;
+    if (!data.length) { el.innerHTML = `<p style="font-size:12px;color:var(--txt-sm)">No results found</p>`; return; }
+    el.innerHTML = data.map(s => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)">
+        <div style="flex:1;font-size:13px"><strong>${esc(s.studentName)}</strong> <span style="color:var(--txt-sm)">${esc(s.admissionNumber||'')} · ${esc(s.program)}</span></div>
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="openPrintUrl('/qr/student/${s._id}/id-card')">ID Card</button>
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="showStudentQR('${s._id}','${esc(s.studentName)}')">QR</button>
+      </div>`).join('');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.searchStudentForId = searchStudentForId;
+
+async function searchTeacherForId() {
+  const q = document.getElementById('teacherNameSearch')?.value?.trim();
+  if (!q) return;
+  try {
+    const { data } = await api(`/teachers?search=${encodeURIComponent(q)}&limit=5`);
+    const el = document.getElementById('teacherSearchResults');
+    if (!el) return;
+    if (!data.length) { el.innerHTML = `<p style="font-size:12px;color:var(--txt-sm)">No results found</p>`; return; }
+    el.innerHTML = data.map(t => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)">
+        <div style="flex:1;font-size:13px"><strong>${esc(t.name)}</strong> <span style="color:var(--txt-sm)">${esc(t.designation||t.qualification||'')}</span></div>
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="openPrintUrl('/qr/teacher/${t._id}/id-card')">ID Card</button>
+      </div>`).join('');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.searchTeacherForId = searchTeacherForId;
+
+async function showStudentQR(id, name) {
+  try {
+    const { data } = await api(`/qr/student/${id}`);
+    const win = window.open('', '_blank', 'width=400,height=500');
+    win.document.write(`<!DOCTYPE html><html><head><title>QR — ${esc(name)}</title>
+    <style>body{font-family:Inter,sans-serif;text-align:center;padding:20px;background:#f7f8fc}
+    h2{font-size:16px;margin-bottom:4px}p{color:#718096;font-size:12px;margin-bottom:16px}
+    img{border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+    button{margin-top:16px;padding:10px 24px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}
+    </style></head><body>
+    <h2>${esc(name)}</h2>
+    <p>${esc(data.student?.admissionNumber||'')} · ${esc(data.student?.program||'')}</p>
+    <img src="${data.qrDataUrl}" width="220" height="220" alt="QR Code">
+    <br><button onclick="window.print()">🖨 Print</button>
+    </body></html>`);
+    win.document.close();
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.showStudentQR = showStudentQR;
+
+// ── 25. CERTIFICATES PAGE ────────────────────────────────────────
+async function certificatesPage() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = `
+    <div class="form-card">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:8px">📜 Certificate Generator</h2>
+      <p style="color:var(--txt-sm);font-size:13px;margin-bottom:20px">Search for a student, then click any certificate type to generate and print.</p>
+
+      <div class="card" style="padding:20px;margin-bottom:16px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:220px">
+            <label style="font-size:11px;font-weight:600;color:var(--txt-sm);text-transform:uppercase;display:block;margin-bottom:4px">Student Name or Admission No.</label>
+            <input type="text" id="certStudentSearch" placeholder="Search student…" style="width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+          </div>
+          <button class="btn btn-primary" onclick="searchStudentForCert()">
+            <span class="material-icons-round" style="font-size:16px">search</span>Search
+          </button>
+        </div>
+        <div id="certStudentResults" style="margin-top:12px"></div>
+      </div>
+
+      <div class="row-2">
+        ${[
+          ['bonafide',   'Bonafide Certificate',    'school',            'Confirms student is enrolled'],
+          ['admission',  'Admission Certificate',   'fact_check',        'Formal admission record'],
+          ['character',  'Character Certificate',   'stars',             'Good conduct certification'],
+          ['transfer',   'Transfer Certificate',    'transfer_within_a_station', 'TC for leaving students'],
+          ['completion', 'Completion Certificate',  'workspace_premium', 'Programme completion award']
+        ].map(([type, label, icon, desc]) => `
+          <div class="card" style="padding:16px">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <span class="material-icons-round" style="color:var(--primary);font-size:28px">${icon}</span>
+              <div>
+                <div style="font-weight:600;font-size:13px">${label}</div>
+                <div style="font-size:12px;color:var(--txt-sm);margin-top:2px">${desc}</div>
+                <button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px" onclick="generateCert('${type}')">
+                  <span class="material-icons-round" style="font-size:14px">print</span>Generate & Print
+                </button>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+let _certStudentId = null;
+async function searchStudentForCert() {
+  const q = document.getElementById('certStudentSearch')?.value?.trim();
+  if (!q) return;
+  try {
+    const { data } = await api(`/students?search=${encodeURIComponent(q)}&limit=8`);
+    const el = document.getElementById('certStudentResults');
+    if (!el) return;
+    if (!data.length) { el.innerHTML = `<p style="font-size:12px;color:var(--txt-sm)">No students found</p>`; return; }
+    el.innerHTML = `<div style="font-size:12px;color:var(--txt-sm);margin-bottom:6px">Click a student to select:</div>` +
+      data.map(s => `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;transition:background .15s"
+          onclick="selectCertStudent('${s._id}','${esc(s.studentName)}')" id="csr_${s._id}"
+          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+          <span class="material-icons-round" style="color:var(--txt-sm);font-size:18px">child_care</span>
+          <div>
+            <div style="font-size:13px;font-weight:500">${esc(s.studentName)}</div>
+            <div style="font-size:11px;color:var(--txt-sm)">${esc(s.admissionNumber||'—')} · ${esc(s.program)}</div>
+          </div>
+        </div>`).join('');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.searchStudentForCert = searchStudentForCert;
+
+function selectCertStudent(id, name) {
+  _certStudentId = id;
+  const el = document.getElementById('certStudentResults');
+  if (el) el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:#e9d8fd;border-radius:8px">
+    <span class="material-icons-round" style="color:var(--primary)">check_circle</span>
+    <span style="font-size:13px;font-weight:600">Selected: ${esc(name)}</span>
+    <button onclick="_certStudentId=null;document.getElementById('certStudentResults').innerHTML=''" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--txt-sm);font-size:12px">Change</button>
+  </div>`;
+  toast(`${name} selected — click any certificate type`, 'success');
+}
+window.selectCertStudent = selectCertStudent;
+
+function generateCert(type) {
+  if (!_certStudentId) { toast('Please search and select a student first', 'warning'); return; }
+  openPrintUrl(`/certificates/student/${_certStudentId}/${type}`);
+}
+window.generateCert = generateCert;
+
+// ── 26. NOTIFICATIONS PAGE ───────────────────────────────────────
+async function notificationsPage() {
+  const area = document.getElementById('contentArea');
+  try {
+    const { data: items, unreadCount } = await api('/notifications?limit=50');
+
+    area.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">🔔 Notifications</h2>
+          ${unreadCount > 0 ? `<span style="font-size:12px;color:var(--txt-sm)">${unreadCount} unread</span>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="markAllNotifsRead()">
+            <span class="material-icons-round" style="font-size:15px">done_all</span>Mark All Read
+          </button>
+          ${canAdmin() ? `
+          <button class="btn btn-primary" onclick="genBirthdayNotifs()">
+            <span class="material-icons-round" style="font-size:15px">cake</span>Generate Birthdays
+          </button>
+          <button class="btn btn-primary" onclick="showCreateNotifForm()">
+            <span class="material-icons-round" style="font-size:15px">add</span>New
+          </button>` : ''}
+        </div>
+      </div>
+
+      <!-- Create form (hidden) -->
+      <div id="notifFormWrap" style="display:none" class="form-card" style="margin-bottom:16px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">New Notification</h3>
+        <form id="notifForm">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--txt-sm);text-transform:uppercase;display:block;margin-bottom:4px">Title *</label>
+              <input type="text" name="title" required placeholder="Notification title" style="width:100%;padding:9px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--txt-sm);text-transform:uppercase;display:block;margin-bottom:4px">Type</label>
+              <select name="type" style="width:100%;padding:9px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+                <option>general</option><option>birthday</option><option>fee</option>
+                <option>admission</option><option>attendance</option><option>teacher</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <label style="font-size:11px;font-weight:600;color:var(--txt-sm);text-transform:uppercase;display:block;margin-bottom:4px">Message *</label>
+            <textarea name="message" required rows="2" placeholder="Notification message…" style="width:100%;padding:9px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;resize:vertical"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button type="submit" class="btn btn-primary">Create</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('notifFormWrap').style.display='none'">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        ${!items.length
+          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">notifications_none</span><p class="empty-title">No notifications</p></div>`
+          : items.map(n => `
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bg);${n.isRead?'opacity:.65':''}">
+              <span class="material-icons-round" style="color:${n.type==='birthday'?'#f6ad55':n.priority==='high'?'var(--err)':'var(--primary)'};font-size:22px;flex-shrink:0;margin-top:2px">
+                ${n.type==='birthday'?'cake':n.type==='fee'?'payments':n.type==='attendance'?'how_to_reg':'notifications'}
+              </span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:${n.isRead?'400':'600'};font-size:13px">${esc(n.title)}</div>
+                <div style="font-size:12px;color:var(--txt-sm);margin-top:2px">${esc(n.message)}</div>
+                <div style="font-size:11px;color:var(--txt-sm);margin-top:4px">${timeAgo(n.createdAt)}</div>
+              </div>
+              <div style="display:flex;gap:4px;flex-shrink:0">
+                ${!n.isRead ? `<button class="btn btn-secondary" style="font-size:11px;padding:4px 8px" onclick="markNotifRead('${n._id}')">Read</button>` : ''}
+                ${canAdmin() ? `<button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;color:var(--err)" onclick="deleteNotif('${n._id}')">Del</button>` : ''}
+              </div>
+            </div>`).join('')}
+      </div>`;
+
+    document.getElementById('notifForm')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        await api('/notifications', { method: 'POST', body: JSON.stringify({ title: fd.get('title'), message: fd.get('message'), type: fd.get('type') }) });
+        toast('Notification created', 'success');
+        notificationsPage();
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
+  }
+}
+
+function showCreateNotifForm() { document.getElementById('notifFormWrap').style.display = ''; }
+window.showCreateNotifForm = showCreateNotifForm;
+
+async function markNotifRead(id) {
+  await api(`/notifications/${id}/read`, { method: 'PATCH' }).catch(() => {});
+  notificationsPage();
+}
+window.markNotifRead = markNotifRead;
+
+async function markAllNotifsRead() {
+  await api('/notifications/read-all', { method: 'PATCH' }).catch(() => {});
+  toast('All notifications marked as read', 'success');
+  notificationsPage();
+}
+window.markAllNotifsRead = markAllNotifsRead;
+
+async function deleteNotif(id) {
+  if (!confirm('Delete this notification?')) return;
+  await api(`/notifications/${id}`, { method: 'DELETE' }).catch(() => {});
+  toast('Deleted', 'success');
+  notificationsPage();
+}
+window.deleteNotif = deleteNotif;
+
+async function genBirthdayNotifs() {
+  try {
+    const { data } = await api('/notifications/generate-birthdays', { method: 'POST' });
+    toast(`${data.created} birthday notification(s) generated`, 'success');
+    notificationsPage();
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.genBirthdayNotifs = genBirthdayNotifs;
+
+// ── 27. TEACHER PORTAL MANAGEMENT ────────────────────────────────
+async function teacherPortalPage() {
+  const { data: teachers } = await api('/teachers?limit=100');
+  const area = document.getElementById('contentArea');
+
+  area.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 style="font-size:17px;font-weight:700">👩‍🏫 Teacher Portal Accounts</h2>
+    </div>
+    <div class="alert alert-info" style="margin-bottom:16px">
+      <span class="material-icons-round">info</span>
+      Set a temporary password to activate a teacher's portal access. The teacher must change it on first login.
+    </div>
+    <div class="card">
+      ${!teachers.length
+        ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">school</span><p class="empty-title">No teachers found</p></div>`
+        : teachers.map(t => `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bg)">
+            ${t.photoUrl ? `<img class="thumb" src="${esc(t.photoUrl)}" alt="">` : `<div class="thumb" style="background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px">👩‍🏫</div>`}
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13px">${esc(t.name)}</div>
+              <div style="font-size:11px;color:var(--txt-sm)">${esc(t.employeeId||'')} · ${esc(t.designation||t.qualification||'')}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="setTeacherPassword('${t._id}','${esc(t.name)}')">
+                <span class="material-icons-round" style="font-size:13px">lock</span>Set Password
+              </button>
+              <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;color:var(--err)" onclick="revokeTeacherAccess('${t._id}','${esc(t.name)}')">
+                <span class="material-icons-round" style="font-size:13px">lock_open</span>Revoke
+              </button>
+            </div>
+          </div>`).join('')}
+    </div>`;
+}
+
+async function setTeacherPassword(id, name) {
+  const pw = prompt(`Set temporary password for ${name}:\n(min 6 characters)`);
+  if (!pw) return;
+  if (pw.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+  try {
+    await api(`/teacher-admin/${id}/portal-access`, { method: 'PUT', body: JSON.stringify({ password: pw }) });
+    toast(`Portal access set for ${name}. Share the temporary password securely.`, 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.setTeacherPassword = setTeacherPassword;
+
+async function revokeTeacherAccess(id, name) {
+  if (!confirm(`Revoke portal access for ${name}? They will not be able to log in.`)) return;
+  try {
+    await api(`/teacher-admin/${id}/portal-access`, { method: 'DELETE' });
+    toast(`Access revoked for ${name}`, 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.revokeTeacherAccess = revokeTeacherAccess;
+
+// ── 28. LEAVE REQUESTS PAGE ───────────────────────────────────────
+async function leaveRequestsPage() {
+  const area = document.getElementById('contentArea');
+  try {
+    const { data: items } = await api('/teacher-admin/leave-requests');
+
+    const pendingItems = items.filter(i => i.status === 'Pending');
+
+    area.innerHTML = `
+      <div style="margin-bottom:16px">
+        <h2 style="font-size:17px;font-weight:700">📅 Leave Requests</h2>
+        ${pendingItems.length ? `<span style="font-size:12px;color:var(--amber)">${pendingItems.length} pending approval</span>` : ''}
+      </div>
+      <div class="card">
+        ${!items.length
+          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">event_busy</span><p class="empty-title">No leave requests</p></div>`
+          : items.map(r => `
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bg)">
+              <span class="material-icons-round" style="color:var(--txt-sm);margin-top:2px">event_busy</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:13px">${esc(r.teacher?.name||'—')}</div>
+                <div style="font-size:12px;color:var(--txt-sm)">${fmtDate(r.date)}${r.endDate && r.endDate!==r.date?' – '+fmtDate(r.endDate):''} · ${esc(r.type)}</div>
+                ${r.reason ? `<div style="font-size:12px;color:var(--txt-sm);margin-top:2px">${esc(r.reason)}</div>` : ''}
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+                <span class="badge badge-${(r.status||'').toLowerCase()}">${esc(r.status)}</span>
+                ${r.status === 'Pending' ? `
+                  <div style="display:flex;gap:4px;margin-top:4px">
+                    <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;background:var(--green);color:#fff" onclick="handleLeave('${r._id}','Approved')">Approve</button>
+                    <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;color:var(--err)" onclick="handleLeave('${r._id}','Rejected')">Reject</button>
+                  </div>` : ''}
+              </div>
+            </div>`).join('')}
+      </div>`;
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
+  }
+}
+
+async function handleLeave(id, status) {
+  try {
+    await api(`/teacher-admin/leave-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    toast(`Leave request ${status.toLowerCase()}`, 'success');
+    leaveRequestsPage();
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.handleLeave = handleLeave;
+
+// ── 29. TEACHER CHECK-IN MONITOR ────────────────────────────────
+async function teacherCheckInPage() {
+  const area = document.getElementById('contentArea');
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data: items } = await api(`/teacher-checkin/admin/list?date=${today}`);
+
+    area.innerHTML = `
+      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">🔍 Check-In Monitor</h2>
+          <div style="font-size:12px;color:var(--txt-sm)">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" id="checkinDate" value="${today}" style="padding:7px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+          <button class="btn btn-secondary" onclick="loadCheckIns()">
+            <span class="material-icons-round" style="font-size:15px">refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom:16px">
+        ${[
+          ['Total Self-Checkins', items.length, 'fingerprint', 'stat-blue'],
+          ['Present / On Time', items.filter(i=>!i.lateEntry).length, 'check_circle', 'stat-green'],
+          ['Late Entries', items.filter(i=>i.lateEntry).length, 'watch_later', 'stat-amber'],
+          ['Checked Out', items.filter(i=>i.checkOutAt).length, 'logout', 'stat-teal']
+        ].map(([label,val,icon,cls]) => `
+          <div class="stat-card ${cls}">
+            <div><div class="stat-label">${label}</div><div class="stat-value">${val}</div></div>
+            <div class="stat-icon"><span class="material-icons-round">${icon}</span></div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card" id="checkInTable">
+        ${!items.length
+          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">fingerprint</span><p class="empty-title">No self check-ins today</p><p class="empty-sub">Teachers who check in via the Teacher Portal will appear here.</p></div>`
+          : `<div class="table-wrap"><table>
+              <thead><tr><th>Teacher</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Status</th><th>Device / IP</th></tr></thead>
+              <tbody>${items.map(r => `
+                <tr>
+                  <td>
+                    <div class="td-main">${esc(r.teacher?.name||'—')}</div>
+                    <div class="td-sub">${esc(r.teacher?.employeeId||'')}</div>
+                  </td>
+                  <td>
+                    <div class="td-main">${r.checkIn || fmtTime(r.checkInAt) || '—'}</div>
+                    ${r.lateEntry ? `<div class="td-sub" style="color:var(--amber)">Late entry</div>` : ''}
+                  </td>
+                  <td>
+                    <div class="td-main">${r.checkOut || fmtTime(r.checkOutAt) || '—'}</div>
+                    ${r.earlyExit ? `<div class="td-sub" style="color:var(--amber)">Early exit</div>` : ''}
+                  </td>
+                  <td>${r.workingHours != null ? r.workingHours+'h' : '—'}</td>
+                  <td><span class="badge badge-${(r.status||'').toLowerCase()}">${esc(r.status)}</span></td>
+                  <td style="font-size:11px;color:var(--txt-sm)">
+                    <div>${esc((r.deviceInfo||'').slice(0,40))}</div>
+                    <div>${esc(r.ipAddress||'')}</div>
+                    ${r.gpsLat ? `<div>📍 ${r.gpsLat.toFixed(4)},${r.gpsLng?.toFixed(4)}</div>` : ''}
+                  </td>
+                </tr>`).join('')}
+              </tbody>
+             </table></div>`}
+      </div>`;
+
+    document.getElementById('checkinDate')?.addEventListener('change', loadCheckIns);
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
+  }
+}
+
+async function loadCheckIns() {
+  const dateEl = document.getElementById('checkinDate');
+  const date   = dateEl?.value || new Date().toISOString().split('T')[0];
+  try {
+    const { data: items } = await api(`/teacher-checkin/admin/list?date=${date}`);
+    const tableEl = document.getElementById('checkInTable');
+    if (!tableEl) return;
+    tableEl.innerHTML = !items.length
+      ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">fingerprint</span><p class="empty-title">No check-ins for this date</p></div>`
+      : `<div class="table-wrap"><table>
+          <thead><tr><th>Teacher</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Status</th></tr></thead>
+          <tbody>${items.map(r => `
+            <tr>
+              <td><div class="td-main">${esc(r.teacher?.name||'—')}</div></td>
+              <td>${r.checkIn||fmtTime(r.checkInAt)||'—'}${r.lateEntry?` <span style="color:var(--amber);font-size:11px">Late</span>`:''}</td>
+              <td>${r.checkOut||fmtTime(r.checkOutAt)||'—'}</td>
+              <td>${r.workingHours!=null?r.workingHours+'h':'—'}</td>
+              <td><span class="badge badge-${(r.status||'').toLowerCase()}">${esc(r.status)}</span></td>
+            </tr>`).join('')}
+          </tbody></table></div>`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.loadCheckIns = loadCheckIns;
 
 // ── 24. INIT ──────────────────────────────────────────────────────
 function init() {

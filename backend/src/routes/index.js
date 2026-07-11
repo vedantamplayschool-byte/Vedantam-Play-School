@@ -1,31 +1,40 @@
 import { Router } from 'express';
-import authRoutes            from './authRoutes.js';
-import dashboardRoutes       from './dashboardRoutes.js';
-import adminRoutes           from './adminRoutes.js';
-import admissionRoutes       from './admissionRoutes.js';
-import contactRoutes         from './contactRoutes.js';
-import newsletterRoutes      from './newsletterRoutes.js';
-import settingsRoutes        from './settingsRoutes.js';
-import studentRoutes         from './studentRoutes.js';
-import parentRoutes          from './parentRoutes.js';
-import feeRoutes             from './feeRoutes.js';
-import attendanceRoutes      from './attendanceRoutes.js';
-import reportsRoutes         from './reportsRoutes.js';
-import searchRoutes          from './searchRoutes.js';
-import academicSessionRoutes from './academicSessionRoutes.js';
-import { crudRouter }        from './resourceRoutes.js';
-import Teacher               from '../models/Teacher.js';
-import Gallery               from '../models/Gallery.js';
-import Notice                from '../models/Notice.js';
-import Event                 from '../models/Event.js';
-import Testimonial           from '../models/Testimonial.js';
-import HeroSlide             from '../models/HeroSlide.js';
-import Enquiry               from '../models/Enquiry.js';
+import authRoutes              from './authRoutes.js';
+import dashboardRoutes         from './dashboardRoutes.js';
+import adminRoutes             from './adminRoutes.js';
+import admissionRoutes         from './admissionRoutes.js';
+import contactRoutes           from './contactRoutes.js';
+import newsletterRoutes        from './newsletterRoutes.js';
+import settingsRoutes          from './settingsRoutes.js';
+import studentRoutes           from './studentRoutes.js';
+import parentRoutes            from './parentRoutes.js';
+import feeRoutes               from './feeRoutes.js';
+import attendanceRoutes        from './attendanceRoutes.js';
+import reportsRoutes           from './reportsRoutes.js';
+import searchRoutes            from './searchRoutes.js';
+import academicSessionRoutes   from './academicSessionRoutes.js';
+/* v2.5 ── new modules */
+import teacherAuthRoutes       from './teacherAuthRoutes.js';
+import teacherPortalRoutes     from './teacherPortalRoutes.js';
+import checkInRoutes           from './checkInRoutes.js';
+import notificationRoutes      from './notificationRoutes.js';
+import certificateRoutes       from './certificateRoutes.js';
+import qrRoutes                from './qrRoutes.js';
+import adminTeacherPortalRoutes from './adminTeacherPortalRoutes.js';
+/* CMS */
+import { crudRouter }  from './resourceRoutes.js';
+import Teacher         from '../models/Teacher.js';
+import Gallery         from '../models/Gallery.js';
+import Notice          from '../models/Notice.js';
+import Event           from '../models/Event.js';
+import Testimonial     from '../models/Testimonial.js';
+import HeroSlide       from '../models/HeroSlide.js';
+import Enquiry         from '../models/Enquiry.js';
 
 const r = Router();
 
 r.get('/health', (req, res) =>
-  res.json({ success: true, message: 'Vedantam Play School API is healthy ✅', data: { time: new Date().toISOString() } })
+  res.json({ success: true, message: 'Vedantam Play School API is healthy ✅', data: { time: new Date().toISOString(), version: '2.5' } })
 );
 
 /* ── Core ──────────────────────────────────────────────────────────── */
@@ -46,7 +55,16 @@ r.use('/reports',           reportsRoutes);
 r.use('/search',            searchRoutes);
 r.use('/academic-sessions', academicSessionRoutes);
 
-/* ── CMS resources (existing crudRouter — unchanged) ──────────────── */
+/* ── ERP v2.5 ──────────────────────────────────────────────────────── */
+r.use('/teacher-auth',          teacherAuthRoutes);
+r.use('/teacher-portal',        teacherPortalRoutes);
+r.use('/teacher-checkin',       checkInRoutes);
+r.use('/notifications',         notificationRoutes);
+r.use('/certificates',          certificateRoutes);
+r.use('/qr',                    qrRoutes);
+r.use('/teacher-admin',         adminTeacherPortalRoutes);
+
+/* ── CMS resources (existing crudRouter — unchanged) ─────────────── */
 r.use('/teachers',     crudRouter(Teacher,     { isActive: true }, ['name', 'qualification']));
 r.use('/gallery',      crudRouter(Gallery,     {}, ['title', 'category']));
 r.use('/notices',      crudRouter(Notice,      {
@@ -56,6 +74,6 @@ r.use('/notices',      crudRouter(Notice,      {
 r.use('/events',       crudRouter(Event,       { isPublished: true }, ['title', 'description', 'location']));
 r.use('/testimonials', crudRouter(Testimonial, { isPublished: true }, ['parentName', 'studentName', 'message']));
 r.use('/hero-slides',  crudRouter(HeroSlide,   { isActive: true },    ['title', 'subtitle']));
-r.use('/enquiries',    crudRouter(Enquiry,      {}, ['name', 'phone', 'email']));
+r.use('/enquiries',    crudRouter(Enquiry,     {}, ['name', 'phone', 'email']));
 
 export default r;

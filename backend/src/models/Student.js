@@ -1,25 +1,41 @@
 import mongoose from 'mongoose';
 
-/* ------------------------------------------------------------------ */
-/*  All new fields are optional or have defaults so existing documents  */
-/*  in MongoDB Atlas are never broken.                                  */
-/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------
+   All new fields are optional or have defaults so existing documents
+   in MongoDB Atlas are never broken.
+   ------------------------------------------------------------------ */
 
 const documentSchema = new mongoose.Schema(
   {
-    docType:   { type: String, trim: true }, // Aadhaar, Birth Certificate, TC, Medical, Other
-    url:       String,
-    publicId:  String,
-    uploadedAt:{ type: Date, default: Date.now }
+    category: {
+      type: String,
+      enum: ['Photo', 'Identity', 'Medical', 'Academic', 'Other'],
+      default: 'Other'
+    },
+    docType: {
+      type: String,
+      enum: [
+        'Student Photo', 'Father Photo', 'Mother Photo', 'Guardian Photo',
+        'Birth Certificate', 'Student Aadhaar', 'Father Aadhaar', 'Mother Aadhaar',
+        'PAN Card', 'Samagra ID', 'Medical Report', 'Vaccination Record',
+        'Transfer Certificate', 'Character Certificate', 'Other'
+      ],
+      default: 'Other'
+    },
+    label:       { type: String, trim: true },       // custom label
+    url:         String,
+    publicId:    String,                              // Cloudinary publicId
+    fileType:    { type: String, trim: true },        // 'image' | 'pdf'
+    isVerified:  { type: Boolean, default: false },
+    uploadedAt:  { type: Date, default: Date.now }
   },
-  { _id: false }
+  { _id: true }  // _id:true so each doc has an id for delete/replace
 );
 
 const schema = new mongoose.Schema(
   {
     /* ── Identifiers ──────────────────────────────────────────────── */
     admissionNumber: { type: String, trim: true, unique: true, sparse: true, index: true },
-    // sparse so existing docs without this field don't collide
 
     /* ── Existing fields (UNCHANGED) ─────────────────────────────── */
     admission:   { type: mongoose.Schema.Types.ObjectId, ref: 'Admission' },
@@ -31,7 +47,7 @@ const schema = new mongoose.Schema(
     address:     String,
     isActive:    { type: Boolean, default: true, index: true },
 
-    /* ── New ERP fields ───────────────────────────────────────────── */
+    /* ── ERP fields ───────────────────────────────────────────────── */
     parent:      { type: mongoose.Schema.Types.ObjectId, ref: 'Parent' },
     session:     { type: mongoose.Schema.Types.ObjectId, ref: 'AcademicSession' },
 
@@ -44,14 +60,33 @@ const schema = new mongoose.Schema(
     motherTongue:{ type: String, trim: true },
 
     // Academic placement
-    section:    { type: String, trim: true },    // A, B, C
+    section:    { type: String, trim: true },
     rollNumber: { type: String, trim: true },
     admissionDate: { type: Date, default: Date.now },
     previousSchool:{ type: String, trim: true },
 
-    // Photo
-    photoUrl:   String,
+    // Student photo
+    photoUrl:      String,
     photoPublicId: String,
+
+    // Parent photos (Module 1 — v2.5)
+    fatherName:          { type: String, trim: true },
+    fatherPhone:         { type: String, trim: true },
+    fatherOccupation:    { type: String, trim: true },
+    fatherPhotoUrl:      String,
+    fatherPhotoPublicId: String,
+
+    motherName:          { type: String, trim: true },
+    motherPhone:         { type: String, trim: true },
+    motherOccupation:    { type: String, trim: true },
+    motherPhotoUrl:      String,
+    motherPhotoPublicId: String,
+
+    guardianName:          { type: String, trim: true },
+    guardianPhone:         { type: String, trim: true },
+    guardianRelation:      { type: String, trim: true },
+    guardianPhotoUrl:      String,
+    guardianPhotoPublicId: String,
 
     // Health
     medicalNotes:  { type: String, trim: true, maxlength: 1000 },
@@ -64,11 +99,15 @@ const schema = new mongoose.Schema(
       relation: { type: String, trim: true }
     },
 
-    // Documents
+    // Documents (v2.5: enhanced schema with category & label)
     documents: [documentSchema],
 
     // Status
-    status: { type: String, enum: ['Active', 'Inactive', 'Transferred', 'Graduated', 'Dropped'], default: 'Active' },
+    status: {
+      type: String,
+      enum: ['Active', 'Inactive', 'Transferred', 'Graduated', 'Dropped'],
+      default: 'Active'
+    },
     transferCertificateDate: Date,
 
     notes: { type: String, trim: true, maxlength: 1000 }

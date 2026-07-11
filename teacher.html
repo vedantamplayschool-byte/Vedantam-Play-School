@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Portal — Vedantam Play School</title>
+  <link rel="icon" href="logo.png">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #667eea;
+      --primary-dk: #5a67d8;
+      --green: #48bb78;
+      --green-dk: #38a169;
+      --amber: #ed8936;
+      --red: #f56565;
+      --teal: #38b2ac;
+      --bg: #f7f8fc;
+      --surface: #ffffff;
+      --bd: #e2e8f0;
+      --txt: #1a202c;
+      --txt-sm: #718096;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--txt); font-size: 14px; }
+
+    /* ── LOGIN PAGE ───────────────────────────────────────────────── */
+    #loginPage {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .login-card {
+      background: #fff; border-radius: 20px; padding: 40px 36px;
+      width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+    .login-logo { text-align: center; margin-bottom: 24px; }
+    .login-logo img { width: 64px; height: 64px; border-radius: 50%; box-shadow: 0 4px 16px rgba(102,126,234,.4); }
+    .login-logo h1 { font-size: 18px; font-weight: 700; margin-top: 10px; color: var(--txt); }
+    .login-logo p  { font-size: 12px; color: var(--txt-sm); margin-top: 2px; }
+    .badge-portal { display: inline-block; background: linear-gradient(135deg,#667eea,#764ba2); color:#fff; font-size:10px; font-weight:600; padding:2px 10px; border-radius:20px; letter-spacing:1px; text-transform:uppercase; margin-top:4px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--txt-sm); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+    .form-group input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--bd); border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color .2s; }
+    .form-group input:focus { outline: none; border-color: var(--primary); }
+    .btn-primary { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary:hover { opacity: .92; }
+    .btn-primary:disabled { opacity: .6; cursor: default; }
+    .alert-err { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; border-radius: 8px; padding: 10px 14px; font-size: 13px; display: none; margin-bottom: 12px; align-items: center; gap: 8px; }
+    .spin { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── FORCE CHANGE PASSWORD ───────────────────────────────────── */
+    #forceChangePage {
+      display: none; min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+
+    /* ── SHELL ────────────────────────────────────────────────────── */
+    #teacherShell { display: none; min-height: 100vh; }
+
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--bd);
+      height: 58px; display: flex; align-items: center; padding: 0 20px; gap: 12px;
+      position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
+    }
+    .topbar-logo { font-weight: 700; font-size: 15px; color: var(--primary); }
+    .topbar-logo span { font-weight: 400; color: var(--txt-sm); font-size: 12px; margin-left: 4px; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; overflow: hidden;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; color: var(--txt-sm); border-radius: 8px; padding: 6px; }
+    .btn-icon:hover { background: var(--bg); color: var(--txt); }
+
+    /* bottom nav for mobile, sidebar for desktop */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
+      background: var(--surface); border-top: 1px solid var(--bd);
+      display: flex; z-index: 99;
+    }
+    .bnav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; background: none; border: none; cursor: pointer; color: var(--txt-sm);
+      font-size: 9px; font-weight: 500; font-family: inherit; padding: 4px 2px;
+      transition: color .15s;
+    }
+    .bnav-btn .material-icons-round { font-size: 22px; }
+    .bnav-btn.active { color: var(--primary); }
+
+    .content { padding: 20px 16px 80px; max-width: 700px; margin: 0 auto; }
+
+    /* ── CARDS ────────────────────────────────────────────────────── */
+    .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 0; }
+    .card-title { font-weight: 600; font-size: 14px; }
+    .card-body { padding: 16px; }
+    .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-item { background: var(--surface); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+    .stat-val { font-size: 22px; font-weight: 700; }
+    .stat-lbl { font-size: 11px; color: var(--txt-sm); margin-top: 2px; }
+    .stat-icon { font-size: 24px; color: var(--primary); margin-bottom: 4px; }
+
+    /* ── STATUS BADGES ────────────────────────────────────────────── */
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .badge-present  { background: #c6f6d5; color: #276749; }
+    .badge-absent   { background: #fed7d7; color: #9b2c2c; }
+    .badge-late     { background: #fefcbf; color: #975a16; }
+    .badge-leave    { background: #bee3f8; color: #2a4365; }
+    .badge-pending  { background: #fefcbf; color: #975a16; }
+    .badge-approved { background: #c6f6d5; color: #276749; }
+    .badge-rejected { background: #fed7d7; color: #9b2c2c; }
+    .badge-checkedin{ background: #c6f6d5; color: #276749; }
+    .badge-notcheckedin { background: #fed7d7; color: #9b2c2c; }
+
+    /* ── LISTS ────────────────────────────────────────────────────── */
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--bg); }
+    .list-item:last-child { border-bottom: none; }
+    .list-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; flex-shrink: 0; }
+    .list-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .list-main { flex: 1; min-width: 0; }
+    .list-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-sub  { font-size: 11px; color: var(--txt-sm); margin-top: 1px; }
+
+    /* ── FORMS ────────────────────────────────────────────────────── */
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: 11px; font-weight: 600; color: var(--txt-sm); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .form-row input, .form-row select, .form-row textarea {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--bd); border-radius: 8px;
+      font-size: 13px; font-family: inherit; background: #fff;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: none; border-color: var(--primary); }
+    .form-row textarea { resize: vertical; min-height: 80px; }
+    .btn { padding: 9px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: opacity .15s; }
+    .btn:hover { opacity: .88; }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn-success { background: var(--green); color: #fff; }
+    .btn-danger  { background: var(--red);   color: #fff; }
+    .btn-amber   { background: var(--amber); color: #fff; }
+    .btn-secondary { background: var(--bg); color: var(--txt); border: 1px solid var(--bd); }
+
+    /* ── CHECKIN UI ───────────────────────────────────────────────── */
+    .checkin-card { text-align: center; padding: 24px 16px; }
+    .checkin-time { font-size: 36px; font-weight: 700; color: var(--txt); font-variant-numeric: tabular-nums; }
+    .checkin-date { font-size: 13px; color: var(--txt-sm); margin-bottom: 20px; }
+    .camera-wrap { position: relative; width: 180px; height: 180px; margin: 0 auto 20px; border-radius: 50%; overflow: hidden; background: #1a1a2e; }
+    .camera-wrap video { width: 100%; height: 100%; object-fit: cover; }
+    .camera-overlay { position: absolute; inset: 0; border-radius: 50%; border: 3px solid var(--primary); }
+    .checkin-status { font-size: 13px; color: var(--txt-sm); margin-bottom: 16px; min-height: 20px; }
+    .checkin-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── TOAST ────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%) translateY(16px);
+      background: #1a202c; color: #fff; padding: 10px 18px; border-radius: 8px;
+      font-size: 13px; z-index: 9999; opacity: 0; transition: all .25s;
+      white-space: nowrap; display: flex; align-items: center; gap: 8px; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.success { background: #276749; }
+    #toast.error   { background: #9b2c2c; }
+
+    /* ── EMPTY STATE ──────────────────────────────────────────────── */
+    .empty { text-align: center; padding: 32px 16px; color: var(--txt-sm); }
+    .empty .material-icons-round { font-size: 40px; color: var(--bd); margin-bottom: 8px; }
+    .empty p { font-size: 13px; }
+
+    /* ── PROFILE ──────────────────────────────────────────────────── */
+    .profile-header { display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg,#667eea,#764ba2); display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; font-weight: 700; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(102,126,234,.4); }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-name { font-size: 18px; font-weight: 700; }
+    .profile-role { font-size: 12px; color: var(--txt-sm); margin-top: 2px; }
+
+    @media (min-width: 640px) {
+      .stat-row { grid-template-columns: repeat(4, 1fr); }
+      .content { padding: 24px 24px 24px; }
+      .bottom-nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN PAGE ──────────────────────────────────────────────────── -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="logo.png" alt="Vedantam Play School" onerror="this.style.display='none'">
+      <h1>Teacher Portal</h1>
+      <p>Vedantam Play School</p>
+      <span class="badge-portal">Secure Login</span>
+    </div>
+    <div class="alert-err" id="loginError"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email or Phone</label>
+        <input type="text" name="identifier" placeholder="Enter email or phone" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-primary" id="loginBtn">
+        <span id="loginBtnText">Sign In</span>
+        <span class="spin" id="loginSpin" style="display:none"></span>
+      </button>
+    </form>
+    <p style="text-align:center;font-size:12px;color:var(--txt-sm);margin-top:16px">
+      Contact admin to activate your portal access.
+    </p>
+  </div>
+</div>
+
+<!-- ── FORCE CHANGE PASSWORD ──────────────────────────────────────── -->
+<div id="forceChangePage" style="display:none;min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);align-items:center;justify-content:center;padding:24px">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>Set Your Password</h1>
+      <p>Please set a new password to continue</p>
+    </div>
+    <div class="alert-err" id="fcError"></div>
+    <form id="forceChangeForm">
+      <div class="form-group">
+        <label>Current (Temporary) Password</label>
+        <input type="password" name="currentPassword" required>
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" name="newPassword" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" name="confirmPassword" required>
+      </div>
+      <button type="submit" class="btn-primary" id="fcBtn">
+        <span id="fcBtnText">Set Password</span>
+        <span class="spin" id="fcSpin" style="display:none"></span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ── TEACHER SHELL ──────────────────────────────────────────────── -->
+<div id="teacherShell">
+  <div class="topbar">
+    <span class="material-icons-round" style="color:var(--primary)">school</span>
+    <div class="topbar-logo">Teacher Portal <span>Vedantam Play School</span></div>
+    <div class="topbar-right">
+      <div class="avatar" id="topAvatar"></div>
+      <button class="btn-icon" id="logoutBtn" title="Sign out">
+        <span class="material-icons-round">logout</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="content" id="contentArea">
+    <div style="text-align:center;padding:40px"><span class="spin" style="width:32px;height:32px;border-width:3px;border-color:var(--bd);border-top-color:var(--primary)"></span></div>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bnav-btn active" data-page="dashboard">
+      <span class="material-icons-round">dashboard</span>Dashboard
+    </button>
+    <button class="bnav-btn" data-page="checkin">
+      <span class="material-icons-round">fingerprint</span>Check-In
+    </button>
+    <button class="bnav-btn" data-page="students">
+      <span class="material-icons-round">child_care</span>Students
+    </button>
+    <button class="bnav-btn" data-page="homework">
+      <span class="material-icons-round">assignment</span>Homework
+    </button>
+    <button class="bnav-btn" data-page="profile">
+      <span class="material-icons-round">person</span>Profile
+    </button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/api-config.js"></script>
+<script src="js/teacher.js"></script>
+</body>
+</html>
