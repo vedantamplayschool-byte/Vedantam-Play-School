@@ -1667,10 +1667,11 @@ async function attendancePage() {
 
 async function renderStudentAttendance(el, dateStr) {
   const { data: students } = await api('/students?limit=200&sort=studentName');
-  const { data: attendance } = await api(`/attendance/students?date=${dateStr}`).catch(() => ({ data: [] }));
+  const { data: attendanceData } = await api(`/attendance/students?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
+  const attendance = attendanceData?.records || [];
 
   const attMap = {};
-  (attendance || []).forEach(a => { attMap[a.student?._id || a.student] = a.status; });
+  attendance.forEach(a => { attMap[a.student?._id || a.student] = a.status; });
 
   el.innerHTML = `
     <div class="card" style="margin-top:16px">
@@ -1729,10 +1730,11 @@ async function renderStudentAttendance(el, dateStr) {
 
 async function renderTeacherAttendance(el, dateStr) {
   const { data: teachers } = await api('/teachers?limit=100&sort=name');
-  const { data: attendance } = await api(`/attendance/teachers?date=${dateStr}`).catch(() => ({ data: [] }));
+  const { data: attendanceData } = await api(`/attendance/teachers?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
+  const attendance = attendanceData?.records || [];
 
   const attMap = {};
-  (attendance || []).forEach(a => { attMap[a.teacher?._id || a.teacher] = a.status; });
+  attendance.forEach(a => { attMap[a.teacher?._id || a.teacher] = a.status; });
 
   el.innerHTML = `
     <div class="card" style="margin-top:16px">
