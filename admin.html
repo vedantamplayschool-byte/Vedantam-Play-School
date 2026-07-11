@@ -39,7 +39,7 @@
             </div>
             <div class="feat-item">
               <span class="material-icons-round">dashboard</span>
-              Complete Management Dashboard
+              Complete ERP Dashboard
             </div>
             <div class="feat-item">
               <span class="material-icons-round">cloud_done</span>
@@ -141,21 +141,24 @@
           <label for="fcCurrent" class="field-label">Current Password</label>
           <div class="input-wrap">
             <span class="material-icons-round field-icon">lock</span>
-            <input id="fcCurrent" name="currentPassword" type="password" class="field-input" placeholder="Your current/temporary password" autocomplete="current-password" required />
+            <input id="fcCurrent" name="currentPassword" type="password" class="field-input"
+              placeholder="Your current/temporary password" autocomplete="current-password" required />
           </div>
         </div>
         <div class="field-group">
           <label for="fcNew" class="field-label">New Password</label>
           <div class="input-wrap">
             <span class="material-icons-round field-icon">lock_open</span>
-            <input id="fcNew" name="newPassword" type="password" class="field-input" placeholder="Minimum 8 characters" minlength="8" autocomplete="new-password" required />
+            <input id="fcNew" name="newPassword" type="password" class="field-input"
+              placeholder="Minimum 8 characters" minlength="8" autocomplete="new-password" required />
           </div>
         </div>
         <div class="field-group">
           <label for="fcConfirm" class="field-label">Confirm New Password</label>
           <div class="input-wrap">
             <span class="material-icons-round field-icon">lock_open</span>
-            <input id="fcConfirm" name="confirmPassword" type="password" class="field-input" placeholder="Repeat new password" autocomplete="new-password" required />
+            <input id="fcConfirm" name="confirmPassword" type="password" class="field-input"
+              placeholder="Repeat new password" autocomplete="new-password" required />
           </div>
         </div>
         <div id="forceChangeError" class="alert alert-error" style="display:none" role="alert"></div>
@@ -212,6 +215,23 @@
           </button>
           <div class="topbar-title" id="pageTitle">Dashboard</div>
         </div>
+
+        <!-- GLOBAL SEARCH -->
+        <div class="search-global-wrap" role="search">
+          <div class="search-global-inner">
+            <span class="material-icons-round search-global-icon">search</span>
+            <input
+              type="search"
+              id="globalSearch"
+              class="search-global-input"
+              placeholder="Search students, parents, teachers…"
+              autocomplete="off"
+              aria-label="Global search"
+            />
+          </div>
+          <div id="searchDrop" class="search-drop" style="display:none" role="listbox" aria-label="Search results"></div>
+        </div>
+
         <div class="topbar-right">
           <div class="topbar-avatar" id="topbarAvatar" title="My Profile" role="button" tabindex="0"></div>
         </div>
