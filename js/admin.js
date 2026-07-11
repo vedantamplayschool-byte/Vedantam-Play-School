@@ -1706,7 +1706,7 @@ async function attendancePage() {
 
 async function renderStudentAttendance(el, dateStr) {
   const { data: students } = await api('/students?limit=200&sort=studentName');
-  const { data: attendanceData } = await api(`/attendance/students?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
+  const { data: attendanceData } = await api(`/attendance/students/date?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
   const attendance = attendanceData?.records || [];
 
   const attMap = {};
