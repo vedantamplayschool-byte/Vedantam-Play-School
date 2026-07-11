@@ -1730,8 +1730,8 @@ async function renderStudentAttendance(el, dateStr) {
 
 async function renderTeacherAttendance(el, dateStr) {
   const { data: teachers } = await api('/teachers?limit=100&sort=name');
-  const { data: attendanceData } = await api(`/attendance/teachers?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
-  const attendance = attendanceData?.records || [];
+const { data: attendanceData } = await api(`/attendance/teachers/date?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
+const attendance = attendanceData?.records || [];
 
   const attMap = {};
   attendance.forEach(a => { attMap[a.teacher?._id || a.teacher] = a.status; });
