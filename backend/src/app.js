@@ -86,6 +86,22 @@ app.use(
   })
 );
 
+/**
+ * Serve the static frontend (index.html, admin.html, css/, js/, etc.) when
+ * the project root is present alongside the backend (e.g. on Replit, where
+ * frontend + backend share one repo and one port). On Render, the deployed
+ * service root is `backend/` only, so these files won't exist and this
+ * middleware simply falls through to the routes/handlers below — no change
+ * to the existing API-only production behavior on Render.
+ */
+const frontendRoot = path.join(__dirname, '..', '..');
+app.use(
+  express.static(frontendRoot, {
+    maxAge: env.nodeEnv === 'production' ? '1h' : 0,
+    index: ['index.html']
+  })
+);
+
 app.use('/api/v1', routes);
 
 /**
