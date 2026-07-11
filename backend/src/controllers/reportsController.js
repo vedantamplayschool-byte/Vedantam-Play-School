@@ -39,7 +39,7 @@ export const studentsReport = asyncHandler(async (req, res) => {
     parentPhone:     s.parent?.fatherPhone || s.phone,
     address:         s.address || '',
     admissionDate:   s.admissionDate ? new Date(s.admissionDate).toLocaleDateString('en-IN') : '',
-    status:          s.status || s.isActive ? 'Active' : 'Inactive'
+    status:          s.status || (s.isActive ? 'Active' : 'Inactive')
   }));
 
   const headers = ['admissionNumber','studentName','gender','program','section','rollNumber',

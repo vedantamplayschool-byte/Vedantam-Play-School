@@ -600,7 +600,6 @@ const RESOURCES = {
       <td><div class="td-main">${esc(r.name)}</div></td>
       <td><div>${esc(r.phone)}</div><div class="td-sub">${esc(r.email || '')}</div></td>
       <td>${esc(r.program || 'General')}</td>`,
-    noCreate: true,
     statusOptions: ['New', 'Contacted', 'Closed'],
     fields: [
       { name: 'name',    label: 'Name',    type: 'text',    required: true },
@@ -709,7 +708,7 @@ const RESOURCES = {
     fields: [
       { name: 'title',       label: 'Title',          type: 'text',     required: true, wide: true },
       { name: 'body',        label: 'Notice Content', type: 'textarea', required: true, wide: true },
-      { name: 'priority',    label: 'Priority',       type: 'select',   options: ['Normal', 'Important', 'Urgent'] },
+      { name: 'priority',    label: 'Priority',       type: 'select',   options: ['Low', 'Normal', 'High'] },
       { name: 'publishDate', label: 'Publish Date',   type: 'date' },
       { name: 'expiresAt',   label: 'Expires At',     type: 'date' },
       { name: 'isPublished', label: 'Published',      type: 'boolean' }
@@ -1789,7 +1788,7 @@ const attendance = attendanceData?.records || [];
 }
 
 async function renderHolidays(el) {
-  const { data } = await api('/attendance/holidays?limit=100&sort=startDate');
+  const { data } = await api('/attendance/holidays?limit=100&sort=date');
 
   el.innerHTML = `
     <div id="holidayFormHost"></div>
@@ -1824,9 +1823,9 @@ function buildHolidaysTable(items) {
   </div>`;
 
   const rows = items.map(h => `<tr>
-    <td><div class="td-main">${esc(h.name)}</div></td>
-    <td>${fmtDate(h.startDate)}</td>
-    <td>${fmtDate(h.endDate)}</td>
+    <td><div class="td-main">${esc(h.title)}</div></td>
+    <td>${fmtDate(h.date)}</td>
+    <td>${h.endDate ? fmtDate(h.endDate) : '—'}</td>
     <td><span class="badge badge-default">${esc(h.type || 'Holiday')}</span></td>
     <td class="td-actions">
       ${canAdmin() ? `<button class="btn btn-danger btn-sm" data-hol-delete="${h._id}">
@@ -1848,10 +1847,10 @@ function openHolidayForm(el) {
       <h2>Add Holiday</h2>
       <form id="holidayForm" novalidate>
         <div class="form-grid">
-          ${renderField({name:'name',      label:'Holiday Name', type:'text',   required:true}, '')}
-          ${renderField({name:'type',      label:'Type',         type:'select', options:['Holiday','Exam','Event','Other']}, '')}
-          ${renderField({name:'startDate', label:'Start Date',   type:'date',   required:true}, '')}
-          ${renderField({name:'endDate',   label:'End Date',     type:'date'}, '')}
+          ${renderField({name:'title',     label:'Holiday Name', type:'text',   required:true}, '')}
+          ${renderField({name:'type',     label:'Type',         type:'select', options:['National','State','School','Other']}, '')}
+          ${renderField({name:'date',     label:'Date',         type:'date',   required:true}, '')}
+          ${renderField({name:'endDate',  label:'End Date',     type:'date'}, '')}
           ${renderField({name:'description',label:'Description', type:'textarea', wide:true}, '')}
           <div class="form-actions col-full">
             <button type="submit" class="btn btn-primary" id="holSaveBtn">Save</button>

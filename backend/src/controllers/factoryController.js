@@ -40,19 +40,12 @@ export const getOne = (Model, baseFilter = {}) =>
 
 export const create = Model =>
   asyncHandler(async (req, res) => {
-
-    console.log("========== CREATE DEBUG ==========");
-    console.log("MODEL:", Model.modelName);
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file ? req.file.fieldname : "No File");
-    console.log("==================================");
-
     const payload = { ...req.body };
 
     if (req.file) {
       const uploaded = await uploadImage(
         req.file,
-        Model.modelName.toLowerCase(),
+        `vedantam/${Model.modelName.toLowerCase()}`,
         req
       );
 
@@ -60,8 +53,6 @@ export const create = Model =>
       payload.photoUrl = uploaded.url;
       payload.publicId = uploaded.publicId;
     }
-
-    console.log("FINAL PAYLOAD:", payload);
 
     const doc = await Model.create(payload);
 
@@ -74,18 +65,12 @@ export const create = Model =>
 
 export const update = Model =>
   asyncHandler(async (req, res) => {
-
-    console.log("========== UPDATE DEBUG ==========");
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file ? req.file.fieldname : "No File");
-    console.log("==================================");
-
     const payload = { ...req.body };
 
     if (req.file) {
       const uploaded = await uploadImage(
         req.file,
-        Model.modelName.toLowerCase(),
+        `vedantam/${Model.modelName.toLowerCase()}`,
         req
       );
 
@@ -93,8 +78,6 @@ export const update = Model =>
       payload.photoUrl = uploaded.url;
       payload.publicId = uploaded.publicId;
     }
-
-    console.log("FINAL UPDATE PAYLOAD:", payload);
 
     const doc = await Model.findByIdAndUpdate(
       req.params.id,
@@ -119,7 +102,6 @@ export const update = Model =>
 
 export const remove = Model =>
   asyncHandler(async (req, res) => {
-
     const doc = await Model.findByIdAndDelete(req.params.id);
 
     if (!doc) {
