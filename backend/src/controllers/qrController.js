@@ -80,7 +80,7 @@ export const studentIdCard = asyncHandler(async (req, res) => {
   body { background: #f0f4ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
   .card {
     width: 85.6mm; height: 53.98mm;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
     border-radius: 8px; overflow: hidden; position: relative;
     display: flex; flex-direction: column;
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
@@ -184,7 +184,7 @@ export const teacherIdCard = asyncHandler(async (req, res) => {
   body { background: #f0f4ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
   .card {
     width: 85.6mm; height: 53.98mm;
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
     border-radius: 8px; overflow: hidden; position: relative;
     display: flex; flex-direction: column;
     box-shadow: 0 8px 32px rgba(0,0,0,0.3); color: #fff;

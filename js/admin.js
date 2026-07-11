@@ -108,7 +108,6 @@ const NAV_GROUPS = [
     label: 'Students',
     items: [
       { key: 'students',     label: 'All Students',   icon: 'child_care' },
-      { key: 'parents',      label: 'Parents',         icon: 'family_restroom' },
       { key: 'admissions',   label: 'Admissions',      icon: 'assignment' },
       { key: 'enquiries',    label: 'Enquiries',       icon: 'forum' },
       { key: 'qr-cards',     label: 'QR & ID Cards',  icon: 'badge' },
@@ -470,7 +469,6 @@ async function dashboard() {
 
   const qaItems = [
     { label: 'Add Student',     icon: 'child_care',          page: 'students',   newForm: true },
-    { label: 'Add Parent',      icon: 'family_restroom',     page: 'parents',    newForm: true },
     { label: 'Collect Fee',     icon: 'payments',            page: 'fees',       newForm: false },
     { label: 'Mark Attendance', icon: 'how_to_reg',          page: 'attendance', newForm: false },
     { label: 'Create Notice',   icon: 'campaign',            page: 'notices',    newForm: true },
@@ -576,23 +574,68 @@ const RESOURCES = {
     hasImage: true,
     studentActions: true,
     fields: [
-      { name: 'studentName',  label: 'Student Name',    type: 'text',     required: true },
-      { name: 'parentName',   label: 'Parent Name',     type: 'text',     required: true },
-      { name: 'phone',        label: 'Phone',           type: 'tel',      required: true },
-      { name: 'program',      label: 'Program',         type: 'select',   required: true, options: PROGRAMS },
-      { name: 'gender',       label: 'Gender',          type: 'select',   options: ['Male', 'Female', 'Other'] },
-      { name: 'dateOfBirth',  label: 'Date of Birth',   type: 'date' },
-      { name: 'admissionDate',label: 'Admission Date',  type: 'date' },
-      { name: 'bloodGroup',   label: 'Blood Group',     type: 'select',   options: BLOOD_GROUPS },
-      { name: 'religion',     label: 'Religion',        type: 'text' },
-      { name: 'category',     label: 'Category',        type: 'select',   options: ['General', 'OBC', 'SC', 'ST', 'Minority'] },
-      { name: 'section',      label: 'Section',         type: 'text' },
-      { name: 'rollNumber',   label: 'Roll Number',     type: 'text' },
-      { name: 'address',      label: 'Address',         type: 'textarea', wide: true },
-      { name: 'medicalNotes', label: 'Medical Notes',   type: 'textarea', wide: true },
-      { name: 'photo',        label: 'Student Photo',   type: 'file',     wide: true },
-      { name: 'status',       label: 'Status',          type: 'select',   options: ['Active', 'Inactive', 'Transferred', 'Graduated', 'Dropped'] },
-      { name: 'notes',        label: 'Notes',           type: 'textarea', wide: true }
+      /* ── Student Information ── */
+      { name: '_s1',           label: 'Student Information',              type: 'separator', icon: 'child_care',        wide: true },
+      { name: 'studentName',   label: 'Student Name',                     type: 'text',     required: true },
+      { name: 'admissionNumber',label:'Admission No.',                    type: 'text',     placeholder: 'Auto-generated if blank' },
+      { name: 'program',       label: 'Program',                          type: 'select',   required: true, options: PROGRAMS },
+      { name: 'section',       label: 'Section',                          type: 'text' },
+      { name: 'rollNumber',    label: 'Roll Number',                      type: 'text' },
+      { name: 'gender',        label: 'Gender',                           type: 'select',   options: ['Male', 'Female', 'Other'] },
+      { name: 'dateOfBirth',   label: 'Date of Birth',                    type: 'date' },
+      { name: 'admissionDate', label: 'Admission Date',                   type: 'date' },
+      { name: 'status',        label: 'Status',                           type: 'select',   options: ['Active', 'Inactive', 'Transferred', 'Graduated', 'Dropped'] },
+      /* ── Personal Details ── */
+      { name: '_s2',           label: 'Personal Details',                 type: 'separator', icon: 'badge',             wide: true },
+      { name: 'bloodGroup',    label: 'Blood Group',                      type: 'select',   options: BLOOD_GROUPS },
+      { name: 'religion',      label: 'Religion',                         type: 'text' },
+      { name: 'category',      label: 'Caste / Category',                 type: 'select',   options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
+      { name: 'nationality',   label: 'Nationality',                      type: 'text' },
+      { name: 'motherTongue',  label: 'Mother Tongue',                    type: 'text' },
+      { name: 'previousSchool',label: 'Previous School',                  type: 'text',     wide: true },
+      /* ── Father's Information ── */
+      { name: '_s3',           label: "Father's Information",             type: 'separator', icon: 'man',               wide: true },
+      { name: 'fatherName',    label: "Father's Name",                    type: 'text' },
+      { name: 'fatherPhone',   label: "Father's Phone / Mobile",          type: 'tel' },
+      { name: 'fatherOccupation',label:"Father's Occupation",             type: 'text' },
+      /* ── Mother's Information ── */
+      { name: '_s4',           label: "Mother's Information",             type: 'separator', icon: 'woman',             wide: true },
+      { name: 'motherName',    label: "Mother's Name",                    type: 'text' },
+      { name: 'motherPhone',   label: "Mother's Phone / Mobile",          type: 'tel' },
+      { name: 'motherOccupation',label:"Mother's Occupation",             type: 'text' },
+      /* ── Primary Contact (used in records) ── */
+      { name: '_s5',           label: 'Primary Contact (for records & certificates)', type: 'separator', icon: 'contacts', wide: true },
+      { name: 'parentName',    label: 'Parent / Guardian Name (Primary)', type: 'text',     required: true },
+      { name: 'phone',         label: 'Contact Phone',                    type: 'tel',      required: true },
+      /* ── Guardian ── */
+      { name: '_s6',           label: 'Guardian (if different from parents)', type: 'separator', icon: 'supervisor_account', wide: true },
+      { name: 'guardianName',  label: 'Guardian Name',                    type: 'text' },
+      { name: 'guardianPhone', label: 'Guardian Phone',                   type: 'tel' },
+      { name: 'guardianRelation', label: 'Guardian Relation',             type: 'text' },
+      /* ── Address ── */
+      { name: '_s7',           label: 'Address',                          type: 'separator', icon: 'place',             wide: true },
+      { name: 'address',       label: 'Full Address',                     type: 'textarea', wide: true },
+      /* ── Emergency Contact ── */
+      { name: '_s8',           label: 'Emergency Contact',                type: 'separator', icon: 'emergency',         wide: true },
+      { name: 'emergencyContact.name',     label: 'Emergency Contact Name',     type: 'text' },
+      { name: 'emergencyContact.phone',    label: 'Emergency Contact Phone',    type: 'tel' },
+      { name: 'emergencyContact.relation', label: 'Emergency Contact Relation', type: 'text' },
+      /* ── Health ── */
+      { name: '_s9',           label: 'Health Information',               type: 'separator', icon: 'local_hospital',    wide: true },
+      { name: 'medicalNotes',  label: 'Medical Notes / Allergies',        type: 'textarea', wide: true },
+      /* ── Photo ── */
+      { name: '_s10',          label: 'Student Photo',                    type: 'separator', icon: 'photo_camera',      wide: true },
+      { name: 'photo',         label: 'Upload Photo',                     type: 'file',     wide: true },
+      /* ── Important Documents ── */
+      { name: '_s11',          label: 'Important Documents  (PDF or Image — saved to student file)', type: 'separator', icon: 'folder_special', wide: true },
+      { name: 'doc_aadhar',    label: 'Student Aadhar Card',              type: 'docfile', docType: 'aadhar',     wide: true },
+      { name: 'doc_birth',     label: 'Birth Certificate',                type: 'docfile', docType: 'birth_cert', wide: true },
+      { name: 'doc_parent_id', label: 'Parent Aadhar / ID Proof',         type: 'docfile', docType: 'parent_id',  wide: true },
+      { name: 'doc_address',   label: 'Address Proof',                    type: 'docfile', docType: 'address',    wide: true },
+      { name: 'doc_other',     label: 'Any Other Important Document',     type: 'docfile', docType: 'other',      wide: true },
+      /* ── Notes ── */
+      { name: '_s12',          label: 'Internal Notes',                   type: 'separator', icon: 'notes',             wide: true },
+      { name: 'notes',         label: 'Notes',                            type: 'textarea', wide: true }
     ]
   },
 
@@ -975,17 +1018,33 @@ function buildRow(key, config, item, showEdit, showDelete) {
 }
 
 // ── 13. FORM ───────────────────────────────────────────────────────
+const DOC_FIELD_NAMES = ['doc_aadhar', 'doc_birth', 'doc_parent_id', 'doc_address', 'doc_other'];
+const DOC_FIELD_TYPES = { doc_aadhar: 'aadhar', doc_birth: 'birth_cert', doc_parent_id: 'parent_id', doc_address: 'address', doc_other: 'other' };
+
 function openForm(key, config, id) {
   const host = document.getElementById('formHost');
   const item = id ? (_cache[key] || []).find(x => x._id === id) || {} : {};
   const isEdit = !!id;
+
+  // For student edit: fetch full record to get documents list
+  const docViewHtml = (key === 'students' && isEdit)
+    ? `<div id="existingDocsSection" style="margin-top:8px"></div>`
+    : '';
 
   host.innerHTML = `
     <div class="form-card" id="editPanel">
       <h2>${isEdit ? 'Edit' : 'Add New'} ${esc(config.label)}</h2>
       <form id="editForm" novalidate>
         <div class="form-grid">
-          ${config.fields.map(f => renderField(f, item[f.name])).join('')}
+          ${config.fields.map(f => {
+            if (f.type === 'separator') return renderField(f, null);
+            if (f.type === 'docfile')   return renderField(f, null);
+            // Resolve dot-notation paths (e.g. emergencyContact.name)
+            const val = f.name.includes('.')
+              ? f.name.split('.').reduce((o, k) => o?.[k], item)
+              : item[f.name];
+            return renderField(f, val);
+          }).join('')}
           <div class="form-actions col-full">
             <button type="submit" class="btn btn-primary" id="saveBtn">
               <span id="saveTxt">Save</span>
@@ -996,7 +1055,31 @@ function openForm(key, config, id) {
           <div class="col-full" id="formMsg"></div>
         </div>
       </form>
+      ${docViewHtml}
     </div>`;
+
+  // Load and display existing documents when editing a student
+  if (key === 'students' && isEdit) {
+    api(`/students/${id}`).then(({ data: s }) => {
+      const el = document.getElementById('existingDocsSection');
+      if (!el || !s?.documents?.length) return;
+      el.innerHTML = `<div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px">
+        <div style="font-weight:700;font-size:12px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">
+          📎 Uploaded Documents (${s.documents.length})
+        </div>
+        ${s.documents.map(d => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px">
+            <span class="material-icons-round" style="color:var(--primary);font-size:20px">${(d.fileType||'').includes('pdf') ? 'picture_as_pdf' : 'image'}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600">${esc(d.label||d.docType)}</div>
+              <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase">${esc(d.docType||'')}</div>
+            </div>
+            <a href="${esc(d.url)}" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px">View</a>
+            ${canAdmin() ? `<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="deleteStudentDoc('${id}','${esc(d._id||'')}')">Delete</button>` : ''}
+          </div>`).join('')}
+      </div>`;
+    }).catch(() => {});
+  }
 
   host.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('cancelFormBtn').addEventListener('click', () => { host.innerHTML = ''; });
@@ -1013,11 +1096,43 @@ function openForm(key, config, id) {
       for (const [k, v] of [...fd.entries()]) {
         if (v instanceof File && !v.name) fd.delete(k);
       }
+
+      // For students: extract doc uploads before main save
+      const docFiles = {};
+      if (key === 'students') {
+        DOC_FIELD_NAMES.forEach(n => {
+          const inp = e.target.querySelector(`input[name="${n}"]`);
+          if (inp?.files?.[0]) docFiles[n] = inp.files[0];
+          fd.delete(n);
+        });
+        // Also remove separator pseudo-fields
+        for (const [k] of [...fd.entries()]) { if (k.startsWith('_s')) fd.delete(k); }
+      }
+
       const method   = id ? 'PATCH' : 'POST';
       const endpoint = `${config.endpoint}${id ? '/' + id : ''}`;
-      await api(endpoint, { method, body: fd });
+      const result   = await api(endpoint, { method, body: fd });
+
+      // Upload document files for students
+      if (key === 'students' && Object.keys(docFiles).length) {
+        const studentId = id || result?.data?._id || result?.data?.student?._id;
+        if (studentId) {
+          let docOk = 0, docFail = 0;
+          for (const [n, file] of Object.entries(docFiles)) {
+            const df = new FormData();
+            df.append('document', file);
+            df.append('docType',  DOC_FIELD_TYPES[n]);
+            df.append('label',    file.name);
+            await api(`/students/${studentId}/documents`, { method: 'POST', body: df })
+              .then(() => docOk++).catch(() => docFail++);
+          }
+          if (docFail) toast(`${docOk} doc(s) uploaded, ${docFail} failed`, 'warning');
+          else if (docOk) toast(`Student saved + ${docOk} document(s) uploaded!`, 'success');
+        }
+      }
+
       host.innerHTML = '';
-      toast(`${config.label} ${id ? 'updated' : 'created'} successfully!`, 'success');
+      if (!Object.keys(docFiles).length) toast(`${config.label} ${id ? 'updated' : 'created'} successfully!`, 'success');
       navigate(key);
     } catch (err) {
       msg.innerHTML = `<div class="alert alert-error"><span class="material-icons-round">error</span>${esc(err.message)}</div>`;
@@ -1026,11 +1141,48 @@ function openForm(key, config, id) {
   });
 }
 
+async function deleteStudentDoc(studentId, docId) {
+  if (!docId || !confirm('Delete this document? This cannot be undone.')) return;
+  try {
+    await api(`/students/${studentId}/documents/${docId}`, { method: 'DELETE' });
+    toast('Document deleted', 'success');
+    // Reload the docs section
+    api(`/students/${studentId}`).then(({ data: s }) => {
+      const el = document.getElementById('existingDocsSection');
+      if (!el) return;
+      if (!s?.documents?.length) { el.innerHTML = ''; return; }
+      // Re-render
+      el.querySelector('div') && (el.innerHTML = el.innerHTML); // trigger re-render via edit form reload
+    }).catch(() => {});
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.deleteStudentDoc = deleteStudentDoc;
+
 function renderField(f, value) {
   const wrapCls = f.wide ? 'form-group col-full' : 'form-group';
   const req     = f.required ? 'required' : '';
   const reqMark = f.required ? ' <span style="color:var(--err)">*</span>' : '';
   const label   = `<label class="form-label" for="ff_${f.name}">${esc(f.label)}${reqMark}</label>`;
+
+  if (f.type === 'separator') {
+    return `<div class="col-full" style="margin:14px 0 2px;padding:10px 14px;background:linear-gradient(to right,var(--bg),transparent);border-radius:8px;border-left:3px solid var(--primary)">
+      <div style="font-weight:700;font-size:11px;color:var(--primary);text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:6px">
+        <span class="material-icons-round" style="font-size:15px">${f.icon || 'info'}</span>${esc(f.label)}
+      </div>
+    </div>`;
+  }
+
+  if (f.type === 'docfile') {
+    const existing = value ? `<a href="${esc(value)}" target="_blank" style="font-size:11px;color:var(--primary);display:inline-flex;align-items:center;gap:3px">
+      <span class="material-icons-round" style="font-size:13px">description</span>View uploaded file</a>` : `<span style="font-size:11px;color:var(--txt-sm)">No file yet</span>`;
+    return `<div class="col-full" style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 14px;background:var(--bg);border-radius:8px;margin-bottom:4px">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--txt);margin-bottom:3px">${esc(f.label)}</div>
+        ${existing}
+      </div>
+      <input name="${f.name}" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="font-size:12px;max-width:240px;padding:5px">
+    </div>`;
+  }
 
   if (f.type === 'file') {
     const preview = value ? `<img src="${esc(value)}" alt="" style="height:58px;margin-top:8px;border-radius:8px;object-fit:cover">` : '';
@@ -1162,13 +1314,14 @@ async function parentsPage() {
         <div class="page-header-sub">${data.length} record${data.length !== 1 ? 's' : ''}</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        ${showNew ? `<button class="btn btn-primary" id="newParentBtn">
-          <span class="material-icons-round" style="font-size:18px">add</span> Add Parent
-        </button>` : ''}
         <button class="btn btn-secondary" id="exportParentBtn">
           <span class="material-icons-round" style="font-size:18px">download</span> Export CSV
         </button>
       </div>
+    </div>
+    <div class="alert alert-info" style="margin:0 0 12px;font-size:13px">
+      <span class="material-icons-round" style="font-size:16px">info</span>
+      Parent records are created automatically when a student is enrolled. Use the student form to manage parent details.
     </div>
     <div id="parentFormHost"></div>
     <div class="card">
@@ -1184,9 +1337,6 @@ async function parentsPage() {
       <div class="table-wrap">${buildParentsTable(data, showDelete)}</div>
     </div>`;
 
-  if (showNew) {
-    document.getElementById('newParentBtn').addEventListener('click', () => openParentForm(null));
-  }
   document.getElementById('exportParentBtn').addEventListener('click', () => exportCSV('parents', data));
   document.getElementById('parentSearchBtn').addEventListener('click', () => {
     _search['parents'] = document.getElementById('parentSearch').value.trim();

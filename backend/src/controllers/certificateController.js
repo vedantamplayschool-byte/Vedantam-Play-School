@@ -10,24 +10,36 @@ const fmtDate = d => {
 };
 
 const baseStyles = () => `
-  @page { size: A4; margin: 20mm; }
+  @page { size: A4; margin: 18mm 20mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Times New Roman', serif; color: #1a1a1a; background: #fff; }
-  .cert { max-width: 750px; margin: 0 auto; padding: 40px; border: 3px double #764ba2; min-height: 200px; }
-  .header { text-align: center; margin-bottom: 30px; }
-  .logo { width: 70px; height: 70px; object-fit: contain; }
-  .school { font-size: 24px; font-weight: 700; color: #764ba2; margin: 8px 0 4px; font-family: 'Segoe UI', sans-serif; }
-  .tagline { font-size: 13px; color: #666; letter-spacing: 2px; text-transform: uppercase; }
-  .divider { border: none; border-top: 2px solid #764ba2; margin: 16px auto; width: 80%; }
-  .cert-type { font-size: 22px; font-weight: 700; text-align: center; color: #4a4a8a; margin: 20px 0; letter-spacing: 2px; text-transform: uppercase; }
-  .cert-no { text-align: right; font-size: 12px; color: #888; margin-bottom: 20px; }
-  .body-text { font-size: 15px; line-height: 2; text-align: justify; margin: 20px 0; }
-  .highlight { font-weight: 700; text-decoration: underline; }
+  .cert {
+    max-width: 750px; margin: 0 auto; padding: 36px 44px;
+    border: 3px double #f97316;
+    box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 8px #fed7aa;
+    min-height: 200px; position: relative;
+  }
+  .cert::before {
+    content: ''; position: absolute; inset: 12px;
+    border: 1px solid #fed7aa; pointer-events: none;
+  }
+  .header { text-align: center; margin-bottom: 28px; }
+  .logo { width: 76px; height: 76px; object-fit: contain; border-radius: 50%; border: 3px solid #f97316; padding: 2px; }
+  .school { font-size: 26px; font-weight: 900; color: #f97316; margin: 10px 0 4px; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.5px; }
+  .tagline { font-size: 12px; color: #ea580c; letter-spacing: 3px; text-transform: uppercase; font-weight: 700; }
+  .school-address { font-size: 11px; color: #888; margin-top: 4px; }
+  .divider { border: none; border-top: 2px solid #f97316; margin: 16px auto; width: 80%; }
+  .divider-thin { border: none; border-top: 1px solid #fed7aa; margin: 10px auto; width: 60%; }
+  .cert-type { font-size: 22px; font-weight: 800; text-align: center; color: #c2410c; margin: 18px 0 8px; letter-spacing: 3px; text-transform: uppercase; font-family: 'Segoe UI', sans-serif; }
+  .cert-no { text-align: right; font-size: 11px; color: #aaa; margin-bottom: 18px; }
+  .body-text { font-size: 15px; line-height: 2.1; text-align: justify; margin: 18px 0; }
+  .highlight { font-weight: 700; text-decoration: underline; color: #c2410c; }
   .footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; }
-  .sig-block { text-align: center; min-width: 140px; }
-  .sig-line { border-top: 1px solid #333; padding-top: 6px; font-size: 12px; }
+  .sig-block { text-align: center; min-width: 160px; }
+  .sig-line { border-top: 1.5px solid #333; padding-top: 6px; font-size: 12px; font-weight: 600; }
   .date-block { font-size: 13px; }
-  @media print { body { margin: 0; } }
+  .school-seal { width: 60px; height: 60px; border-radius: 50%; border: 2px dashed #f97316; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; opacity: 0.4; font-size: 22px; }
+  @media print { body { margin: 0; } .cert { box-shadow: none; } }
 `;
 
 const certNo = () => `VPS/${new Date().getFullYear()}/${Date.now().toString().slice(-6)}`;
@@ -271,7 +283,8 @@ ${baseStyles()}
   <div style="text-align:center;font-size:14px;color:#888;margin-bottom:20px">${student.program} Programme · ${new Date().getFullYear()}</div>
   <div class="body-text" style="text-align:center">
     This is to certify that<br><br>
-    <span style="font-size:22px;font-weight:700;color:#4a4a8a">${student.studentName}</span><br><br>
+    <span style="font-size:26px;font-weight:900;color:#c2410c;font-style:italic;font-family:'Segoe UI',sans-serif">${student.studentName}</span><br><br>
+    ${student.parentName ? `<span style="font-size:13px;color:#777">${student.gender==='Male'?'S/o':'D/o'} ${student.parentName}</span><br><br>` : ''}
     has successfully completed the <strong>${student.program}</strong> programme
     at <strong>${school.name}</strong> for the academic year
     <strong>${new Date().getFullYear()}–${new Date().getFullYear() + 1}</strong>.<br><br>
