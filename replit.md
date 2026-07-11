@@ -91,12 +91,15 @@ The app runs on port 5000. The workflow "Start application" manages this.
 | `/api/v1/reports` | CSV/data exports |
 
 ## Secrets Required
-- `MONGODB_URI` — MongoDB Atlas connection string
-- `JWT_SECRET` — shared JWT signing secret (all portals)
-- `SESSION_SECRET` — Express session secret
-- `CLOUDINARY_CLOUD_NAME` — Cloudinary cloud name
-- `CLOUDINARY_API_KEY` — Cloudinary API key
-- `CLOUDINARY_API_SECRET` — Cloudinary API secret
+- `MONGODB_URI` — MongoDB Atlas connection string (configured)
+- `JWT_SECRET` — shared JWT signing secret, auto-generated on setup (configured)
+- `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` — Cloudinary media storage (configured)
+- `SESSION_SECRET` — present but currently unused by backend code
+
+## Setup Status (July 2026 re-import)
+- Dependencies installed via `npm install --prefix backend`.
+- All required secrets configured; "Start application" workflow boots cleanly, connects to MongoDB, and serves the site + `/admin.html`.
+- An admin account already exists in the connected database, so the JWT/bootstrap flow was skipped — log in with existing admin credentials at `/admin.html`.
 
 ## User Preferences
 - Existing APIs and collections must never be removed — all changes are additive
