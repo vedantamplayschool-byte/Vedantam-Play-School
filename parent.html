@@ -71,7 +71,8 @@
     }
 
     /* ── SHELL ────────────────────────────────────────────────────── */
-    #parentShell { display: none; min-height: 100vh; }
+    #parentShell { min-height: 100vh; }
+    .hidden { display: none !important; }
 
     .topbar {
       background: var(--surface); border-bottom: 1px solid var(--bd);
@@ -286,7 +287,7 @@
 </div>
 
 <!-- ── PARENT SHELL ────────────────────────────────────────────────── -->
-<div id="parentShell">
+<div id="parentShell" class="hidden">
 
   <!-- Desktop sidebar -->
   <nav class="sidebar-nav" id="sidebarNav" style="display:none">

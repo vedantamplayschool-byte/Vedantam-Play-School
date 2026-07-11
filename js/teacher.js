@@ -611,7 +611,7 @@ async function loadLeaveRequests() {
 function bootTeacher() {
   document.getElementById('loginPage').style.display    = 'none';
   document.getElementById('forceChangePage').style.display = 'none';
-  document.getElementById('teacherShell').style.display = '';
+  document.getElementById('teacherShell').classList.remove('hidden');
 
   // Avatar
   const av = document.getElementById('topAvatar');
@@ -630,7 +630,7 @@ function bootTeacher() {
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     try { await api('/teacher-auth/logout', { method: 'POST' }); } catch (_) {}
     clearToken(); stopCamera();
-    document.getElementById('teacherShell').style.display = 'none';
+    document.getElementById('teacherShell').classList.add('hidden');
     document.getElementById('loginPage').style.display = '';
     toast('Signed out', 'success');
   });

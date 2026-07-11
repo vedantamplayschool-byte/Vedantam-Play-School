@@ -60,6 +60,10 @@ function showPage(id) {
   ['loginPage','forceChangePage','parentShell'].forEach(p => {
     const el = document.getElementById(p);
     if (!el) return;
+    if (p === 'parentShell') {
+      el.classList.toggle('hidden', p !== id);
+      return;
+    }
     el.style.display = p === id ? '' : 'none';
     if (p === 'forceChangePage' && p === id) el.style.display = 'flex';
   });
