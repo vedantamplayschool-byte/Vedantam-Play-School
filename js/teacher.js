@@ -63,7 +63,7 @@ function navigate(page) {
   document.querySelectorAll('.bnav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === page));
   const area = document.getElementById('contentArea');
   area.innerHTML = '<div style="text-align:center;padding:40px"><span class="spin" style="width:28px;height:28px;border-width:3px;border-color:var(--bd);border-top-color:var(--primary)"></span></div>';
-  const pages = { dashboard, checkin: checkInPage, students: studentsPage, homework: homeworkPage, profile: profilePage };
+  const pages = { dashboard, checkin: checkInPage, students: studentsPage, homework: homeworkPage, profile: profilePage, notices: noticesPage, attendance: attendancePage };
   Promise.resolve((pages[page] || dashboard)()).catch(err => {
     area.innerHTML = `<div class="card"><div class="card-body"><p style="color:var(--red)">${esc(err.message)}</p></div></div>`;
   });
@@ -139,6 +139,36 @@ async function dashboard() {
       </div>
     </div>
 
+    <!-- Quick actions -->
+    <div class="card">
+      <div class="card-head"><span class="card-title">Quick Actions</span></div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-secondary" onclick="navigate('attendance')"><span class="material-icons-round" style="font-size:15px">fact_check</span>Mark Attendance</button>
+        <button class="btn btn-secondary" onclick="navigate('homework')"><span class="material-icons-round" style="font-size:15px">assignment</span>Add Homework</button>
+        <button class="btn btn-secondary" onclick="showLeaveFormFromDashboard()"><span class="material-icons-round" style="font-size:15px">event_busy</span>Apply Leave</button>
+        <button class="btn btn-secondary" onclick="navigate('notices')"><span class="material-icons-round" style="font-size:15px">campaign</span>Notices</button>
+      </div>
+    </div>
+
+    <!-- Today's notices -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Notice Board</span>
+        <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="navigate('notices')">View All</button>
+      </div>
+      <div>
+        ${(d.todayNotices || []).length ? d.todayNotices.map(n => `
+          <div class="list-item">
+            <span class="material-icons-round" style="color:${n.priority==='High'?'var(--red)':n.priority==='Low'?'var(--txt-sm)':'var(--primary)'}">campaign</span>
+            <div class="list-main">
+              <div class="list-name">${esc(n.title)}</div>
+              <div class="list-sub">${fmtDate(n.createdAt)}${n.priority?' · '+esc(n.priority):''}</div>
+            </div>
+          </div>`).join('') :
+          `<div class="empty"><span class="material-icons-round">campaign</span><p>No notices right now</p></div>`}
+      </div>
+    </div>
+
     <!-- Today's students quick view -->
     <div class="card">
       <div class="card-head">
@@ -157,6 +187,73 @@ async function dashboard() {
           `<div class="empty"><span class="material-icons-round">child_care</span><p>No students assigned</p></div>`}
       </div>
     </div>`;
+}
+
+function showLeaveFormFromDashboard() {
+  navigate('profile');
+  setTimeout(() => { showLeaveForm(); document.getElementById('leaveFormWrap')?.scrollIntoView({ behavior: 'smooth' }); }, 300);
+}
+window.showLeaveFormFromDashboard = showLeaveFormFromDashboard;
+
+/* ══════════════════════════════════════════════════════════════════
+   NOTICE BOARD
+   ══════════════════════════════════════════════════════════════════ */
+async function noticesPage() {
+  const { data } = await api('/teacher-portal/notices');
+  const area = document.getElementById('contentArea');
+  area.innerHTML = `
+    <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Notice Board</h2>
+    <div class="card">
+      ${data.length ? data.map(n => `
+        <div class="list-item" style="align-items:flex-start">
+          <span class="material-icons-round" style="color:${n.priority==='High'?'var(--red)':n.priority==='Low'?'var(--txt-sm)':'var(--primary)'}">campaign</span>
+          <div class="list-main">
+            <div class="list-name">${esc(n.title)}</div>
+            <div class="list-sub" style="white-space:pre-wrap;margin-top:4px">${esc(n.body)}</div>
+            <div class="list-sub" style="margin-top:4px">${fmtDate(n.createdAt)}</div>
+          </div>
+          <span class="badge badge-${n.priority==='High'?'absent':n.priority==='Low'?'leave':'pending'}">${esc(n.priority)}</span>
+        </div>`).join('') : `<div class="empty"><span class="material-icons-round">campaign</span><p>No notices published</p></div>`}
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MARK ATTENDANCE (today, own class)
+   ══════════════════════════════════════════════════════════════════ */
+async function attendancePage() {
+  const { data } = await api('/teacher-portal/today-attendance');
+  const area = document.getElementById('contentArea');
+  area.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h2 style="font-size:16px;font-weight:700">Mark Today's Attendance</h2>
+      <button class="btn btn-success" id="saveAttBtn"><span class="material-icons-round" style="font-size:15px">save</span>Save</button>
+    </div>
+    ${!data.length ? `<div class="empty"><span class="material-icons-round">child_care</span><p>No students assigned to your class</p></div>` : `
+    <div class="card">
+      ${data.map(s => `
+        <div class="list-item" data-student-id="${s._id}">
+          <div class="list-avatar">${s.photoUrl ? `<img src="${esc(s.photoUrl)}" alt="">` : '🧒'}</div>
+          <div class="list-main">
+            <div class="list-name">${esc(s.studentName)}</div>
+            <div class="list-sub">${s.rollNumber ? 'Roll ' + esc(s.rollNumber) : esc(s.admissionNumber || '')}</div>
+          </div>
+          <select class="att-status" style="padding:6px 8px;border:1.5px solid var(--bd);border-radius:8px;font-size:12px">
+            ${['Present','Absent','Late','Leave'].map(st => `<option value="${st}" ${(s.attendanceStatus||'Present')===st?'selected':''}>${st}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>`}`;
+
+  document.getElementById('saveAttBtn')?.addEventListener('click', async () => {
+    const rows = [...document.querySelectorAll('#contentArea [data-student-id]')].map(row => ({
+      student: row.dataset.studentId,
+      status: row.querySelector('.att-status').value
+    }));
+    if (!rows.length) return;
+    try {
+      await api('/teacher-portal/attendance', { method: 'POST', body: JSON.stringify({ date: new Date().toISOString().slice(0,10), records: rows }) });
+      toast('Attendance saved', 'success');
+    } catch (err) { toast(err.message, 'error'); }
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -213,8 +310,7 @@ async function checkInPage() {
         </div>
 
         <p style="font-size:11px;color:var(--txt-sm);margin-top:16px;line-height:1.5">
-          📷 Camera is used for identity verification only.<br>
-          No image is captured, stored, or uploaded.
+          📷 Opening the camera is optional. If open, a snapshot is attached to your check-in/out record; otherwise none is captured.
         </p>
       </div>
     </div>
@@ -287,6 +383,16 @@ function stopCamera() {
   if (wrap) wrap.style.display = 'none';
 }
 
+function captureCameraFrame() {
+  if (!_cameraStream) return null;
+  const video = document.getElementById('cameraFeed');
+  if (!video || !video.videoWidth) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  return new Promise(resolve => canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.85));
+}
+
 async function doCheckIn() {
   const btn = document.getElementById('checkInBtn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>'; }
@@ -298,7 +404,17 @@ async function doCheckIn() {
         () => resolve(), { timeout: 3000 }
       ));
     }
-    const { message } = await api('/teacher-checkin/checkin', { method: 'POST', body: JSON.stringify({ gpsLat, gpsLng }) });
+    const photoBlob = await captureCameraFrame();
+    let message;
+    if (photoBlob) {
+      const fd = new FormData();
+      fd.append('photo', photoBlob, 'checkin.jpg');
+      if (gpsLat !== undefined) fd.append('gpsLat', gpsLat);
+      if (gpsLng !== undefined) fd.append('gpsLng', gpsLng);
+      ({ message } = await api('/teacher-checkin/checkin', { method: 'POST', body: fd }));
+    } else {
+      ({ message } = await api('/teacher-checkin/checkin', { method: 'POST', body: JSON.stringify({ gpsLat, gpsLng }) }));
+    }
     stopCamera();
     toast(message, 'success');
     setTimeout(() => navigate('checkin'), 600);
@@ -320,7 +436,17 @@ async function doCheckOut() {
         () => resolve(), { timeout: 3000 }
       ));
     }
-    const { message } = await api('/teacher-checkin/checkout', { method: 'POST', body: JSON.stringify({ gpsLat, gpsLng }) });
+    const photoBlob = await captureCameraFrame();
+    let message;
+    if (photoBlob) {
+      const fd = new FormData();
+      fd.append('photo', photoBlob, 'checkout.jpg');
+      if (gpsLat !== undefined) fd.append('gpsLat', gpsLat);
+      if (gpsLng !== undefined) fd.append('gpsLng', gpsLng);
+      ({ message } = await api('/teacher-checkin/checkout', { method: 'POST', body: fd }));
+    } else {
+      ({ message } = await api('/teacher-checkin/checkout', { method: 'POST', body: JSON.stringify({ gpsLat, gpsLng }) }));
+    }
     stopCamera();
     toast(message, 'success');
     setTimeout(() => navigate('checkin'), 600);
@@ -346,6 +472,7 @@ async function studentsPage() {
   area.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <h2 style="font-size:16px;font-weight:700">My Students (${students.length})</h2>
+      <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="navigate('attendance')">Mark Attendance</button>
     </div>
     <div class="card">
       ${students.map(s => `
@@ -359,13 +486,24 @@ async function studentsPage() {
               ${s.bloodGroup  ? ' · ' + esc(s.bloodGroup) : ''}
             </div>
           </div>
-          <div style="text-align:right;font-size:11px;color:var(--txt-sm)">
+          <div style="text-align:right;font-size:11px;color:var(--txt-sm);display:flex;flex-direction:column;align-items:flex-end;gap:4px">
             ${s.phone ? `<div>${esc(s.phone)}</div>` : ''}
             ${s.emergencyContact?.phone ? `<div style="color:var(--red)">🆘 ${esc(s.emergencyContact.phone)}</div>` : ''}
+            <button class="btn btn-secondary" style="font-size:10px;padding:3px 8px" onclick="addRemark('${s._id}','${esc(s.studentName).replace(/'/g, "\\'")}')">Add Remark</button>
           </div>
         </div>`).join('')}
     </div>`;
 }
+
+async function addRemark(studentId, studentName) {
+  const remark = prompt(`Daily remark for ${studentName}:`);
+  if (!remark || !remark.trim()) return;
+  try {
+    await api(`/teacher-portal/students/${studentId}/remark`, { method: 'PUT', body: JSON.stringify({ remark: remark.trim() }) });
+    toast('Remark saved', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.addRemark = addRemark;
 
 /* ══════════════════════════════════════════════════════════════════
    HOMEWORK
@@ -422,7 +560,7 @@ function renderHomeworkPage() {
         ? `<div class="empty"><span class="material-icons-round">assignment</span><p>No homework assigned yet</p></div>`
         : _homeworkItems.map(h => `
           <div class="list-item" data-hw-id="${h._id}">
-            <span class="material-icons-round" style="color:var(--primary);font-size:28px">menu_book</span>
+            ${h.imageUrl ? `<img src="${esc(h.imageUrl)}" alt="" style="width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0">` : `<span class="material-icons-round" style="color:var(--primary);font-size:28px">menu_book</span>`}
             <div class="list-main">
               <div class="list-name">${esc(h.title)}</div>
               <div class="list-sub">${esc(h.subject)} · Due: ${fmtDate(h.dueDate)}</div>
@@ -430,6 +568,10 @@ function renderHomeworkPage() {
             </div>
             <div style="display:flex;flex-direction:column;gap:4px">
               <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px" onclick="editHomework('${h._id}')">Edit</button>
+              <label class="btn btn-secondary" style="font-size:11px;padding:4px 8px;cursor:pointer;text-align:center">
+                ${h.imageUrl ? 'Replace' : 'Attach'} Img
+                <input type="file" accept="image/*" style="display:none" onchange="uploadHwImage('${h._id}', this)">
+              </label>
               <button class="btn btn-danger"    style="font-size:11px;padding:4px 8px" onclick="deleteHomework('${h._id}')">Del</button>
             </div>
           </div>`).join('')}
@@ -437,6 +579,19 @@ function renderHomeworkPage() {
 
   document.getElementById('hwForm').addEventListener('submit', saveHomework);
 }
+
+async function uploadHwImage(id, input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    await api(`/teacher-portal/homework/${id}/image`, { method: 'PATCH', body: fd });
+    toast('Image attached', 'success');
+    homeworkPage();
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.uploadHwImage = uploadHwImage;
 
 function showHomeworkForm(hw = null) {
   document.getElementById('hwFormWrap').style.display = '';

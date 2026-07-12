@@ -5,8 +5,11 @@ import Homework         from '../models/Homework.js';
 import LeaveRequest     from '../models/LeaveRequest.js';
 import AcademicSession  from '../models/AcademicSession.js';
 import FeePayment       from '../models/FeePayment.js';
+import Notice           from '../models/Notice.js';
+import StudentRemark    from '../models/StudentRemark.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok }           from '../utils/apiResponse.js';
+import { uploadImage }  from '../services/uploadService.js';
 
 const todayRange = () => {
   const s = new Date(); s.setHours(0, 0, 0, 0);
@@ -33,7 +36,8 @@ export const teacherDashboard = asyncHandler(async (req, res) => {
     pendingLeaves,
     todayHomework,
     myTodayAttendance,
-    recentStudents
+    recentStudents,
+    todayNotices
   ] = await Promise.all([
     Student.countDocuments(studentFilter),
 
@@ -57,7 +61,13 @@ export const teacherDashboard = asyncHandler(async (req, res) => {
     TeacherAttendance.findOne({ teacher: teacher._id, date: { $gte: start, $lte: end } }).lean(),
 
     // Recent students
-    Student.find(studentFilter).sort('-createdAt').limit(5).lean()
+    Student.find(studentFilter).sort('-createdAt').limit(5).lean(),
+
+    // Today's / active notices for the quick-actions & notices widget
+    Notice.find({
+      isPublished: true,
+      $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gte: new Date() } }]
+    }).sort('-createdAt').limit(5).lean()
   ]);
 
   // Summarise attendance
@@ -81,7 +91,8 @@ export const teacherDashboard = asyncHandler(async (req, res) => {
       pendingLeaves,
       todayHomework,
       myTodayAttendance,
-      recentStudents
+      recentStudents,
+      todayNotices
     }
   });
 });
@@ -189,4 +200,108 @@ export const todayStudentAttendance = asyncHandler(async (req, res) => {
   }));
 
   ok(res, { data: result });
+});
+
+/* ── MARK/UPDATE STUDENT ATTENDANCE (teacher, own class only) ────── */
+export const markStudentAttendance = asyncHandler(async (req, res) => {
+  const { date, records } = req.body;
+  if (!date || !Array.isArray(records) || !records.length) {
+    const e = new Error('date and records[] are required'); e.status = 400; throw e;
+  }
+
+  const teacher = req.teacher;
+  const parsedDate = new Date(date);
+  parsedDate.setHours(0, 0, 0, 0);
+
+  // A teacher may only mark attendance for students in their own assigned class.
+  const studentFilter = { isActive: true, _id: { $in: records.map(r => r.student) } };
+  if (teacher.assignedProgram) studentFilter.program = teacher.assignedProgram;
+  if (teacher.assignedSection) studentFilter.section = teacher.assignedSection;
+
+  const allowedIds = new Set((await Student.find(studentFilter, '_id').lean()).map(s => String(s._id)));
+  const filteredRecords = records.filter(r => allowedIds.has(String(r.student)));
+
+  if (!filteredRecords.length) {
+    const e = new Error('None of the given students belong to your assigned class'); e.status = 403; throw e;
+  }
+
+  const activeSession = await AcademicSession.findOne({ isActive: true }).lean();
+
+  const ops = filteredRecords.map(r => ({
+    updateOne: {
+      filter: { student: r.student, date: parsedDate },
+      update: {
+        $set: {
+          status: r.status || 'Absent',
+          remarks: r.remarks || '',
+          session: activeSession?._id
+        },
+        $unset: { markedBy: '' } // teacher-marked records aren't tied to an Admin id
+      },
+      upsert: true
+    }
+  }));
+
+  await StudentAttendance.bulkWrite(ops);
+  ok(res, { message: `Attendance marked for ${filteredRecords.length} students` });
+});
+
+/* ── NOTICE BOARD (view, same feed parents/admin see) ─────────────── */
+export const teacherNotices = asyncHandler(async (req, res) => {
+  const filter = {
+    isPublished: true,
+    $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gte: new Date() } }]
+  };
+  if (req.query.priority) filter.priority = req.query.priority;
+
+  const notices = await Notice.find(filter).sort('-createdAt').limit(30).lean();
+  ok(res, { data: notices });
+});
+
+/* ── DAILY STUDENT REMARKS ─────────────────────────────────────────── */
+export const upsertStudentRemark = asyncHandler(async (req, res) => {
+  const teacher = req.teacher;
+  const { remark, date } = req.body;
+  if (!remark) { const e = new Error('remark is required'); e.status = 400; throw e; }
+
+  // Confirm the student belongs to this teacher's class before allowing a remark.
+  const studentFilter = { _id: req.params.id, isActive: true };
+  if (teacher.assignedProgram) studentFilter.program = teacher.assignedProgram;
+  if (teacher.assignedSection) studentFilter.section = teacher.assignedSection;
+  const student = await Student.findOne(studentFilter).lean();
+  if (!student) { const e = new Error('Student not found in your assigned class'); e.status = 404; throw e; }
+
+  const parsedDate = date ? new Date(date) : new Date();
+  parsedDate.setHours(0, 0, 0, 0);
+
+  const doc = await StudentRemark.findOneAndUpdate(
+    { student: req.params.id, date: parsedDate },
+    { $set: { remark, teacher: teacher._id } },
+    { new: true, upsert: true, runValidators: true }
+  );
+
+  ok(res, { message: 'Remark saved', data: doc });
+});
+
+export const listStudentRemarks = asyncHandler(async (req, res) => {
+  const remarks = await StudentRemark.find({ student: req.params.id })
+    .sort('-date')
+    .limit(30)
+    .populate('teacher', 'name')
+    .lean();
+  ok(res, { data: remarks });
+});
+
+/* ── HOMEWORK IMAGE ATTACHMENT ─────────────────────────────────────── */
+export const uploadHomeworkImage = asyncHandler(async (req, res) => {
+  if (!req.file) { const e = new Error('Image file is required'); e.status = 400; throw e; }
+  const doc = await Homework.findOne({ _id: req.params.id, teacher: req.teacher._id });
+  if (!doc) { const e = new Error('Homework not found'); e.status = 404; throw e; }
+
+  const uploaded = await uploadImage(req.file, 'vedantam/homework', req);
+  doc.imageUrl = uploaded.url;
+  doc.imagePublicId = uploaded.publicId || '';
+  await doc.save();
+
+  ok(res, { message: 'Homework image attached', data: doc });
 });

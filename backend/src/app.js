@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import routes from './routes/index.js';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { auditAdminActions } from './middleware/auditLog.js';
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -95,6 +96,23 @@ app.use(
  * to the existing API-only production behavior on Render.
  */
 const frontendRoot = path.join(__dirname, '..', '..');
+
+/**
+ * Hidden admin access: the admin login page is never reachable at the
+ * predictable /admin.html URL. It is only served at a secret path defined
+ * by the ADMIN_SECRET_PATH secret. Direct requests to /admin.html 404 just
+ * like any other unknown route.
+ */
+if (env.adminSecretPath) {
+  app.get(`/${env.adminSecretPath}`, (req, res) => {
+    res.sendFile(path.join(frontendRoot, 'admin.html'));
+  });
+}
+
+// Block direct, guessable access to the admin page before the static
+// middleware below ever gets a chance to serve the file.
+app.get('/admin.html', notFound);
+
 app.use(
   express.static(frontendRoot, {
     maxAge: env.nodeEnv === 'production' ? '1h' : 0,
@@ -102,7 +120,7 @@ app.use(
   })
 );
 
-app.use('/api/v1', routes);
+app.use('/api/v1', auditAdminActions, routes);
 
 /**
  * Root Route (Health Check)

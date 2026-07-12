@@ -2,7 +2,7 @@ import { Router }        from 'express';
 import { protectParent } from '../middleware/parentAuth.js';
 import rateLimit         from 'express-rate-limit';
 import {
-  parentLogin, parentLogout, parentMe, changeParentPassword
+  parentLogin, parentLogout, parentMe, changeParentPassword, updateParentProfile
 } from '../controllers/parentAuthController.js';
 
 const r = Router();
@@ -16,6 +16,7 @@ r.post('/logout', parentLogout);
 
 r.use(protectParent);
 r.get('/me',              parentMe);
+r.put('/profile',         updateParentProfile);
 r.put('/change-password', changeParentPassword);
 
 export default r;

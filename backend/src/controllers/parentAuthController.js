@@ -2,6 +2,7 @@ import Parent from '../models/Parent.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok } from '../utils/apiResponse.js';
 import { signParentToken } from '../middleware/parentAuth.js';
+import { recordLoginAttempt } from '../middleware/auditLog.js';
 
 const COOKIE_OPTS = (days) => ({
   expires: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
@@ -33,16 +34,19 @@ export const parentLogin = asyncHandler(async (req, res) => {
   }).select('+password');
 
   if (!parent || !parent.password) {
+    await recordLoginAttempt({ portal: 'parent', identifier: id, userModel: 'Parent', success: false, reason: 'Portal access not activated', req });
     const e = new Error('Parent portal access not activated. Contact school admin.'); e.status = 401; throw e;
   }
 
   const match = await parent.comparePassword(password);
   if (!match) {
+    await recordLoginAttempt({ portal: 'parent', identifier: id, user: parent, userModel: 'Parent', success: false, reason: 'Incorrect password', req });
     const e = new Error('Incorrect password'); e.status = 401; throw e;
   }
 
   parent.lastLoginAt = new Date();
   await parent.save({ validateBeforeSave: false });
+  await recordLoginAttempt({ portal: 'parent', identifier: id, user: parent, userModel: 'Parent', success: true, req });
 
   const token = signParentToken(parent._id);
   const jwtCookieDays = Number(process.env.JWT_COOKIE_EXPIRES_DAYS || 7);
@@ -89,4 +93,21 @@ export const changeParentPassword = asyncHandler(async (req, res) => {
   await parent.save();
 
   ok(res, { message: 'Password changed successfully' });
+});
+
+/* ── UPDATE CONTACT INFO ───────────────────────────────────────────
+   Parents can keep their own contact details current; admin still owns
+   everything else (linked children, portal activation, etc). */
+export const updateParentProfile = asyncHandler(async (req, res) => {
+  const allowed = [
+    'fatherPhone', 'fatherWhatsApp', 'fatherEmail', 'fatherOccupation',
+    'motherPhone', 'motherWhatsApp', 'motherEmail', 'motherOccupation',
+    'guardianName', 'guardianPhone', 'guardianRelation',
+    'address', 'city', 'state', 'pincode'
+  ];
+  const payload = {};
+  allowed.forEach(k => { if (req.body[k] !== undefined) payload[k] = req.body[k]; });
+
+  const doc = await Parent.findByIdAndUpdate(req.parent._id, payload, { new: true, runValidators: true });
+  ok(res, { message: 'Contact information updated', data: doc });
 });

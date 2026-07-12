@@ -49,3 +49,25 @@ All new routes are mounted in `backend/src/routes/index.js`:
 
 `adminTeacherPortalRoutes` handles: set/revoke teacher portal password, list/approve/reject leave requests,
 list all homework. It requires `protect + authorize('super_admin','admin','principal')`.
+
+---
+
+## Check-in/out photo capture is now optional-but-functional
+Teacher self check-in/out used to explicitly promise "no photo is ever captured/stored" (privacy stance).
+This was changed: if the teacher opens the camera in the UI, a snapshot is captured and uploaded
+(multipart) and stored on the attendance record; if the camera is never opened, behavior is unchanged
+(JSON-only request, no photo). Both check-in and check-out endpoints accept an optional multipart file
+now, falling back to JSON when none is sent.
+
+**Why:** User requested photo-verified check-in as an option without breaking the no-camera flow or
+older clients that still POST plain JSON.
+
+**How to apply:** Any future changes to check-in/out must preserve both paths (JSON-only and
+multipart-with-photo). Update the on-screen privacy disclaimer text if this policy changes again.
+
+---
+
+## AuditLog / LoginHistory field names
+`AuditLog` uses `statusCode` and `adminName` (not `status`/`admin.name` — `admin` is just an ObjectId,
+not populated). `LoginHistory` uses `portal`/`identifier`/`success`/`reason`/`ipAddress`. Mismatching
+these in frontend rendering fails silently (fields just render blank, no error).

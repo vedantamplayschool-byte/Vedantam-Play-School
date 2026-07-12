@@ -352,9 +352,27 @@ async function feesPage() {
           <div><div style="color:var(--txt-sm)">Balance</div><div style="font-weight:600;color:${(p.balance||0)>0?'var(--red)':'var(--green)'}">${fmtCur(p.balance)}</div></div>
         </div>
         ${p.paymentDate ? `<div style="font-size:11px;color:var(--txt-sm);margin-top:8px">Paid on: ${fmtDate(p.paymentDate)} · ${esc(p.paymentMode||'')}</div>` : ''}
+        ${p.amountPaid ? `<div style="margin-top:10px"><button class="btn-icon" style="background:var(--bg);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--primary)" onclick="downloadReceipt('${p._id}')"><span class="material-icons-round" style="font-size:16px">picture_as_pdf</span>&nbsp;Download Receipt</button></div>` : ''}
       </div>
     </div>`).join('') : `<div class="empty"><span class="material-icons-round">payments</span><p>No fee records found</p></div>`}`;
 }
+
+async function downloadReceipt(paymentId) {
+  try {
+    const res = await fetch(`${API}/parent-portal/fees/${paymentId}/receipt/pdf`, {
+      headers: S.token ? { Authorization: `Bearer ${S.token}` } : {},
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Could not generate receipt');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `receipt-${paymentId}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.downloadReceipt = downloadReceipt;
 
 /* ════════════════════════════════════════════════════════════════════
    NOTICES
@@ -382,11 +400,21 @@ async function noticesPage() {
 /* ════════════════════════════════════════════════════════════════════
    EVENTS
    ════════════════════════════════════════════════════════════════════ */
-async function eventsPage() {
-  const { data: events } = await api('/parent-portal/events');
+async function eventsPage(category) {
+  const qs = category ? `?category=${encodeURIComponent(category)}` : '';
+  const { data: events } = await api(`/parent-portal/events${qs}`);
   const area = document.getElementById('contentArea');
 
-  area.innerHTML = events.length ? events.map(ev => {
+  const categories = ['General','PTM','Exam','Holiday','Sports','Cultural','Other'];
+  const filterBar = `
+    <div class="filter-bar">
+      <select id="eventCatFilter" onchange="eventsPage(this.value)">
+        <option value="">All Categories</option>
+        ${categories.map(c => `<option value="${c}" ${category===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>`;
+
+  const list = events.length ? events.map(ev => {
     const isPast = ev.eventDate && new Date(ev.eventDate) < new Date();
     return `
     <div class="card">
@@ -394,10 +422,13 @@ async function eventsPage() {
         <div style="display:flex;gap:14px;align-items:flex-start">
           <div style="flex-shrink:0;width:50px;height:50px;border-radius:12px;background:${isPast?'var(--bg)':'#eff6ff'};display:flex;flex-direction:column;align-items:center;justify-content:center">
             <div style="font-size:16px;font-weight:700;color:${isPast?'var(--txt-sm)':'var(--blue)'}">${ev.eventDate?new Date(ev.eventDate).getDate():'?'}</div>
-            <div style="font-size:9px;color:${isPast?'var(--txt-sm)':'var(--blue)';font-weight:600}">${ev.eventDate?new Date(ev.eventDate).toLocaleString('en-IN',{month:'short'}):''}</div>
+            <div style="font-size:9px;font-weight:600;color:${isPast?'var(--txt-sm)':'var(--blue)'}">${ev.eventDate?new Date(ev.eventDate).toLocaleString('en-IN',{month:'short'}):''}</div>
           </div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">${esc(ev.title)}</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="font-weight:600;font-size:14px">${esc(ev.title)}</div>
+              ${ev.category && ev.category !== 'General' ? `<span class="badge badge-normal">${esc(ev.category)}</span>` : ''}
+            </div>
             ${ev.description ? `<div style="font-size:13px;color:var(--txt-sm);margin-top:4px">${esc(ev.description)}</div>` : ''}
             ${ev.location ? `<div style="font-size:12px;color:var(--txt-sm);margin-top:4px"><span class="material-icons-round" style="font-size:14px;vertical-align:middle">place</span> ${esc(ev.location)}</div>` : ''}
           </div>
@@ -406,7 +437,10 @@ async function eventsPage() {
       </div>
     </div>`;
   }).join('') : `<div class="empty"><span class="material-icons-round">event</span><p>No events found</p></div>`;
+
+  area.innerHTML = filterBar + list;
 }
+window.eventsPage = eventsPage;
 
 /* ════════════════════════════════════════════════════════════════════
    GALLERY
@@ -458,6 +492,27 @@ async function profilePage() {
     </div>
 
     <div class="card">
+      <div class="card-head"><span class="card-title">Update Contact Info</span></div>
+      <div class="card-body">
+        <div id="profileError" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px;margin-bottom:12px"></div>
+        <form id="profileForm" class="pw-form" style="max-width:none;display:grid;grid-template-columns:1fr 1fr;gap:14px 16px">
+          <div class="form-group"><label>Father's Phone</label><input type="text" name="fatherPhone" value="${esc(p.fatherPhone||'')}"></div>
+          <div class="form-group"><label>Mother's Phone</label><input type="text" name="motherPhone" value="${esc(p.motherPhone||'')}"></div>
+          <div class="form-group"><label>Guardian Phone</label><input type="text" name="guardianPhone" value="${esc(p.guardianPhone||'')}"></div>
+          <div class="form-group"><label>Address</label><input type="text" name="address" value="${esc(p.address||'')}"></div>
+          <div class="form-group"><label>City</label><input type="text" name="city" value="${esc(p.city||'')}"></div>
+          <div class="form-group"><label>State</label><input type="text" name="state" value="${esc(p.state||'')}"></div>
+          <div class="form-group"><label>Pincode</label><input type="text" name="pincode" value="${esc(p.pincode||'')}"></div>
+          <div style="grid-column:1/-1">
+            <button type="submit" style="padding:10px 20px;background:linear-gradient(135deg,#f97316,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
+              <span class="material-icons-round" style="font-size:18px">save</span>Save Contact Info
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-head"><span class="card-title">Change Password</span></div>
       <div class="card-body">
         ${p.mustChangePassword ? `<div style="background:#fef9c3;border:1px solid #fef08a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#854d0e"><strong>Action required:</strong> Please change your temporary password.</div>` : ''}
@@ -474,6 +529,22 @@ async function profilePage() {
         </div>
       </div>
     </div>`;
+
+  document.getElementById('profileForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const errEl = document.getElementById('profileError');
+    errEl.style.display = 'none';
+    const body = Object.fromEntries(fd.entries());
+    try {
+      const { data } = await api('/parent-auth/profile', { method: 'PUT', body: JSON.stringify(body) });
+      S.parent = { ...S.parent, ...data };
+      toast('Contact info updated');
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = '';
+    }
+  });
 
   document.getElementById('pwForm').addEventListener('submit', async e => {
     e.preventDefault();

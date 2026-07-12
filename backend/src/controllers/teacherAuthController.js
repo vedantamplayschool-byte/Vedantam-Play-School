@@ -3,6 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok } from '../utils/apiResponse.js';
 import { signTeacherToken } from '../middleware/teacherAuth.js';
 import { uploadImage } from '../services/uploadService.js';
+import { recordLoginAttempt } from '../middleware/auditLog.js';
 
 const COOKIE_OPTS = (days) => ({
   expires: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
@@ -18,20 +19,24 @@ export const teacherLogin = asyncHandler(async (req, res) => {
     const e = new Error('Please provide credentials and password'); e.status = 400; throw e;
   }
 
+  const identifier = email || phone;
   const query = email ? { email: email.toLowerCase().trim() } : { phone: phone.trim() };
   const teacher = await Teacher.findOne({ ...query, isActive: true }).select('+password');
 
   if (!teacher || !teacher.password) {
+    await recordLoginAttempt({ portal: 'teacher', identifier, userModel: 'Teacher', success: false, reason: 'Portal access not activated', req });
     const e = new Error('Teacher portal access not activated for this account. Contact admin.'); e.status = 401; throw e;
   }
 
   const match = await teacher.comparePassword(password);
   if (!match) {
+    await recordLoginAttempt({ portal: 'teacher', identifier, user: teacher, userModel: 'Teacher', success: false, reason: 'Incorrect password', req });
     const e = new Error('Incorrect password'); e.status = 401; throw e;
   }
 
   teacher.lastLoginAt = new Date();
   await teacher.save({ validateBeforeSave: false });
+  await recordLoginAttempt({ portal: 'teacher', identifier, user: teacher, userModel: 'Teacher', success: true, req });
 
   const token = signTeacherToken(teacher._id);
   const jwtCookieDays = Number(process.env.JWT_COOKIE_EXPIRES_DAYS || 7);

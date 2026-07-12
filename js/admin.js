@@ -166,7 +166,9 @@ const NAV_GROUPS = [
     items: [
       { key: 'storage-monitor', label: 'Storage Monitor',  icon: 'storage',   admin: true },
       { key: 'archive',         label: 'Archive Manager',  icon: 'archive',   admin: true },
-      { key: 'backup',          label: 'Backup & Export',  icon: 'backup',    admin: true }
+      { key: 'backup',          label: 'Backup & Export',  icon: 'backup',    admin: true },
+      { key: 'login-history',   label: 'Login History',    icon: 'history',   admin: true },
+      { key: 'audit-logs',      label: 'Audit Logs',       icon: 'fact_check',admin: true }
     ]
   },
   {
@@ -273,6 +275,8 @@ function navigate(key) {
     'storage-monitor':     storageMonitorPage,
     archive:               archivePage,
     backup:                backupPage,
+    'login-history':       loginHistoryPage,
+    'audit-logs':          auditLogsPage,
     students:          () => resourcePage(RESOURCES.students),
     admissions:        () => resourcePage(RESOURCES.admissions),
     enquiries:         () => resourcePage(RESOURCES.enquiries),
@@ -754,15 +758,17 @@ const RESOURCES = {
     getTitle: r => r.title,
     getSubtitle: r => r.location,
     badge: r => ({ text: r.isPublished !== false ? 'Published' : 'Draft', cls: r.isPublished !== false ? 'badge-approved' : 'badge-inactive' }),
-    columns: ['Photo', 'Event', 'Location', 'Date', 'Status', 'Actions'],
+    columns: ['Photo', 'Event', 'Category', 'Location', 'Date', 'Status', 'Actions'],
     hasImage: true,
     renderCells: r => `
       <td>${r.imageUrl ? `<img class="thumb" src="${esc(r.imageUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
       <td><div class="td-main">${esc(r.title)}</div></td>
+      <td><span class="badge badge-default">${esc(r.category || 'General')}</span></td>
       <td>${esc(r.location || '')}</td>
       <td>${fmtDate(r.eventDate)}</td>`,
     fields: [
       { name: 'title',       label: 'Event Title',  type: 'text',     required: true },
+      { name: 'category',    label: 'Category',     type: 'select',   options: ['General','PTM','Exam','Holiday','Sports','Cultural','Other'] },
       { name: 'location',    label: 'Location',     type: 'text' },
       { name: 'eventDate',   label: 'Event Date',   type: 'date' },
       { name: 'description', label: 'Description',  type: 'textarea', wide: true },
@@ -3252,6 +3258,93 @@ async function loadCheckIns() {
   } catch (err) { toast(err.message, 'error'); }
 }
 window.loadCheckIns = loadCheckIns;
+
+/* ══════════════════════════════════════════════════════════════════
+   LOGIN HISTORY
+   ══════════════════════════════════════════════════════════════════ */
+async function loginHistoryPage(page = 1) {
+  const area = document.getElementById('contentArea');
+  const portal = document.getElementById('lhPortalFilter')?.value || '';
+  try {
+    const qs = new URLSearchParams({ page, limit: 25, ...(portal ? { portal } : {}) });
+    const { data: items, pagination } = await api(`/security/login-history?${qs}`);
+
+    area.innerHTML = `
+      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:17px;font-weight:700">Login History</h2>
+        <select id="lhPortalFilter" style="padding:7px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
+          <option value="">All Portals</option>
+          <option value="admin"  ${portal==='admin'?'selected':''}>Admin</option>
+          <option value="teacher"${portal==='teacher'?'selected':''}>Teacher</option>
+          <option value="parent" ${portal==='parent'?'selected':''}>Parent</option>
+        </select>
+      </div>
+      <div class="card">
+        ${!items.length
+          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">history</span><p class="empty-title">No login attempts recorded yet</p></div>`
+          : `<div class="table-wrap"><table>
+              <thead><tr><th>When</th><th>Portal</th><th>Identifier</th><th>Result</th><th>Reason</th><th>IP</th></tr></thead>
+              <tbody>${items.map(r => `
+                <tr>
+                  <td>${new Date(r.createdAt).toLocaleString('en-IN')}</td>
+                  <td><span class="badge badge-default">${esc(r.portal)}</span></td>
+                  <td>${esc(r.identifier || '')}</td>
+                  <td><span class="badge ${r.success ? 'badge-approved' : 'badge-rejected'}">${r.success ? 'Success' : 'Failed'}</span></td>
+                  <td style="font-size:12px;color:var(--txt-sm)">${esc(r.reason || '')}</td>
+                  <td style="font-size:12px;color:var(--txt-sm)">${esc(r.ipAddress || '')}</td>
+                </tr>`).join('')}
+              </tbody></table></div>`}
+        ${pagination ? `<div style="display:flex;justify-content:center;gap:8px;padding:14px">
+          <button class="btn btn-secondary" ${pagination.page<=1?'disabled':''} onclick="loginHistoryPage(${pagination.page-1})">Prev</button>
+          <span style="align-self:center;font-size:12px;color:var(--txt-sm)">Page ${pagination.page} of ${pagination.pages||1}</span>
+          <button class="btn btn-secondary" ${pagination.page>=(pagination.pages||1)?'disabled':''} onclick="loginHistoryPage(${pagination.page+1})">Next</button>
+        </div>` : ''}
+      </div>`;
+
+    document.getElementById('lhPortalFilter')?.addEventListener('change', () => loginHistoryPage(1));
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
+  }
+}
+window.loginHistoryPage = loginHistoryPage;
+
+/* ══════════════════════════════════════════════════════════════════
+   AUDIT LOGS
+   ══════════════════════════════════════════════════════════════════ */
+async function auditLogsPage(page = 1) {
+  const area = document.getElementById('contentArea');
+  try {
+    const qs = new URLSearchParams({ page, limit: 25 });
+    const { data: items, pagination } = await api(`/security/audit-logs?${qs}`);
+
+    area.innerHTML = `
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:16px">Audit Logs</h2>
+      <div class="card">
+        ${!items.length
+          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">fact_check</span><p class="empty-title">No admin actions recorded yet</p></div>`
+          : `<div class="table-wrap"><table>
+              <thead><tr><th>When</th><th>Admin</th><th>Method</th><th>Path</th><th>Status</th><th>IP</th></tr></thead>
+              <tbody>${items.map(r => `
+                <tr>
+                  <td>${new Date(r.createdAt).toLocaleString('en-IN')}</td>
+                  <td>${esc(r.adminName || '—')}</td>
+                  <td><span class="badge badge-default">${esc(r.method)}</span></td>
+                  <td style="font-size:12px;font-family:monospace">${esc(r.path)}</td>
+                  <td><span class="badge ${r.statusCode < 400 ? 'badge-approved' : 'badge-rejected'}">${r.statusCode}</span></td>
+                  <td style="font-size:12px;color:var(--txt-sm)">${esc(r.ipAddress || '')}</td>
+                </tr>`).join('')}
+              </tbody></table></div>`}
+        ${pagination ? `<div style="display:flex;justify-content:center;gap:8px;padding:14px">
+          <button class="btn btn-secondary" ${pagination.page<=1?'disabled':''} onclick="auditLogsPage(${pagination.page-1})">Prev</button>
+          <span style="align-self:center;font-size:12px;color:var(--txt-sm)">Page ${pagination.page} of ${pagination.pages||1}</span>
+          <button class="btn btn-secondary" ${pagination.page>=(pagination.pages||1)?'disabled':''} onclick="auditLogsPage(${pagination.page+1})">Next</button>
+        </div>` : ''}
+      </div>`;
+  } catch (err) {
+    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
+  }
+}
+window.auditLogsPage = auditLogsPage;
 
 // ── 30. PARENT PORTAL ADMIN ───────────────────────────────────────
 async function parentPortalAdminPage() {
