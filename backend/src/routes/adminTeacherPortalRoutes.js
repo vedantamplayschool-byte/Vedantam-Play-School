@@ -11,9 +11,50 @@ import LeaveRequest           from '../models/LeaveRequest.js';
 import Homework               from '../models/Homework.js';
 import { asyncHandler }       from '../utils/asyncHandler.js';
 import { ok }                 from '../utils/apiResponse.js';
+import { upload }             from '../middleware/upload.js';
+import { uploadImage }        from '../services/uploadService.js';
+import { generateTempPassword, generateEmployeeId } from '../utils/generateCredentials.js';
 
 const r = Router();
 r.use(protect, authorize('super_admin', 'admin', 'principal'));
+
+/* ── CREATE TEACHER WITH CREDENTIALS ─────────────────────────────── */
+r.post('/create', upload.single('image'), asyncHandler(async (req, res) => {
+  const payload = { ...req.body };
+
+  // Auto-generate employeeId if not supplied
+  if (!payload.employeeId) {
+    payload.employeeId = await generateEmployeeId(Teacher);
+  }
+
+  // Handle photo upload
+  if (req.file) {
+    const uploaded = await uploadImage(req.file, 'vedantam/teacher-photos', req);
+    payload.photoUrl      = uploaded.url;
+    payload.photoPublicId = uploaded.publicId;
+  }
+
+  // Auto-generate portal password — admin cannot let teachers change it
+  const plainPassword = generateTempPassword(10);
+  payload.password          = plainPassword;
+  payload.mustChangePassword = false; // teachers cannot self-change password
+
+  const teacher = await Teacher.create(payload);
+
+  ok(res, {
+    status: 201,
+    message: 'Teacher created successfully',
+    data: teacher,
+    credentials: {
+      name:       teacher.name,
+      employeeId: teacher.employeeId,
+      email:      teacher.email   || null,
+      phone:      teacher.phone   || null,
+      password:   plainPassword,
+      loginNote:  'Teacher uses this password to log in. Password cannot be changed by the teacher — only admin can reset it.'
+    }
+  });
+}));
 
 /* ── SET / RESET TEACHER PORTAL PASSWORD ─────────────────────────── */
 r.put('/:id/portal-access', asyncHandler(async (req, res) => {
@@ -23,10 +64,10 @@ r.put('/:id/portal-access', asyncHandler(async (req, res) => {
   }
   const teacher = await Teacher.findById(req.params.id);
   if (!teacher) { const e = new Error('Teacher not found'); e.status = 404; throw e; }
-  teacher.password = password;
-  teacher.mustChangePassword = true;
+  teacher.password           = password;
+  teacher.mustChangePassword = false; // teachers cannot self-change password
   await teacher.save();
-  ok(res, { message: 'Teacher portal access updated. Teacher must change password on first login.' });
+  ok(res, { message: 'Teacher portal password updated.' });
 }));
 
 /* ── REVOKE PORTAL ACCESS ────────────────────────────────────────── */

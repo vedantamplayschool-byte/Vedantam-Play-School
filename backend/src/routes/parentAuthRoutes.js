@@ -17,6 +17,9 @@ r.post('/logout', parentLogout);
 r.use(protectParent);
 r.get('/me',              parentMe);
 r.put('/profile',         updateParentProfile);
-r.put('/change-password', changeParentPassword);
+// Password change is admin-only — parents use the password given by admin
+r.put('/change-password', (req, res) => {
+  res.status(403).json({ success: false, message: 'Password can only be changed by the school admin. Please contact admin to reset your password.' });
+});
 
 export default r;

@@ -1116,7 +1116,10 @@ function openForm(key, config, id) {
       }
 
       const method   = id ? 'PATCH' : 'POST';
-      const endpoint = `${config.endpoint}${id ? '/' + id : ''}`;
+      // Teacher creation uses dedicated onboard endpoint that returns credentials
+      const endpoint = (key === 'teachers' && !id)
+        ? '/teacher-admin/create'
+        : `${config.endpoint}${id ? '/' + id : ''}`;
       const result   = await api(endpoint, { method, body: fd });
 
       // Upload document files for students
@@ -1139,6 +1142,17 @@ function openForm(key, config, id) {
 
       host.innerHTML = '';
       if (!Object.keys(docFiles).length) toast(`${config.label} ${id ? 'updated' : 'created'} successfully!`, 'success');
+
+      // Show parent credentials after new student creation
+      if (key === 'students' && !id && result?.parentCredentials?.isNew) {
+        showParentCredentialsModal(result.parentCredentials);
+      }
+
+      // Show teacher credentials after new teacher creation
+      if (key === 'teachers' && !id && result?.credentials) {
+        showTeacherCredentialsModal(result.credentials);
+      }
+
       navigate(key);
     } catch (err) {
       msg.innerHTML = `<div class="alert alert-error"><span class="material-icons-round">error</span>${esc(err.message)}</div>`;
@@ -1267,25 +1281,76 @@ function showParentCredentialsModal({ portalEmail, password }) {
   wrap.className = 'modal-overlay';
   wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
   wrap.innerHTML = `
-    <div class="card" style="max-width:380px;width:100%;padding:24px;text-align:center">
-      <div style="font-size:32px;margin-bottom:4px">🎉</div>
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Parent Portal Access Ready</h3>
-      <p style="font-size:12px;color:var(--txt-sm);margin-bottom:16px">Share these login details with the parent. They'll be asked to set their own password on first login.</p>
-      <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:16px">
-        <div style="margin-bottom:8px"><span style="color:var(--txt-sm)">Email/ID:</span><br><strong id="pcEmail">${esc(portalEmail)}</strong></div>
-        <div><span style="color:var(--txt-sm)">Password:</span><br><strong id="pcPass">${esc(password)}</strong></div>
+    <div class="card" style="max-width:400px;width:100%;padding:28px;text-align:center;border-radius:20px">
+      <div style="font-size:36px;margin-bottom:6px">🎉</div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">Parent Portal Access Ready</h3>
+      <p style="font-size:12px;color:var(--txt-sm);margin-bottom:18px;line-height:1.6">Share these login details with the parent. <strong>They cannot change the password themselves</strong> — only admin can reset it.</p>
+      <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:18px;border:1px solid rgba(0,0,0,.06)">
+        <div style="margin-bottom:10px">
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Login Email / ID</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(portalEmail)}</strong>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Password</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(password)}</strong>
+        </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" style="flex:1" id="pcCopyBtn">📋 Copy</button>
+        <button class="btn btn-secondary" style="flex:1" id="pcCopyBtn">📋 Copy Credentials</button>
         <button class="btn btn-primary" style="flex:1" id="pcCloseBtn">Done</button>
       </div>
     </div>`;
   document.body.appendChild(wrap);
   wrap.querySelector('#pcCopyBtn').onclick = () => {
-    navigator.clipboard?.writeText(`Vedantam Play School Parent Portal\nLogin: ${portalEmail}\nPassword: ${password}`);
-    toast('Credentials copied', 'success');
+    navigator.clipboard?.writeText(`Vedantam Play School — Parent Portal\nLogin: ${portalEmail}\nPassword: ${password}\nNote: Password can only be reset by admin.`);
+    toast('Credentials copied to clipboard', 'success');
   };
   wrap.querySelector('#pcCloseBtn').onclick = () => wrap.remove();
+}
+
+/* Shown right after teacher creation: display credentials for the admin to share. */
+function showTeacherCredentialsModal({ name, employeeId, email, phone, password }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-overlay';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+  const loginId = email || phone || '';
+  wrap.innerHTML = `
+    <div class="card" style="max-width:420px;width:100%;padding:28px;text-align:center;border-radius:20px">
+      <div style="font-size:36px;margin-bottom:6px">👩‍🏫</div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">Teacher Account Created</h3>
+      <p style="font-size:12px;color:var(--txt-sm);margin-bottom:18px;line-height:1.6">Share these credentials with <strong>${esc(name||'the teacher')}</strong>. <strong>They cannot change the password themselves</strong> — only admin can reset it.</p>
+      <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:18px;border:1px solid rgba(0,0,0,.06)">
+        ${employeeId ? `<div style="margin-bottom:10px">
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Employee ID</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(employeeId)}</strong>
+        </div>` : ''}
+        ${loginId ? `<div style="margin-bottom:10px">
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Login (Email / Phone)</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(loginId)}</strong>
+        </div>` : ''}
+        <div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Password</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(password)}</strong>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" style="flex:1" id="tcCopyBtn">📋 Copy Credentials</button>
+        <button class="btn btn-primary" style="flex:1" id="tcCloseBtn">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector('#tcCopyBtn').onclick = () => {
+    const text = [
+      'Vedantam Play School — Teacher Portal',
+      employeeId ? `Employee ID: ${employeeId}` : '',
+      loginId    ? `Login: ${loginId}` : '',
+      `Password: ${password}`,
+      'Note: Password can only be reset by admin.'
+    ].filter(Boolean).join('\n');
+    navigator.clipboard?.writeText(text);
+    toast('Credentials copied to clipboard', 'success');
+  };
+  wrap.querySelector('#tcCloseBtn').onclick = () => wrap.remove();
 }
 
 async function archiveStudent(id) {
@@ -3103,7 +3168,7 @@ async function teacherPortalPage() {
     </div>
     <div class="alert alert-info" style="margin-bottom:16px">
       <span class="material-icons-round">info</span>
-      Set a temporary password to activate a teacher's portal access. The teacher must change it on first login.
+      Set a password to activate a teacher's portal access. <strong>Teachers cannot change their own password</strong> — only admin can reset it here.
     </div>
     <div class="card">
       ${!teachers.length
@@ -3398,7 +3463,7 @@ async function parentPortalAdminPage() {
 
       <div class="alert alert-info" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
         <span class="material-icons-round">info</span>
-        Set a portal email and temporary password to activate a parent's portal access. Parents must change their password on first login.
+        Set a portal email and password to activate a parent's portal access. <strong>Parents cannot change their own password</strong> — only admin can reset it here.
       </div>
 
       <div class="card" id="ppList">

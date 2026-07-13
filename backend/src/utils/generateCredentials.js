@@ -21,3 +21,36 @@ export function fallbackPortalEmail(phone) {
   const digits = String(phone || '').replace(/\D/g, '') || crypto.randomBytes(4).toString('hex');
   return `${digits}@parent.vedantam.school`;
 }
+
+/**
+ * Auto-generate a teacher employee ID in the format VPS/T/YYYY/NNN.
+ * Pass the Teacher mongoose model so this utility stays model-agnostic.
+ */
+export async function generateEmployeeId(TeacherModel) {
+  const year   = new Date().getFullYear();
+  const prefix = `VPS/T/${year}/`;
+  const last   = await TeacherModel.findOne(
+    { employeeId: { $regex: `^${prefix.replace(/\//g, '\\/')}` } },
+    { employeeId: 1 }
+  ).sort({ employeeId: -1 });
+  const seq = last ? parseInt(last.employeeId.split('/').pop(), 10) + 1 : 1;
+  return `${prefix}${String(seq).padStart(3, '0')}`;
+}
+
+/**
+ * Auto-generate a roll number for a student, e.g. PG/A/001 or NUR/001.
+ * Pass the Student mongoose model.
+ */
+export async function generateRollNumber(StudentModel, program, section) {
+  const codes = { 'Play Group': 'PG', Nursery: 'NUR', LKG: 'LKG', UKG: 'UKG' };
+  const code  = codes[program] || (program || 'STU').slice(0, 3).toUpperCase();
+  const sec   = section ? `/${String(section).toUpperCase()}` : '';
+  const prefix = `${code}${sec}/`;
+  const escaped = prefix.replace(/\//g, '\\/');
+  const last  = await StudentModel.findOne(
+    { rollNumber: { $regex: `^${escaped}` } },
+    { rollNumber: 1 }
+  ).sort({ rollNumber: -1 });
+  const seq = last ? parseInt(last.rollNumber.split('/').pop(), 10) + 1 : 1;
+  return `${prefix}${String(seq).padStart(3, '0')}`;
+}
