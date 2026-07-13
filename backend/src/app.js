@@ -109,6 +109,20 @@ if (env.adminSecretPath) {
   });
 }
 
+/**
+ * Returns the current admin secret path so the homepage's hidden entry
+ * gesture (logo taps on mobile, keyboard combo on desktop) can redirect
+ * there without the path ever being hardcoded into a static, committed
+ * file. Not linked from any visible page — only called by that gesture.
+ * This is convenience/obscurity, not the access control boundary: the
+ * boundary is /admin.html always 404ing and the admin page only ever
+ * being served at the secret path itself.
+ */
+app.get('/api/v1/admin-entry', (req, res) => {
+  if (!env.adminSecretPath) return res.status(404).json({ success: false, message: 'Not configured' });
+  res.json({ success: true, path: env.adminSecretPath });
+});
+
 // Block direct, guessable access to the admin page before the static
 // middleware below ever gets a chance to serve the file.
 app.get('/admin.html', notFound);

@@ -15,12 +15,49 @@ const form=document.getElementById('admissionForm');const success=document.getEl
 const newsletter=document.getElementById('newsletterForm');newsletter?.addEventListener('submit',async e=>{e.preventDefault();const status=document.getElementById('newsletterStatus');const email=new FormData(newsletter).get('email');try{await api(EP.newsletter||'/newsletter',{method:'POST',body:JSON.stringify({email})});status.textContent='Subscribed successfully.';status.className='form-message success';newsletter.reset()}catch(err){status.textContent=err.message;status.className='form-message error'}});
 document.querySelectorAll('.btn,.learn,.contact-pills a').forEach(btn=>btn.addEventListener('click',e=>{const rip=document.createElement('span');const r=btn.getBoundingClientRect();const s=Math.max(r.width,r.height);rip.style.cssText=`position:absolute;width:${s}px;height:${s}px;left:${e.clientX-r.left-s/2}px;top:${e.clientY-r.top-s/2}px;border-radius:50%;background:rgba(255,255,255,.35);transform:scale(0);animation:ripple .6s linear;pointer-events:none`;btn.appendChild(rip);rip.onanimationend=()=>rip.remove()}));const st=document.createElement('style');st.textContent='@keyframes ripple{to{transform:scale(3);opacity:0}}';document.head.appendChild(st);backToTop?.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
 
-/* Admin Portal is intentionally not listed anywhere on the public site,
-   and /admin.html itself always 404s (blocked server-side in
-   backend/src/app.js). The admin page only exists at a secret URL —
-   your domain + "/" + the ADMIN_SECRET_PATH secret — which staff
-   should bookmark directly. That secret is deliberately never embedded
-   in any public file (this one included), on any device, so it can't
-   be discovered by reading the site's source. */
+/* ── Hidden admin entry ────────────────────────────────────────────
+   Admin Portal is intentionally not listed anywhere on the public
+   site, and /admin.html itself always 404s (blocked server-side in
+   backend/src/app.js). The real access boundary is server-side: the
+   admin page is only ever served at the secret ADMIN_SECRET_PATH URL.
+   These two gestures are just a convenient, unlisted way for staff to
+   reach that URL — the path itself is fetched on demand from the
+   server (never hardcoded here) so it isn't sitting in this file's
+   source for anyone to read. Note this is obscurity, not security: on
+   a shared/public device someone could still discover the path by
+   watching network requests while performing the gesture. */
+(function(){
+  async function goToAdmin(){
+    try{
+      const r=await fetch('/api/v1/admin-entry');
+      const d=await r.json();
+      if(d && d.path) location.href='/'+d.path;
+    }catch(e){ /* silent: no visible trace on failure */ }
+  }
+
+  // Mobile / any device: 7 taps on the homescreen logo within 4s.
+  const logo=document.getElementById('brandLogo');
+  if(logo){
+    let taps=0,timer=null;
+    logo.addEventListener('click',e=>{
+      taps++;
+      clearTimeout(timer);
+      timer=setTimeout(()=>{taps=0},4000);
+      if(taps>=7){
+        e.preventDefault();
+        taps=0;clearTimeout(timer);
+        goToAdmin();
+      }
+    });
+  }
+
+  // Desktop: Ctrl + Alt + A.
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey && e.altKey && (e.key==='a'||e.key==='A')){
+      e.preventDefault();
+      goToAdmin();
+    }
+  });
+})();
 
 const contactForm=document.getElementById('contactForm');contactForm?.addEventListener('submit',async e=>{e.preventDefault();let valid=true;contactForm.querySelectorAll('[required]').forEach(f=>{const ok=f.checkValidity()&&f.value.trim();f.classList.toggle('field-error',!ok);if(!ok)valid=false});if(!valid)return;const button=contactForm.querySelector('button[type="submit"]');button.disabled=true;try{const data=Object.fromEntries(new FormData(contactForm).entries());await api(EP.contacts||'/contacts',{method:'POST',body:JSON.stringify(data)});setFormMessage(contactForm,'Thank you! Your message has been sent.','success');contactForm.reset()}catch(err){setFormMessage(contactForm,err.message,'error')}finally{button.disabled=false}});contactForm?.querySelectorAll('input,textarea').forEach(f=>f.addEventListener('input',()=>f.classList.remove('field-error')));
