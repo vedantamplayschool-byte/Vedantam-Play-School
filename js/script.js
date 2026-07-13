@@ -51,9 +51,12 @@ document.querySelectorAll('.btn,.learn,.contact-pills a').forEach(btn=>btn.addEv
     });
   }
 
-  // Desktop: Ctrl + Alt + A.
+  // Desktop: Ctrl + Alt + A. Uses e.code (physical key), not e.key, because
+  // on some keyboards/OSes (notably Mac, and some non-US layouts where
+  // Ctrl+Alt acts as AltGr) holding Alt changes what e.key reports for "A"
+  // (e.g. becomes "å"), which silently broke the e.key-based check.
   document.addEventListener('keydown',e=>{
-    if(e.ctrlKey && e.altKey && (e.key==='a'||e.key==='A')){
+    if(e.ctrlKey && e.altKey && e.code==='KeyA'){
       e.preventDefault();
       goToAdmin();
     }
