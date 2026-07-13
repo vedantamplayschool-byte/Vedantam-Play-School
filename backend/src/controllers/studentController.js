@@ -79,10 +79,14 @@ export const createStudent = asyncHandler(async (req, res) => {
     const lookupPhone = fPhone || mPhone;
 
     if (lookupPhone) {
+      // Build $or only from non-empty phone values to avoid matching
+      // documents where the phone field is null/missing (undefined clause bug).
+      const phoneOrClauses = [];
+      if (fPhone) phoneOrClauses.push({ fatherPhone: fPhone });
+      if (mPhone) phoneOrClauses.push({ motherPhone: mPhone });
+
       // Find existing parent or create new one
-      let parent = await Parent.findOne({
-        $or: [{ fatherPhone: fPhone || undefined }, { motherPhone: mPhone || undefined }]
-      }).select('+password');
+      let parent = await Parent.findOne({ $or: phoneOrClauses }).select('+password');
 
       if (!parent) {
         const plainPassword = generateTempPassword(8);
