@@ -33,7 +33,7 @@
         <span><strong>Vedantam Play School</strong><small>Play · Learn · Grow</small></span>
       </a>
       <nav class="nav-links" id="navLinks" aria-label="Primary navigation">
-        <a href="#home">Home</a><a href="#programs">Programs</a><a href="#facilities">Facilities</a><a href="#gallery">Gallery</a><a href="#notices">Notices</a><a href="#teachers">Teachers</a><a href="#enquiry">Enquiry</a><a href="#contact">Contact</a><a href="#portals">Portals</a>
+        <a href="#home">Home</a><a href="#programs">Programs</a><a href="#facilities">Facilities</a><a href="#gallery">Gallery</a><a href="#notices">Notices</a><a href="#enquiry">Enquiry</a><a href="#contact">Contact</a><a href="#portals">Portals</a>
         <a class="nav-cta" href="#enquiry">Admission Open</a>
       </nav>
       <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
@@ -96,7 +96,6 @@
       </div>
     </section>
 
-
     <section class="section gallery" id="gallery">
       <div class="container">
         <div class="section-head reveal"><span class="eyebrow">Gallery</span><h2>Moments from our happy campus</h2><p>Photos are loaded from the school API when available.</p></div>
@@ -114,13 +113,6 @@
       </div>
     </section>
 
-    <section class="section teachers" id="teachers">
-      <div class="container">
-        <div class="section-head reveal"><span class="eyebrow">Teachers</span><h2>Caring mentors for early learners</h2></div>
-        <div class="card-grid dynamic-grid" id="teacherGrid"></div>
-      </div>
-    </section>
-
     <section class="section testimonials" id="testimonials">
       <div class="container">
         <div class="section-head reveal"><span class="eyebrow">Testimonials</span><h2>What parents say</h2></div>
@@ -132,13 +124,13 @@
       <div class="container enquiry-grid">
         <div class="reveal"><span class="eyebrow">Admissions Open</span><h2>Send an enquiry today</h2><p>Fill the form or contact us directly. Both phone numbers support call and WhatsApp.</p><div class="contact-pills"><a href="tel:+919232711263">Call 9232711263</a><a href="https://wa.me/919232711263" target="_blank" rel="noopener">WhatsApp 9232711263</a><a href="tel:+917812318480">Call 7812318480</a><a href="https://wa.me/917812318480" target="_blank" rel="noopener">WhatsApp 7812318480</a></div></div>
         <form class="enquiry-form reveal" id="admissionForm" novalidate>
-          <div class="form-success" id="formSuccess" hidden>🎉 Thank you! Please call or WhatsApp us to complete your enquiry.</div>
-          <label>Student Name <input name="studentName" required placeholder="Student name" /></label>
-          <label>Parent Name <input name="parentName" required placeholder="Parent name" /></label>
-          <label>Phone <input name="phone" type="tel" required pattern="[0-9+\-() ]{7,20}" placeholder="Phone number" /></label>
-          <label>Age <input name="age" required placeholder="Child age" /></label>
-          <label>Program Interested <select name="program" required><option value="">Select program</option><option>Play Group</option><option>Nursery</option><option>LKG</option><option>UKG</option></select></label>
-          <label class="wide">Message <textarea name="message" rows="4" placeholder="Your message"></textarea></label>
+          <div class="form-success" id="formSuccess" hidden>🎉 Thank you! We will contact you soon.</div>
+          <label>Child's Name <input name="name" required placeholder="Child's full name" /></label>
+          <label>Parent / Guardian Name <input name="parentName" required placeholder="Parent name" /></label>
+          <label>Mobile Number <input name="phone" type="tel" required pattern="[0-9+\-() ]{7,20}" placeholder="Mobile number" /></label>
+          <label>Child's Age <input name="age" required placeholder="e.g. 3 years" /></label>
+          <label>Class Applied For <select name="program" required><option value="">Select class</option><option>Play Group</option><option>Nursery</option><option>LKG</option><option>UKG</option></select></label>
+          <label class="wide">Message (Optional) <textarea name="message" rows="3" placeholder="Any additional information"></textarea></label>
           <button class="btn primary wide" type="submit">Submit Enquiry</button>
         </form>
       </div>
@@ -178,20 +170,7 @@
           <article class="contact-card reveal"><h3>✉️ Email</h3><p><a href="mailto:vedantamplayschool@gmail.com">vedantamplayschool@gmail.com</a></p></article>
           <article class="contact-card reveal"><h3>📸 Instagram</h3><p><a href="https://www.instagram.com/vedantamplayschool" target="_blank" rel="noopener">@vedantamplayschool</a></p></article>
         </div>
-        <div class="contact-form-wrap reveal">
-          <form class="contact-form" id="contactForm" novalidate>
-            <h3>Send us a message</h3>
-            <label>Name <input name="name" required placeholder="Your name" /></label>
-            <label>Phone <input name="phone" type="tel" required pattern="[0-9+\-() ]{7,20}" placeholder="Phone number" /></label>
-            <label>Email <input name="email" type="email" placeholder="Email address" /></label>
-            <label>Subject <input name="subject" placeholder="Subject" /></label>
-            <label class="wide">Message <textarea name="message" rows="4" required placeholder="How can we help?" ></textarea></label>
-            <button class="btn primary wide" type="submit">Send Message</button>
-          </form>
-        </div>
-        <div class="map-placeholder reveal">Map location placeholder — Google Map will be embedded when available.</div>
       </div>
-        <form class="newsletter-form reveal" id="newsletterForm" novalidate><label>Subscribe for school updates <input name="email" type="email" required placeholder="Parent email address" /></label><button class="btn primary" type="submit">Subscribe</button><span id="newsletterStatus" role="status"></span></form>
     </section>
   </main>
 

@@ -875,7 +875,7 @@ button, input, select, textarea { font: inherit; }
   transform: translateY(28px);
   transition: opacity .65s ease, transform .65s ease;
 }
-.reveal.visible {
+.reveal.revealed {
   opacity: 1;
   transform: none;
 }

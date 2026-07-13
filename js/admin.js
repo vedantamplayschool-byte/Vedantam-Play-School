@@ -632,11 +632,11 @@ const RESOURCES = {
       { name: 'photo',         label: 'Upload Photo',                     type: 'file',     wide: true },
       /* ── Important Documents ── */
       { name: '_s11',          label: 'Important Documents  (PDF or Image — saved to student file)', type: 'separator', icon: 'folder_special', wide: true },
-      { name: 'doc_aadhar',    label: 'Student Aadhar Card',              type: 'docfile', docType: 'aadhar',     wide: true },
-      { name: 'doc_birth',     label: 'Birth Certificate',                type: 'docfile', docType: 'birth_cert', wide: true },
-      { name: 'doc_parent_id', label: 'Parent Aadhar / ID Proof',         type: 'docfile', docType: 'parent_id',  wide: true },
-      { name: 'doc_address',   label: 'Address Proof',                    type: 'docfile', docType: 'address',    wide: true },
-      { name: 'doc_other',     label: 'Any Other Important Document',     type: 'docfile', docType: 'other',      wide: true },
+      { name: 'doc_aadhar',        label: 'Child Aadhar Card',            type: 'docfile', docType: 'student_aadhar', wide: true },
+      { name: 'doc_birth',         label: 'Birth Certificate',            type: 'docfile', docType: 'birth_cert',    wide: true },
+      { name: 'doc_father_aadhar', label: "Father's Aadhar Card",         type: 'docfile', docType: 'father_aadhar', wide: true },
+      { name: 'doc_mother_aadhar', label: "Mother's Aadhar Card",         type: 'docfile', docType: 'mother_aadhar', wide: true },
+      { name: 'doc_samagra',       label: 'Samagra ID',                   type: 'docfile', docType: 'samagra_id',    wide: true },
       /* ── Notes ── */
       { name: '_s12',          label: 'Internal Notes',                   type: 'separator', icon: 'notes',             wide: true },
       { name: 'notes',         label: 'Notes',                            type: 'textarea', wide: true }
@@ -663,14 +663,38 @@ const RESOURCES = {
     noCreate: true,
     admissionActions: true,
     fields: [
-      { name: 'studentName', label: 'Student Name', type: 'text',    required: true },
-      { name: 'parentName',  label: 'Parent Name',  type: 'text',    required: true },
-      { name: 'phone',       label: 'Phone',        type: 'tel',     required: true },
-      { name: 'email',       label: 'Email',        type: 'email' },
-      { name: 'age',         label: 'Age',          type: 'text',    required: true },
-      { name: 'gender',      label: 'Gender',       type: 'select',  options: ['Male', 'Female', 'Other'] },
-      { name: 'program',     label: 'Program',      type: 'select',  required: true, options: PROGRAMS },
-      { name: 'message',     label: 'Notes',        type: 'textarea', wide: true }
+      /* ── Student Details ── */
+      { name: '_a1',            label: 'Student Details',              type: 'separator', icon: 'child_care',  wide: true },
+      { name: 'studentName',    label: 'Name of the Child',            type: 'text',    required: true },
+      { name: 'program',        label: 'Class Applied For',            type: 'select',  required: true, options: PROGRAMS },
+      { name: 'gender',         label: 'Gender',                       type: 'select',  options: ['Male', 'Female', 'Other'] },
+      { name: 'dateOfBirth',    label: 'Date of Birth',                type: 'date' },
+      { name: 'age',            label: 'Age',                          type: 'text' },
+      { name: 'nationality',    label: 'Nationality',                  type: 'text' },
+      { name: 'religion',       label: 'Religion',                     type: 'text' },
+      { name: 'caste',          label: 'Caste / Category',             type: 'text' },
+      { name: 'admissionDate',  label: 'Admission Date',               type: 'date' },
+      /* ── Address ── */
+      { name: '_a2',            label: 'Address',                      type: 'separator', icon: 'place',       wide: true },
+      { name: 'address',        label: 'Full Address',                 type: 'textarea', wide: true },
+      /* ── Father's Information ── */
+      { name: '_a3',            label: "Father's Information",         type: 'separator', icon: 'man',         wide: true },
+      { name: 'fatherName',     label: "Father's Name",               type: 'text' },
+      { name: 'fatherPhone',    label: "Father's Mobile Number",      type: 'tel' },
+      { name: 'fatherOccupation', label: "Father's Occupation",       type: 'text' },
+      /* ── Mother's Information ── */
+      { name: '_a4',            label: "Mother's Information",         type: 'separator', icon: 'woman',       wide: true },
+      { name: 'motherName',     label: "Mother's Name",               type: 'text' },
+      { name: 'motherPhone',    label: "Mother's Mobile Number",      type: 'tel' },
+      { name: 'motherOccupation', label: "Mother's Occupation",       type: 'text' },
+      /* ── Primary Contact ── */
+      { name: '_a5',            label: 'Primary Contact (for records)',type: 'separator', icon: 'contacts',    wide: true },
+      { name: 'parentName',     label: 'Parent / Guardian Name',      type: 'text',    required: true },
+      { name: 'phone',          label: 'Contact Mobile Number',       type: 'tel',     required: true },
+      { name: 'email',          label: 'Email (optional)',            type: 'email' },
+      /* ── Notes ── */
+      { name: '_a6',            label: 'Additional Notes',             type: 'separator', icon: 'notes',       wide: true },
+      { name: 'message',        label: 'Notes / Remarks',             type: 'textarea', wide: true }
     ]
   },
 
@@ -1024,8 +1048,8 @@ function buildRow(key, config, item, showEdit, showDelete) {
 }
 
 // ── 13. FORM ───────────────────────────────────────────────────────
-const DOC_FIELD_NAMES = ['doc_aadhar', 'doc_birth', 'doc_parent_id', 'doc_address', 'doc_other'];
-const DOC_FIELD_TYPES = { doc_aadhar: 'aadhar', doc_birth: 'birth_cert', doc_parent_id: 'parent_id', doc_address: 'address', doc_other: 'other' };
+const DOC_FIELD_NAMES = ['doc_aadhar', 'doc_birth', 'doc_father_aadhar', 'doc_mother_aadhar', 'doc_samagra'];
+const DOC_FIELD_TYPES = { doc_aadhar: 'student_aadhar', doc_birth: 'birth_cert', doc_father_aadhar: 'father_aadhar', doc_mother_aadhar: 'mother_aadhar', doc_samagra: 'samagra_id' };
 
 function openForm(key, config, id) {
   const host = document.getElementById('formHost');
@@ -1145,7 +1169,11 @@ function openForm(key, config, id) {
 
       // Show parent credentials after new student creation
       if (key === 'students' && !id && result?.parentCredentials?.isNew) {
-        showParentCredentialsModal(result.parentCredentials);
+        showParentCredentialsModal({
+          ...result.parentCredentials,
+          admissionNumber: result.data?.admissionNumber,
+          rollNumber:      result.data?.rollNumber
+        });
       }
 
       // Show teacher credentials after new teacher creation
@@ -1276,18 +1304,26 @@ async function convertAdmission(admissionId) {
 
 /* Shown right after enrollment: the parent-portal login just generated for
    this family, so the admin can copy/share it immediately. */
-function showParentCredentialsModal({ portalEmail, password }) {
+function showParentCredentialsModal({ portalEmail, password, admissionNumber, rollNumber }) {
   const wrap = document.createElement('div');
   wrap.className = 'modal-overlay';
-  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;overflow-y:auto';
   wrap.innerHTML = `
-    <div class="card" style="max-width:400px;width:100%;padding:28px;text-align:center;border-radius:20px">
+    <div class="card" style="max-width:440px;width:100%;padding:28px;text-align:center;border-radius:20px;margin:auto">
       <div style="font-size:36px;margin-bottom:6px">🎉</div>
-      <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">Parent Portal Access Ready</h3>
-      <p style="font-size:12px;color:var(--txt-sm);margin-bottom:18px;line-height:1.6">Share these login details with the parent. <strong>They cannot change the password themselves</strong> — only admin can reset it.</p>
-      <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:18px;border:1px solid rgba(0,0,0,.06)">
-        <div style="margin-bottom:10px">
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Login Email / ID</div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">Student Admission Successful</h3>
+      <p style="font-size:12px;color:var(--txt-sm);margin-bottom:18px;line-height:1.6">Share these details with the parent. <strong>Password can only be reset by admin.</strong></p>
+      <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:18px;border:1px solid rgba(0,0,0,.06);display:grid;gap:12px">
+        ${admissionNumber ? `<div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Admission Number</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(admissionNumber)}</strong>
+        </div>` : ''}
+        ${rollNumber ? `<div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Roll Number</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(rollNumber)}</strong>
+        </div>` : ''}
+        <div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Parent Portal Login (User ID)</div>
           <strong style="font-size:14px;color:var(--primary)">${esc(portalEmail)}</strong>
         </div>
         <div>
@@ -1296,14 +1332,18 @@ function showParentCredentialsModal({ portalEmail, password }) {
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" style="flex:1" id="pcCopyBtn">📋 Copy Credentials</button>
+        <button class="btn btn-secondary" style="flex:1" id="pcCopyBtn">📋 Copy All</button>
         <button class="btn btn-primary" style="flex:1" id="pcCloseBtn">Done</button>
       </div>
     </div>`;
   document.body.appendChild(wrap);
   wrap.querySelector('#pcCopyBtn').onclick = () => {
-    navigator.clipboard?.writeText(`Vedantam Play School — Parent Portal\nLogin: ${portalEmail}\nPassword: ${password}\nNote: Password can only be reset by admin.`);
-    toast('Credentials copied to clipboard', 'success');
+    const lines = ['Vedantam Play School — Student Admission Details'];
+    if (admissionNumber) lines.push(`Admission No: ${admissionNumber}`);
+    if (rollNumber)      lines.push(`Roll No: ${rollNumber}`);
+    lines.push(`Parent Portal Login: ${portalEmail}`, `Password: ${password}`, 'Note: Password can only be reset by admin.');
+    navigator.clipboard?.writeText(lines.join('\n'));
+    toast('Details copied to clipboard', 'success');
   };
   wrap.querySelector('#pcCloseBtn').onclick = () => wrap.remove();
 }
