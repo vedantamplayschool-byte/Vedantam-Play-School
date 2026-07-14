@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "N798BYlahGU90CSe6KxNi"
+uri = "file://id-cards/both-cards-preview.jpg"
+type = "image"
+title = "Vedantam Play School — ID Cards (CR80)"
