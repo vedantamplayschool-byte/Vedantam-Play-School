@@ -577,6 +577,40 @@ const RESOURCES = {
       <td>${esc(r.program)}</td>`,
     hasImage: true,
     studentActions: true,
+    /* Fields shown ONLY when creating a new student (lean intake form) */
+    createFields: [
+      /* ── Child Details ── */
+      { name: '_c1',              label: 'Child Details',                type: 'separator', icon: 'child_care',  wide: true },
+      { name: 'studentName',      label: 'Name of the Child',            type: 'text',    required: true },
+      { name: 'program',          label: 'Class Applied For',            type: 'select',  required: true, options: PROGRAMS },
+      { name: 'gender',           label: 'Gender',                       type: 'select',  options: ['Male', 'Female', 'Other'] },
+      { name: 'dateOfBirth',      label: 'Date of Birth',                type: 'date' },
+      { name: 'nationality',      label: 'Nationality',                  type: 'text' },
+      { name: 'religion',         label: 'Religion',                     type: 'text' },
+      { name: 'category',         label: 'Caste / Category',             type: 'select',  options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
+      { name: 'admissionDate',    label: 'Admission Date',               type: 'date' },
+      /* ── Address ── */
+      { name: '_c2',              label: 'Address',                      type: 'separator', icon: 'place',       wide: true },
+      { name: 'address',          label: 'Full Address',                 type: 'textarea', wide: true },
+      /* ── Father's Information ── */
+      { name: '_c3',              label: "Father's Information",         type: 'separator', icon: 'man',         wide: true },
+      { name: 'fatherName',       label: "Father's Name",                type: 'text' },
+      { name: 'fatherPhone',      label: "Father's Mobile Number",       type: 'tel' },
+      { name: 'fatherOccupation', label: "Father's Occupation",          type: 'text' },
+      /* ── Mother's Information ── */
+      { name: '_c4',              label: "Mother's Information",         type: 'separator', icon: 'woman',       wide: true },
+      { name: 'motherName',       label: "Mother's Name",                type: 'text' },
+      { name: 'motherPhone',      label: "Mother's Mobile Number",       type: 'tel' },
+      { name: 'motherOccupation', label: "Mother's Occupation",          type: 'text' },
+      /* ── Documents ── */
+      { name: '_c5',              label: 'Documents  (PDF or Image)',    type: 'separator', icon: 'folder_special', wide: true },
+      { name: 'doc_aadhar',        label: 'Child Aadhar Card',           type: 'docfile', docType: 'student_aadhar', wide: true },
+      { name: 'doc_birth',         label: 'Birth Certificate',           type: 'docfile', docType: 'birth_cert',    wide: true },
+      { name: 'doc_father_aadhar', label: "Father's Aadhar Card",        type: 'docfile', docType: 'father_aadhar', wide: true },
+      { name: 'doc_mother_aadhar', label: "Mother's Aadhar Card",        type: 'docfile', docType: 'mother_aadhar', wide: true },
+      { name: 'doc_samagra',       label: 'Samagra ID',                  type: 'docfile', docType: 'samagra_id',    wide: true }
+    ],
+    /* Full fields list used when EDITING an existing student */
     fields: [
       /* ── Student Information ── */
       { name: '_s1',           label: 'Student Information',              type: 'separator', icon: 'child_care',        wide: true },
@@ -1066,7 +1100,7 @@ function openForm(key, config, id) {
       <h2>${isEdit ? 'Edit' : 'Add New'} ${esc(config.label)}</h2>
       <form id="editForm" novalidate>
         <div class="form-grid">
-          ${config.fields.map(f => {
+          ${((!isEdit && config.createFields) ? config.createFields : config.fields).map(f => {
             if (f.type === 'separator') return renderField(f, null);
             if (f.type === 'docfile')   return renderField(f, null);
             // Resolve dot-notation paths (e.g. emergencyContact.name)
@@ -1136,7 +1170,18 @@ function openForm(key, config, id) {
           fd.delete(n);
         });
         // Also remove separator pseudo-fields
-        for (const [k] of [...fd.entries()]) { if (k.startsWith('_s')) fd.delete(k); }
+        for (const [k] of [...fd.entries()]) { if (k.startsWith('_s') || k.startsWith('_c')) fd.delete(k); }
+        // For new student (lean create form): derive parentName & phone from father's details
+        if (!id) {
+          if (!fd.get('parentName') || !fd.get('parentName').trim()) {
+            const fn = (fd.get('fatherName') || '').trim();
+            if (fn) fd.set('parentName', fn);
+          }
+          if (!fd.get('phone') || !fd.get('phone').trim()) {
+            const fp = (fd.get('fatherPhone') || fd.get('motherPhone') || '').trim();
+            if (fp) fd.set('phone', fp);
+          }
+        }
       }
 
       const method   = id ? 'PATCH' : 'POST';
