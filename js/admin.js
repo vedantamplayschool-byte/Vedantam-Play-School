@@ -575,12 +575,11 @@ const RESOURCES = {
         <div class="td-sub">${esc(r.phone)}</div>
       </td>
       <td>${esc(r.program)}</td>`,
-    hasImage: true,
+    hasImage: false,
     studentActions: true,
-    /* Fields shown ONLY when creating a new student (lean intake form) */
-    createFields: [
+    fields: [
       /* ── Child Details ── */
-      { name: '_c1',              label: 'Child Details',                type: 'separator', icon: 'child_care',  wide: true },
+      { name: '_s1',              label: 'Child Details',                type: 'separator', icon: 'child_care',     wide: true },
       { name: 'studentName',      label: 'Name of the Child',            type: 'text',    required: true },
       { name: 'program',          label: 'Class Applied For',            type: 'select',  required: true, options: PROGRAMS },
       { name: 'gender',           label: 'Gender',                       type: 'select',  options: ['Male', 'Female', 'Other'] },
@@ -590,90 +589,25 @@ const RESOURCES = {
       { name: 'category',         label: 'Caste / Category',             type: 'select',  options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
       { name: 'admissionDate',    label: 'Admission Date',               type: 'date' },
       /* ── Address ── */
-      { name: '_c2',              label: 'Address',                      type: 'separator', icon: 'place',       wide: true },
+      { name: '_s2',              label: 'Address',                      type: 'separator', icon: 'place',          wide: true },
       { name: 'address',          label: 'Full Address',                 type: 'textarea', wide: true },
       /* ── Father's Information ── */
-      { name: '_c3',              label: "Father's Information",         type: 'separator', icon: 'man',         wide: true },
+      { name: '_s3',              label: "Father's Information",         type: 'separator', icon: 'man',            wide: true },
       { name: 'fatherName',       label: "Father's Name",                type: 'text' },
       { name: 'fatherPhone',      label: "Father's Mobile Number",       type: 'tel' },
       { name: 'fatherOccupation', label: "Father's Occupation",          type: 'text' },
       /* ── Mother's Information ── */
-      { name: '_c4',              label: "Mother's Information",         type: 'separator', icon: 'woman',       wide: true },
+      { name: '_s4',              label: "Mother's Information",         type: 'separator', icon: 'woman',          wide: true },
       { name: 'motherName',       label: "Mother's Name",                type: 'text' },
       { name: 'motherPhone',      label: "Mother's Mobile Number",       type: 'tel' },
       { name: 'motherOccupation', label: "Mother's Occupation",          type: 'text' },
       /* ── Documents ── */
-      { name: '_c5',              label: 'Documents  (PDF or Image)',    type: 'separator', icon: 'folder_special', wide: true },
+      { name: '_s5',              label: 'Documents  (PDF or Image)',    type: 'separator', icon: 'folder_special', wide: true },
       { name: 'doc_aadhar',        label: 'Child Aadhar Card',           type: 'docfile', docType: 'student_aadhar', wide: true },
       { name: 'doc_birth',         label: 'Birth Certificate',           type: 'docfile', docType: 'birth_cert',    wide: true },
       { name: 'doc_father_aadhar', label: "Father's Aadhar Card",        type: 'docfile', docType: 'father_aadhar', wide: true },
       { name: 'doc_mother_aadhar', label: "Mother's Aadhar Card",        type: 'docfile', docType: 'mother_aadhar', wide: true },
       { name: 'doc_samagra',       label: 'Samagra ID',                  type: 'docfile', docType: 'samagra_id',    wide: true }
-    ],
-    /* Full fields list used when EDITING an existing student */
-    fields: [
-      /* ── Student Information ── */
-      { name: '_s1',           label: 'Student Information',              type: 'separator', icon: 'child_care',        wide: true },
-      { name: 'studentName',   label: 'Student Name',                     type: 'text',     required: true },
-      { name: 'admissionNumber',label:'Admission No.',                    type: 'text',     placeholder: 'Auto-generated if blank' },
-      { name: 'program',       label: 'Program',                          type: 'select',   required: true, options: PROGRAMS },
-      { name: 'section',       label: 'Section',                          type: 'text' },
-      { name: 'rollNumber',    label: 'Roll Number',                      type: 'text' },
-      { name: 'gender',        label: 'Gender',                           type: 'select',   options: ['Male', 'Female', 'Other'] },
-      { name: 'dateOfBirth',   label: 'Date of Birth',                    type: 'date' },
-      { name: 'admissionDate', label: 'Admission Date',                   type: 'date' },
-      { name: 'status',        label: 'Status',                           type: 'select',   options: ['Active', 'Inactive', 'Transferred', 'Graduated', 'Dropped'] },
-      /* ── Personal Details ── */
-      { name: '_s2',           label: 'Personal Details',                 type: 'separator', icon: 'badge',             wide: true },
-      { name: 'bloodGroup',    label: 'Blood Group',                      type: 'select',   options: BLOOD_GROUPS },
-      { name: 'religion',      label: 'Religion',                         type: 'text' },
-      { name: 'category',      label: 'Caste / Category',                 type: 'select',   options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
-      { name: 'nationality',   label: 'Nationality',                      type: 'text' },
-      { name: 'motherTongue',  label: 'Mother Tongue',                    type: 'text' },
-      { name: 'previousSchool',label: 'Previous School',                  type: 'text',     wide: true },
-      /* ── Father's Information ── */
-      { name: '_s3',           label: "Father's Information",             type: 'separator', icon: 'man',               wide: true },
-      { name: 'fatherName',    label: "Father's Name",                    type: 'text' },
-      { name: 'fatherPhone',   label: "Father's Phone / Mobile",          type: 'tel' },
-      { name: 'fatherOccupation',label:"Father's Occupation",             type: 'text' },
-      /* ── Mother's Information ── */
-      { name: '_s4',           label: "Mother's Information",             type: 'separator', icon: 'woman',             wide: true },
-      { name: 'motherName',    label: "Mother's Name",                    type: 'text' },
-      { name: 'motherPhone',   label: "Mother's Phone / Mobile",          type: 'tel' },
-      { name: 'motherOccupation',label:"Mother's Occupation",             type: 'text' },
-      /* ── Primary Contact (used in records) ── */
-      { name: '_s5',           label: 'Primary Contact (for records & certificates)', type: 'separator', icon: 'contacts', wide: true },
-      { name: 'parentName',    label: 'Parent / Guardian Name (Primary)', type: 'text',     required: true },
-      { name: 'phone',         label: 'Contact Phone',                    type: 'tel',      required: true },
-      /* ── Guardian ── */
-      { name: '_s6',           label: 'Guardian (if different from parents)', type: 'separator', icon: 'supervisor_account', wide: true },
-      { name: 'guardianName',  label: 'Guardian Name',                    type: 'text' },
-      { name: 'guardianPhone', label: 'Guardian Phone',                   type: 'tel' },
-      { name: 'guardianRelation', label: 'Guardian Relation',             type: 'text' },
-      /* ── Address ── */
-      { name: '_s7',           label: 'Address',                          type: 'separator', icon: 'place',             wide: true },
-      { name: 'address',       label: 'Full Address',                     type: 'textarea', wide: true },
-      /* ── Emergency Contact ── */
-      { name: '_s8',           label: 'Emergency Contact',                type: 'separator', icon: 'emergency',         wide: true },
-      { name: 'emergencyContact.name',     label: 'Emergency Contact Name',     type: 'text' },
-      { name: 'emergencyContact.phone',    label: 'Emergency Contact Phone',    type: 'tel' },
-      { name: 'emergencyContact.relation', label: 'Emergency Contact Relation', type: 'text' },
-      /* ── Health ── */
-      { name: '_s9',           label: 'Health Information',               type: 'separator', icon: 'local_hospital',    wide: true },
-      { name: 'medicalNotes',  label: 'Medical Notes / Allergies',        type: 'textarea', wide: true },
-      /* ── Photo ── */
-      { name: '_s10',          label: 'Student Photo',                    type: 'separator', icon: 'photo_camera',      wide: true },
-      { name: 'photo',         label: 'Upload Photo',                     type: 'file',     wide: true },
-      /* ── Important Documents ── */
-      { name: '_s11',          label: 'Important Documents  (PDF or Image — saved to student file)', type: 'separator', icon: 'folder_special', wide: true },
-      { name: 'doc_aadhar',        label: 'Child Aadhar Card',            type: 'docfile', docType: 'student_aadhar', wide: true },
-      { name: 'doc_birth',         label: 'Birth Certificate',            type: 'docfile', docType: 'birth_cert',    wide: true },
-      { name: 'doc_father_aadhar', label: "Father's Aadhar Card",         type: 'docfile', docType: 'father_aadhar', wide: true },
-      { name: 'doc_mother_aadhar', label: "Mother's Aadhar Card",         type: 'docfile', docType: 'mother_aadhar', wide: true },
-      { name: 'doc_samagra',       label: 'Samagra ID',                   type: 'docfile', docType: 'samagra_id',    wide: true },
-      /* ── Notes ── */
-      { name: '_s12',          label: 'Internal Notes',                   type: 'separator', icon: 'notes',             wide: true },
-      { name: 'notes',         label: 'Notes',                            type: 'textarea', wide: true }
     ]
   },
 
@@ -1100,7 +1034,7 @@ function openForm(key, config, id) {
       <h2>${isEdit ? 'Edit' : 'Add New'} ${esc(config.label)}</h2>
       <form id="editForm" novalidate>
         <div class="form-grid">
-          ${((!isEdit && config.createFields) ? config.createFields : config.fields).map(f => {
+          ${config.fields.map(f => {
             if (f.type === 'separator') return renderField(f, null);
             if (f.type === 'docfile')   return renderField(f, null);
             // Resolve dot-notation paths (e.g. emergencyContact.name)
@@ -1170,7 +1104,7 @@ function openForm(key, config, id) {
           fd.delete(n);
         });
         // Also remove separator pseudo-fields
-        for (const [k] of [...fd.entries()]) { if (k.startsWith('_s') || k.startsWith('_c')) fd.delete(k); }
+        for (const [k] of [...fd.entries()]) { if (k.startsWith('_s')) fd.delete(k); }
         // For new student (lean create form): derive parentName & phone from father's details
         if (!id) {
           if (!fd.get('parentName') || !fd.get('parentName').trim()) {
