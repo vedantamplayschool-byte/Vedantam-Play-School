@@ -54,3 +54,27 @@ export async function generateRollNumber(StudentModel, program, section) {
   const seq = last ? parseInt(last.rollNumber.split('/').pop(), 10) + 1 : 1;
   return `${prefix}${String(seq).padStart(3, '0')}`;
 }
+
+/**
+ * Auto-generate the next plain sequential roll number for a class, used by
+ * the admission-enrollment flow: "1", "2", "3"... independently per class
+ * (Nursery, LKG, UKG each start at 1), unrelated to the PG/A/001-style
+ * `generateRollNumber()` above used by manual student creation.
+ *
+ * Scoped by `program` (the class) only, since Sections don't exist yet.
+ * Pass a `section` once Sections ship and this will additionally scope
+ * the sequence per section without needing a schema/index migration --
+ * just start passing the student's section through.
+ */
+export async function generateNextClassRollNumber(StudentModel, program, section) {
+  const filter = {
+    program,
+    // only plain-numeric roll numbers count toward this sequence
+    rollNumber: { $regex: /^\d+$/ }
+  };
+  if (section) filter.section = section;
+
+  const existing = await StudentModel.find(filter, { rollNumber: 1 }).lean();
+  const maxSeq = existing.reduce((max, s) => Math.max(max, parseInt(s.rollNumber, 10) || 0), 0);
+  return String(maxSeq + 1);
+}

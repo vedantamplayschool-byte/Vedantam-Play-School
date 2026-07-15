@@ -53,7 +53,7 @@ export const getStudentAttendanceByDate = asyncHandler(async (req, res) => {
   if (section) stuFilter.section = section;
   if (session) stuFilter.session = session;
 
-  const students    = await Student.find(stuFilter, 'studentName program section rollNumber photoUrl').sort('studentName');
+  const students    = await Student.find(stuFilter, 'studentName program section rollNumber admissionNumber photoUrl').sort('studentName');
   const studentIds  = students.map(s => s._id);
   const attendance  = await StudentAttendance.find({ student: { $in: studentIds }, date: parsedDate });
 
@@ -61,7 +61,7 @@ export const getStudentAttendanceByDate = asyncHandler(async (req, res) => {
   attendance.forEach(a => { attMap[String(a.student)] = a; });
 
   const result = students.map(s => ({
-    student:  { _id: s._id, studentName: s.studentName, program: s.program, section: s.section, rollNumber: s.rollNumber, photoUrl: s.photoUrl },
+    student:  { _id: s._id, studentName: s.studentName, program: s.program, section: s.section, rollNumber: s.rollNumber, admissionNumber: s.admissionNumber, photoUrl: s.photoUrl },
     status:   attMap[String(s._id)]?.status || 'Absent',
     remarks:  attMap[String(s._id)]?.remarks || '',
     recorded: !!attMap[String(s._id)]

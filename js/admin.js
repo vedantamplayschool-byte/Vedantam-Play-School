@@ -1220,7 +1220,10 @@ function renderField(f, value) {
         <div style="font-size:12px;font-weight:600;color:var(--txt);margin-bottom:3px">${esc(f.label)}</div>
         ${existing}
       </div>
-      <input name="${f.name}" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="font-size:12px;max-width:240px;padding:5px">
+      <div>
+        <input name="${f.name}" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="font-size:12px;max-width:240px;padding:5px">
+        <div style="font-size:10px;color:var(--txt-sm);margin-top:3px">Max 200KB</div>
+      </div>
     </div>`;
   }
 
@@ -1988,61 +1991,76 @@ async function attendancePage() {
   await showTab('student-att');
 }
 
-async function renderStudentAttendance(el, dateStr) {
-  const { data: students } = await api('/students?limit=200&sort=studentName');
-  const { data: attendanceData } = await api(`/attendance/students/date?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
-  const attendance = attendanceData?.records || [];
+const ATTENDANCE_CLASSES = ['Play Group', 'Nursery', 'LKG', 'UKG'];
 
-  const attMap = {};
-  attendance.forEach(a => { attMap[a.student?._id || a.student] = a.status; });
+async function renderStudentAttendance(el, dateStr, programFilter) {
+  programFilter = programFilter || '';
 
+  // Class selector + date always render first so the admin can pick a
+  // class even before any students have loaded.
   el.innerHTML = `
     <div class="card" style="margin-top:16px">
       <div class="card-head">
         <span class="card-title">Student Attendance</span>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="attClass" class="form-input" style="width:150px">
+            <option value="">All Classes</option>
+            ${ATTENDANCE_CLASSES.map(c => `<option value="${esc(c)}" ${programFilter === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+          </select>
           <input type="date" id="attDate" class="form-input" style="width:160px" value="${dateStr}">
           <button class="btn btn-secondary btn-sm" id="loadAttBtn">Load</button>
           ${canEdit() ? `<button class="btn btn-primary btn-sm" id="saveAttBtn">Save Attendance</button>` : ''}
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Student</th><th>Program</th><th>Present</th><th>Absent</th><th>Late</th><th>Holiday</th></tr></thead>
-          <tbody>
-            ${students.map((s, i) => {
-              const cur = attMap[s._id] || 'Present';
-              return `<tr>
-                <td style="font-size:12px;color:var(--txt-sm)">${i + 1}</td>
-                <td>
-                  <div class="td-main">${esc(s.studentName)}</div>
-                  <div class="td-sub">${esc(s.admissionNumber || '')}</div>
-                </td>
-                <td>${esc(s.program)}</td>
-                ${['Present','Absent','Late','Holiday'].map(st => `
-                  <td style="text-align:center">
-                    <input type="radio" name="att_${s._id}" value="${st}" ${cur === st ? 'checked' : ''}>
-                  </td>`).join('')}
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
+      <div class="table-wrap" id="attTableWrap"><div class="loader-center"><span class="spin spin-lg"></span></div></div>
     </div>`;
 
+  document.getElementById('attClass').value = programFilter;
+
+  const qs = new URLSearchParams({ date: dateStr });
+  if (programFilter) qs.set('program', programFilter);
+  const { data: attendanceData } = await api(`/attendance/students/date?${qs.toString()}`).catch(() => ({ data: { records: [] } }));
+  const records = attendanceData?.records || []; // already sorted A-Z by studentName, one row per active student in the class
+
+  const tableWrap = document.getElementById('attTableWrap');
+  tableWrap.innerHTML = `
+    <table>
+      <thead><tr><th>Roll No</th><th>Admission No</th><th>Student</th><th>Class</th><th>Present</th><th>Absent</th><th>Late</th><th>Holiday</th></tr></thead>
+      <tbody>
+        ${records.length ? records.map(r => {
+          const s = r.student || {};
+          return `<tr>
+            <td style="font-size:12px;color:var(--txt-sm)">${esc(s.rollNumber || '—')}</td>
+            <td style="font-size:12px;color:var(--txt-sm)">${esc(s.admissionNumber || '—')}</td>
+            <td><div class="td-main">${esc(s.studentName || '')}</div></td>
+            <td>${esc(s.program || '')}</td>
+            ${['Present','Absent','Late','Holiday'].map(st => `
+              <td style="text-align:center">
+                <input type="radio" name="att_${s._id}" value="${st}" ${r.status === st ? 'checked' : ''}>
+              </td>`).join('')}
+          </tr>`;
+        }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--txt-sm);padding:24px">No students found${programFilter ? ` in ${esc(programFilter)}` : ''}.</td></tr>`}
+      </tbody>
+    </table>`;
+
   document.getElementById('loadAttBtn').addEventListener('click', () => {
-    renderStudentAttendance(el, document.getElementById('attDate').value);
+    renderStudentAttendance(el, document.getElementById('attDate').value, document.getElementById('attClass').value);
+  });
+  document.getElementById('attClass').addEventListener('change', () => {
+    renderStudentAttendance(el, document.getElementById('attDate').value, document.getElementById('attClass').value);
   });
 
   if (canEdit()) {
     document.getElementById('saveAttBtn')?.addEventListener('click', async () => {
-      const date     = document.getElementById('attDate').value;
-      const records  = students.map(s => {
+      const date    = document.getElementById('attDate').value;
+      const students = records.map(r => r.student).filter(Boolean);
+      const attRecords = students.map(s => {
         const radio = document.querySelector(`input[name="att_${s._id}"]:checked`);
         return { student: s._id, date, status: radio?.value || 'Present' };
       });
+      if (!attRecords.length) { toast('No students to save', 'error'); return; }
       try {
-        await api('/attendance/students', { method: 'POST', body: JSON.stringify({ date, records }) });
+        await api('/attendance/students', { method: 'POST', body: JSON.stringify({ date, records: attRecords }) });
         toast('Student attendance saved!', 'success');
       } catch (err) {
         toast(err.message, 'error');

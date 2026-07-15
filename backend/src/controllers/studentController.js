@@ -6,7 +6,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok }           from '../utils/apiResponse.js';
 import { buildQuery, paginate } from '../utils/apiFeatures.js';
 import { uploadImage }  from '../services/uploadService.js';
-import { generateTempPassword, fallbackPortalEmail, generateRollNumber } from '../utils/generateCredentials.js';
+import { generateTempPassword, fallbackPortalEmail, generateRollNumber, generateNextClassRollNumber } from '../utils/generateCredentials.js';
 
 /* ── Admission-number generator: VPS/2024/00001 ─────────────────── */
 async function generateAdmissionNumber() {
@@ -178,13 +178,23 @@ export const convertAdmission = asyncHandler(async (req, res) => {
   }
   const admNo  = await generateAdmissionNumber();
   const active = await AcademicSession.findOne({ isActive: true });
+
+  // Roll number is auto-assigned per class (1, 2, 3... independently for
+  // each class) unless the request explicitly provides one. Scoped by
+  // `section` too once Sections exist -- see generateNextClassRollNumber().
+  const program = req.body.program || adm.program;
+  const rollNumber = req.body.rollNumber
+    || await generateNextClassRollNumber(Student, program, req.body.section);
+
   const student = await Student.create({
     admission: adm._id, admissionNumber: admNo,
     studentName: adm.studentName, parentName: adm.parentName,
-    phone: adm.phone, program: adm.program,
+    phone: adm.phone, program,
     dateOfBirth: adm.dateOfBirth, address: adm.address,
     gender: adm.gender, session: active?._id, admissionDate: new Date(),
-    ...req.body
+    status: 'Active',
+    ...req.body,
+    rollNumber
   });
 
   /* ── Auto-provision parent portal credentials ──────────────────────

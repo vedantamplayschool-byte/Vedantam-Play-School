@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>File Compressor — Vedantam Play School</title>
+  <meta name="description" content="Free browser-based file compressor for images (JPG, PNG, WEBP) and PDFs. Compress towards a target size — nothing is uploaded to any server." />
+  <meta name="theme-color" content="#ff8a00" />
+  <link rel="icon" href="logo.png" />
+  <meta name="robots" content="noindex" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/file-compressor.css" />
+</head>
+<body>
+  <header class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="brand" aria-label="Vedantam Play School home">
+        <img src="logo.png" alt="Vedantam Play School official logo" width="64" height="64" />
+        <span><strong>Vedantam Play School</strong><small>Play · Learn · Grow</small></span>
+      </a>
+      <nav class="nav-links" id="navLinks" aria-label="Primary navigation">
+        <a href="index.html#home">Home</a><a href="index.html#programs">Programs</a><a href="index.html#gallery">Gallery</a><a href="index.html#contact">Contact</a><a class="active" href="file-compressor.html">File Compressor</a>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="fc-hero">
+      <div class="container">
+        <div class="fc-hero-inner reveal">
+          <span class="eyebrow">🗜️ Free &amp; Private Tool</span>
+          <h1>File Compressor</h1>
+          <p>Shrink images and PDFs right in your browser to a target size you choose. Nothing is ever uploaded — your files never leave this device.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section fc-tool" id="compressor">
+      <div class="container">
+        <div class="fc-card reveal">
+
+          <div id="fcDropZone" class="fc-dropzone" tabindex="0" role="button" aria-label="Upload a file to compress">
+            <input type="file" id="fcFileInput" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" hidden />
+            <div class="fc-drop-icon">📁</div>
+            <p class="fc-drop-title">Drag &amp; drop a file here</p>
+            <p class="fc-drop-sub">JPG, JPEG, PNG, WEBP or PDF</p>
+            <button type="button" class="btn primary" id="fcBrowseBtn">Browse File</button>
+          </div>
+
+          <div id="fcFileInfo" class="fc-file-info" hidden>
+            <div class="fc-file-row">
+              <div class="fc-file-meta">
+                <div class="fc-file-name" id="fcFileName"></div>
+                <div class="fc-file-sub"><span id="fcFileType"></span> · Original size: <strong id="fcOriginalSize"></strong></div>
+              </div>
+              <button type="button" class="fc-remove-btn" id="fcRemoveBtn" aria-label="Remove file">✕</button>
+            </div>
+
+            <img id="fcPreviewImg" class="fc-preview-img" alt="File preview" hidden />
+
+            <div class="fc-controls">
+              <label class="fc-target-label" for="fcTargetSize">Target Size (KB)
+                <input type="number" id="fcTargetSize" min="1" step="1" placeholder="e.g. 100" required />
+              </label>
+              <button type="button" class="btn primary" id="fcCompressBtn">Compress</button>
+            </div>
+
+            <div id="fcStatus" class="fc-status" hidden></div>
+
+            <div id="fcResult" class="fc-result" hidden>
+              <div class="fc-result-stats">
+                <div class="fc-stat"><span>Original</span><strong id="fcStatOriginal"></strong></div>
+                <div class="fc-stat"><span>Compressed</span><strong id="fcStatCompressed"></strong></div>
+                <div class="fc-stat fc-stat-accent"><span>Reduced by</span><strong id="fcStatPercent"></strong></div>
+              </div>
+              <img id="fcResultPreview" class="fc-preview-img" alt="Compressed preview" hidden />
+              <a id="fcDownloadBtn" class="btn whatsapp fc-download-btn" download>⬇ Download Compressed File</a>
+            </div>
+          </div>
+
+        </div>
+
+        <p class="fc-footnote">Everything runs locally in your browser using JavaScript — no backend, no database, no uploads. Images are recompressed by re-encoding; PDF compression optimizes the file structure and works best on image-heavy PDFs. Very small targets on already-tiny or text-only files may not be fully achievable — you'll see a clear message if that happens.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div><img src="logo.png" alt="Vedantam Play School official logo" width="86" height="86" /><h3>Vedantam Play School</h3><p>Admissions Open · Enquiry Timing: 9:00 AM to 12:00 PM</p></div>
+      <div><h4>Contact</h4><p><a href="tel:+919232711263">9232711263</a> · <a href="tel:+917812318480">7812318480</a><br><a href="mailto:vedantamplayschool@gmail.com">vedantamplayschool@gmail.com</a></p></div>
+      <div><h4>Address</h4><p>Indra Mohan Nagar, Behind Dr. Manish Patel, Damoh, Madhya Pradesh 470661</p></div>
+    </div>
+    <p class="copyright">© 2026 Vedantam Play School. All rights reserved.</p>
+  </footer>
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+  <script src="js/vendor/pdf-lib.min.js"></script>
+  <script src="js/file-compressor.js"></script>
+</body>
+</html>

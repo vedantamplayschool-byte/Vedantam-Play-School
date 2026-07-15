@@ -1,6 +1,6 @@
 import { Router }           from 'express';
 import { protect, authorize } from '../middleware/auth.js';
-import { upload }             from '../middleware/upload.js';
+import { upload, uploadDocument } from '../middleware/upload.js';
 import { idParam, pagination } from '../validators/common.js';
 import { validate }           from '../middleware/validate.js';
 import {
@@ -48,7 +48,7 @@ r.post('/:id/restore',
 /* ── Document management (v2.5) ──────────────────────────────────── */
 r.post('/:id/documents',
   authorize('super_admin', 'admin', 'principal', 'office_staff'),
-  upload.single('document'), addDocument
+  uploadDocument.single('document'), addDocument
 );
 
 r.delete('/:id/documents/:docId',
@@ -58,7 +58,7 @@ r.delete('/:id/documents/:docId',
 
 r.put('/:id/documents/:docId',
   authorize('super_admin', 'admin', 'principal', 'office_staff'),
-  upload.single('document'), replaceDocument
+  uploadDocument.single('document'), replaceDocument
 );
 
 /* ── Parent photo upload (v2.5) ───────────────────────────────────── */
