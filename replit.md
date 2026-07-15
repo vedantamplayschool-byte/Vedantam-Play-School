@@ -100,6 +100,7 @@ The app runs on port 5000. The workflow "Start application" manages this.
 - Dependencies installed via `npm install --prefix backend`.
 - All required secrets configured; "Start application" workflow boots cleanly, connects to MongoDB, and serves the site.
 - An admin account already exists in the connected database, so the JWT/bootstrap flow was skipped — log in with existing admin credentials.
+- Re-imported again on July 15, 2026: dependencies were missing (`node_modules` not present) and all secrets (`MONGODB_URI`, `JWT_SECRET`, `CLOUDINARY_*`, `ADMIN_SECRET_PATH`) had been dropped by the re-import. Reinstalled deps and re-collected secrets (JWT_SECRET/ADMIN_SECRET_PATH freshly generated, Mongo/Cloudinary re-entered by the user). Verified the workflow boots, connects to MongoDB, and the homepage renders.
 
 ## Hidden Admin Access
 - The Admin Portal is intentionally **not listed** on the public homepage — only Teacher and Parent portal cards show under "School Management Portals".
