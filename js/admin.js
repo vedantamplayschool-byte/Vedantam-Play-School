@@ -1020,6 +1020,29 @@ function buildRow(key, config, item, showEdit, showDelete) {
 const DOC_FIELD_NAMES = ['doc_aadhar', 'doc_birth', 'doc_father_aadhar', 'doc_mother_aadhar', 'doc_samagra'];
 const DOC_FIELD_TYPES = { doc_aadhar: 'student_aadhar', doc_birth: 'birth_cert', doc_father_aadhar: 'father_aadhar', doc_mother_aadhar: 'mother_aadhar', doc_samagra: 'samagra_id' };
 
+let _extraDocCounter = 0;
+window.addExtraDocRow = function () {
+  const container = document.getElementById('extraDocRows');
+  if (!container) return;
+  const idx = ++_extraDocCounter;
+  const row = document.createElement('div');
+  row.className = 'extra-doc-row';
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px';
+  row.innerHTML = `
+    <input type="text" placeholder="Document name (e.g. TC, Medical Certificate…)"
+      style="padding:8px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:var(--card);color:var(--txt);outline:none;width:100%">
+    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"
+      style="font-size:12px;padding:5px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--txt);width:100%">
+    <button type="button" onclick="removeExtraDocRow(this)"
+      style="display:flex;align-items:center;justify-content:center;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:6px;cursor:pointer;flex-shrink:0">
+      <span class="material-icons-round" style="font-size:16px">delete</span>
+    </button>`;
+  container.appendChild(row);
+};
+window.removeExtraDocRow = function (btn) {
+  btn.closest('.extra-doc-row')?.remove();
+};
+
 function openForm(key, config, id) {
   const host = document.getElementById('formHost');
   const item = id ? (_cache[key] || []).find(x => x._id === id) || {} : {};
@@ -1044,6 +1067,18 @@ function openForm(key, config, id) {
               : item[f.name];
             return renderField(f, val);
           }).join('')}
+          ${key === 'students' ? `
+          <div class="col-full" id="extraDocsSection" style="margin-top:4px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to right,var(--bg),transparent);border-radius:8px;border-left:3px solid var(--primary);margin-bottom:6px">
+              <div style="font-weight:700;font-size:11px;color:var(--primary);text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:6px">
+                <span class="material-icons-round" style="font-size:15px">add_circle_outline</span>Extra / More Documents
+              </div>
+              <button type="button" onclick="addExtraDocRow()" style="display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.3px">
+                <span class="material-icons-round" style="font-size:14px">add</span>Add Document
+              </button>
+            </div>
+            <div id="extraDocRows"></div>
+          </div>` : ''}
           <div class="form-actions col-full">
             <button type="submit" class="btn btn-primary" id="saveBtn">
               <span id="saveTxt">Save</span>
@@ -1099,11 +1134,19 @@ function openForm(key, config, id) {
 
       // For students: extract doc uploads before main save
       const docFiles = {};
+      const extraDocFiles = []; // [{file, label}] for "More Documents" rows
       if (key === 'students') {
         DOC_FIELD_NAMES.forEach(n => {
           const inp = e.target.querySelector(`input[name="${n}"]`);
           if (inp?.files?.[0]) docFiles[n] = inp.files[0];
           fd.delete(n);
+        });
+        // Collect extra document rows
+        document.querySelectorAll('.extra-doc-row').forEach(row => {
+          const fileInp  = row.querySelector('input[type="file"]');
+          const labelInp = row.querySelector('input[type="text"]');
+          const file = fileInp?.files?.[0];
+          if (file) extraDocFiles.push({ file, label: (labelInp?.value?.trim() || file.name) });
         });
         // Also remove separator pseudo-fields
         for (const [k] of [...fd.entries()]) { if (k.startsWith('_s')) fd.delete(k); }
@@ -1127,16 +1170,20 @@ function openForm(key, config, id) {
         : `${config.endpoint}${id ? '/' + id : ''}`;
       const result   = await api(endpoint, { method, body: fd });
 
-      // Upload document files for students
-      if (key === 'students' && Object.keys(docFiles).length) {
+      // Upload document files for students (fixed + extra)
+      const allDocUploads = [
+        ...Object.entries(docFiles).map(([n, file]) => ({ file, docType: DOC_FIELD_TYPES[n], label: file.name })),
+        ...extraDocFiles.map(({ file, label }) => ({ file, docType: 'Other', label }))
+      ];
+      if (key === 'students' && allDocUploads.length) {
         const studentId = id || result?.data?._id || result?.data?.student?._id;
         if (studentId) {
           let docOk = 0, docFail = 0;
-          for (const [n, file] of Object.entries(docFiles)) {
+          for (const { file, docType, label } of allDocUploads) {
             const df = new FormData();
             df.append('document', file);
-            df.append('docType',  DOC_FIELD_TYPES[n]);
-            df.append('label',    file.name);
+            df.append('docType',  docType);
+            df.append('label',    label);
             await api(`/students/${studentId}/documents`, { method: 'POST', body: df })
               .then(() => docOk++).catch(() => docFail++);
           }
@@ -1146,7 +1193,7 @@ function openForm(key, config, id) {
       }
 
       host.innerHTML = '';
-      if (!Object.keys(docFiles).length) toast(`${config.label} ${id ? 'updated' : 'created'} successfully!`, 'success');
+      if (!allDocUploads.length) toast(`${config.label} ${id ? 'updated' : 'created'} successfully!`, 'success');
 
       // Show parent credentials after new student creation
       if (key === 'students' && !id && result?.parentCredentials?.isNew) {
