@@ -1220,10 +1220,7 @@ function renderField(f, value) {
         <div style="font-size:12px;font-weight:600;color:var(--txt);margin-bottom:3px">${esc(f.label)}</div>
         ${existing}
       </div>
-      <div>
-        <input name="${f.name}" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="font-size:12px;max-width:240px;padding:5px">
-        <div style="font-size:10px;color:var(--txt-sm);margin-top:3px">Max 200KB</div>
-      </div>
+      <input name="${f.name}" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="font-size:12px;max-width:240px;padding:5px">
     </div>`;
   }
 
