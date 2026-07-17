@@ -13,8 +13,10 @@ const S = {
   admin: null,
   page:  'dashboard'
 };
-const _cache  = {};
-const _search = {};
+const _cache   = {};
+const _search  = {};
+const _filters = {};
+window._updateFilter = (key, name, val) => { (_filters[key] = _filters[key] || {})[name] = val; navigate(key); };
 
 // ── 3. DOM HELPERS ────────────────────────────────────────────────
 const $  = s => document.querySelector(s);
@@ -562,9 +564,10 @@ const RESOURCES = {
       const cls = st === 'Active' ? 'badge-active' : st === 'Transferred' ? 'badge-approved' : 'badge-inactive';
       return { text: st, cls };
     },
-    columns: ['', 'Student', 'Adm. No.', 'Parent / Phone', 'Program', 'Status', 'Admitted', 'Actions'],
+    columns: ['', 'Roll No.', 'Student', 'Adm. No.', 'Parent / Phone', 'Program', 'Status', 'Admitted', 'Actions'],
     renderCells: r => `
       <td>${r.photoUrl ? `<img class="thumb" src="${esc(r.photoUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
+      <td style="font-family:monospace;font-size:14px;font-weight:700;color:var(--primary);text-align:center">${esc(r.rollNumber || '—')}</td>
       <td>
         <div class="td-main">${esc(r.studentName)}</div>
         ${r.gender ? `<div class="td-sub">${esc(r.gender)}</div>` : ''}
@@ -577,6 +580,11 @@ const RESOURCES = {
       <td>${esc(r.program)}</td>`,
     hasImage: false,
     studentActions: true,
+    filters: [
+      { name: 'program', label: 'Class',  options: ['','Play Group','Nursery','LKG','UKG'],                  labels: ['All Classes','Play Group','Nursery','LKG','UKG'] },
+      { name: 'status',  label: 'Status', options: ['','Active','Inactive','Transferred'],                   labels: ['All Status','Active','Inactive','Transferred'] },
+      { name: 'sort',    label: 'Sort by',options: ['studentName','-studentName','rollNumber','-createdAt'], labels: ['Name A→Z','Name Z→A','Roll No.','Latest First'] }
+    ],
     fields: [
       /* ── Child Details ── */
       { name: '_s1',              label: 'Child Details',                type: 'separator', icon: 'child_care',     wide: true },
@@ -737,7 +745,6 @@ const RESOURCES = {
       { name: 'gender',        label: 'Gender',         type: 'select',   options: ['Male', 'Female', 'Other'] },
       { name: 'dateOfBirth',   label: 'Date of Birth',  type: 'date' },
       { name: 'joiningDate',   label: 'Joining Date',   type: 'date' },
-      { name: 'salary',        label: 'Salary (₹)',     type: 'number' },
       { name: 'experience',    label: 'Experience',     type: 'text' },
       { name: 'description',   label: 'About',          type: 'textarea', wide: true },
       { name: 'image',         label: 'Photo',          type: 'file',     wide: true },
@@ -876,10 +883,18 @@ const RESOURCES = {
 
 // ── 12. RESOURCE PAGE ──────────────────────────────────────────────
 async function resourcePage(config) {
-  const key    = Object.keys(RESOURCES).find(k => RESOURCES[k] === config);
-  const search = _search[key] || '';
-  const params = new URLSearchParams({ limit: 100, sort: '-createdAt' });
+  const key         = Object.keys(RESOURCES).find(k => RESOURCES[k] === config);
+  const search      = _search[key] || '';
+  const filterState = _filters[key] || {};
+  const sortVal     = (config.filters && filterState.sort) ? filterState.sort : '-createdAt';
+
+  const params = new URLSearchParams({ limit: 200, sort: sortVal });
   if (search) params.set('search', search);
+  if (config.filters) {
+    for (const f of config.filters) {
+      if (f.name !== 'sort' && filterState[f.name]) params.set(f.name, filterState[f.name]);
+    }
+  }
 
   const { data } = await api(`${config.endpoint}?${params}`);
   _cache[key] = data;
@@ -887,6 +902,12 @@ async function resourcePage(config) {
   const showNew    = !config.noCreate && canEdit();
   const showDelete = canAdmin();
   const showEdit   = canEdit();
+
+  const filterDropdowns = (config.filters || []).map(f => `
+    <select style="padding:6px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:12px;background:var(--card);color:var(--txt);cursor:pointer"
+      onchange="_updateFilter('${key}','${f.name}',this.value)">
+      ${f.options.map((o, i) => `<option value="${esc(o)}" ${(filterState[f.name]||'')===(o)?'selected':''}>${esc(f.labels?.[i] || o || 'All')}</option>`).join('')}
+    </select>`).join('');
 
   document.getElementById('contentArea').innerHTML = `
     <div class="page-header">
@@ -906,14 +927,18 @@ async function resourcePage(config) {
     <div id="formHost"></div>
     <div class="card">
       <div class="card-head" style="padding:12px 16px">
-        <div class="table-toolbar" style="width:100%;margin:0;border:none;gap:8px">
-          <div class="search-wrap">
+        <div class="table-toolbar" style="width:100%;margin:0;border:none;gap:8px;flex-wrap:wrap">
+          ${filterDropdowns}
+          <div class="search-wrap" style="flex:1;min-width:160px">
             <span class="material-icons-round">search</span>
             <input class="search-input" id="searchBox"
               placeholder="Search ${esc(config.label.toLowerCase())}…"
               value="${esc(search)}">
           </div>
           <button class="btn btn-secondary btn-sm" id="searchBtn">Search</button>
+          ${Object.values(filterState).some(v => v) || search ? `<button class="btn btn-secondary btn-sm" id="clearBtn" title="Clear all filters">
+            <span class="material-icons-round" style="font-size:14px">filter_alt_off</span>
+          </button>` : ''}
         </div>
       </div>
       <div class="table-wrap">${buildTable(key, config, data, showEdit, showDelete)}</div>
@@ -927,6 +952,11 @@ async function resourcePage(config) {
   });
   document.getElementById('searchBox').addEventListener('keydown', e => {
     if (e.key === 'Enter') { _search[key] = e.target.value.trim(); navigate(key); }
+  });
+  document.getElementById('clearBtn')?.addEventListener('click', () => {
+    _search[key] = '';
+    _filters[key] = {};
+    navigate(key);
   });
 }
 

@@ -6,18 +6,18 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok }           from '../utils/apiResponse.js';
 import { buildQuery, paginate } from '../utils/apiFeatures.js';
 import { uploadImage }  from '../services/uploadService.js';
-import { generateTempPassword, fallbackPortalEmail, generateRollNumber, generateNextClassRollNumber } from '../utils/generateCredentials.js';
+import { generateTempPassword, fallbackPortalEmail, assignAlphabeticalRollNumbers } from '../utils/generateCredentials.js';
 
-/* ── Admission-number generator: VPS/2024/00001 ─────────────────── */
+/* ── Admission-number generator: VPS-2026-001 ───────────────────── */
 async function generateAdmissionNumber() {
   const year   = new Date().getFullYear();
-  const prefix = `VPS/${year}/`;
+  const prefix = `VPS-${year}-`;
   const last   = await Student.findOne(
-    { admissionNumber: { $regex: `^${prefix}` } },
+    { admissionNumber: { $regex: `^VPS-${year}-` } },
     { admissionNumber: 1 }
   ).sort({ admissionNumber: -1 });
-  const seq = last ? parseInt(last.admissionNumber.split('/')[2], 10) + 1 : 1;
-  return `${prefix}${String(seq).padStart(5, '0')}`;
+  const seq = last ? parseInt(last.admissionNumber.split('-')[2], 10) + 1 : 1;
+  return `${prefix}${String(seq).padStart(3, '0')}`;
 }
 
 /* ── LIST ────────────────────────────────────────────────────────── */
@@ -56,10 +56,8 @@ export const createStudent = asyncHandler(async (req, res) => {
   // Auto-generate admission number
   if (!payload.admissionNumber) payload.admissionNumber = await generateAdmissionNumber();
 
-  // Auto-generate roll number based on program + section
-  if (!payload.rollNumber && payload.program) {
-    payload.rollNumber = await generateRollNumber(Student, payload.program, payload.section || '');
-  }
+  // Roll number will be assigned after create via alphabetical reorder
+  delete payload.rollNumber;
 
   if (req.file) {
     const uploaded = await uploadImage(req.file, 'vedantam/students', req);
@@ -130,10 +128,14 @@ export const createStudent = asyncHandler(async (req, res) => {
     await Parent.findByIdAndUpdate(doc.parent, { $addToSet: { students: doc._id } });
   }
 
+  // Re-assign roll numbers alphabetically for the entire class
+  if (doc.program) await assignAlphabeticalRollNumbers(Student, doc.program, doc.section || '');
+  const updatedDoc = await Student.findById(doc._id).populate('parent session');
+
   ok(res, {
     status: 201,
     message: 'Student created successfully',
-    data: doc,
+    data: updatedDoc,
     ...(parentCredentials ? { parentCredentials } : {})
   });
 });
@@ -154,7 +156,15 @@ export const updateStudent = asyncHandler(async (req, res) => {
     if (old.parent) await Parent.findByIdAndUpdate(old.parent, { $pull: { students: doc._id } });
     await Parent.findByIdAndUpdate(payload.parent, { $addToSet: { students: doc._id } });
   }
-  ok(res, { message: 'Student updated', data: doc });
+  // Re-sort roll numbers if name or class changed
+  const nameChanged    = payload.studentName && payload.studentName !== old.studentName;
+  const programChanged = payload.program     && payload.program     !== old.program;
+  if (nameChanged || programChanged) {
+    await assignAlphabeticalRollNumbers(Student, doc.program, doc.section || '');
+    if (programChanged) await assignAlphabeticalRollNumbers(Student, old.program, old.section || '');
+  }
+  const refreshed = await Student.findById(doc._id).populate('parent session');
+  ok(res, { message: 'Student updated', data: refreshed });
 });
 
 /* ── DELETE ──────────────────────────────────────────────────────── */
@@ -178,13 +188,7 @@ export const convertAdmission = asyncHandler(async (req, res) => {
   }
   const admNo  = await generateAdmissionNumber();
   const active = await AcademicSession.findOne({ isActive: true });
-
-  // Roll number is auto-assigned per class (1, 2, 3... independently for
-  // each class) unless the request explicitly provides one. Scoped by
-  // `section` too once Sections exist -- see generateNextClassRollNumber().
   const program = req.body.program || adm.program;
-  const rollNumber = req.body.rollNumber
-    || await generateNextClassRollNumber(Student, program, req.body.section);
 
   const student = await Student.create({
     admission: adm._id, admissionNumber: admNo,
@@ -193,9 +197,11 @@ export const convertAdmission = asyncHandler(async (req, res) => {
     dateOfBirth: adm.dateOfBirth, address: adm.address,
     gender: adm.gender, session: active?._id, admissionDate: new Date(),
     status: 'Active',
-    ...req.body,
-    rollNumber
+    ...req.body
   });
+
+  // Re-assign roll numbers alphabetically for the enrolled class
+  await assignAlphabeticalRollNumbers(Student, program, req.body.section || '');
 
   /* ── Auto-provision parent portal credentials ──────────────────────
      As soon as an admission becomes an enrolled student, the family

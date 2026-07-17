@@ -69,7 +69,6 @@ export async function generateRollNumber(StudentModel, program, section) {
 export async function generateNextClassRollNumber(StudentModel, program, section) {
   const filter = {
     program,
-    // only plain-numeric roll numbers count toward this sequence
     rollNumber: { $regex: /^\d+$/ }
   };
   if (section) filter.section = section;
@@ -77,4 +76,28 @@ export async function generateNextClassRollNumber(StudentModel, program, section
   const existing = await StudentModel.find(filter, { rollNumber: 1 }).lean();
   const maxSeq = existing.reduce((max, s) => Math.max(max, parseInt(s.rollNumber, 10) || 0), 0);
   return String(maxSeq + 1);
+}
+
+/**
+ * Re-assign roll numbers for all active students in a class, sorted
+ * alphabetically A→Z by studentName. Roll numbers become 1, 2, 3 …
+ * Call this after any student is created, enrolled, renamed, or
+ * transferred into/out of a class so the ordering stays consistent.
+ */
+export async function assignAlphabeticalRollNumbers(StudentModel, program, section) {
+  if (!program) return 0;
+  const filter = { program, isActive: { $ne: false }, status: { $nin: ['Inactive', 'Transferred'] } };
+  if (section) filter.section = section;
+
+  const students = await StudentModel.find(filter, { _id: 1, studentName: 1 }).lean();
+  students.sort((a, b) =>
+    (a.studentName || '').localeCompare(b.studentName || '', 'en', { sensitivity: 'base' })
+  );
+
+  if (!students.length) return 0;
+  const ops = students.map((s, i) => ({
+    updateOne: { filter: { _id: s._id }, update: { $set: { rollNumber: String(i + 1) } } }
+  }));
+  await StudentModel.bulkWrite(ops);
+  return students.length;
 }
