@@ -1096,17 +1096,6 @@ function openForm(key, config, id) {
         if (v instanceof File && !v.name) fd.delete(k);
       }
 
-      // ── 120 KB size limit for every file input (photo + all documents) ──
-      const MAX_FILE_BYTES = 120 * 1024; // 120 KB
-      const oversized = [];
-      e.target.querySelectorAll('input[type="file"]').forEach(inp => {
-        [...(inp.files || [])].forEach(file => {
-          if (file.size > MAX_FILE_BYTES) oversized.push(`"${file.name}" (${(file.size/1024).toFixed(0)} KB)`);
-        });
-      });
-      if (oversized.length) {
-        throw new Error(`File size limit is 120 KB. These files are too large:\n${oversized.join('\n')}\nPlease compress and re-upload.`);
-      }
 
       // For students: extract doc uploads before main save
       const docFiles = {};
