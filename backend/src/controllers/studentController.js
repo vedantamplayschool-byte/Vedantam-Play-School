@@ -8,15 +8,15 @@ import { buildQuery, paginate } from '../utils/apiFeatures.js';
 import { uploadImage }  from '../services/uploadService.js';
 import { generateTempPassword, fallbackPortalEmail, assignAlphabeticalRollNumbers } from '../utils/generateCredentials.js';
 
-/* ── Admission-number generator: VPS-2026-001 ───────────────────── */
+/* ── Admission-number generator: VPS/2026/001 ───────────────────── */
 async function generateAdmissionNumber() {
   const year   = new Date().getFullYear();
-  const prefix = `VPS-${year}-`;
+  const prefix = `VPS/${year}/`;
   const last   = await Student.findOne(
-    { admissionNumber: { $regex: `^VPS-${year}-` } },
+    { admissionNumber: { $regex: `^VPS/${year}/` } },
     { admissionNumber: 1 }
   ).sort({ admissionNumber: -1 });
-  const seq = last ? parseInt(last.admissionNumber.split('-')[2], 10) + 1 : 1;
+  const seq = last ? parseInt(last.admissionNumber.split('/')[2], 10) + 1 : 1;
   return `${prefix}${String(seq).padStart(3, '0')}`;
 }
 
