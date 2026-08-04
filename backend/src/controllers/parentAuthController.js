@@ -1,4 +1,5 @@
 import Parent from '../models/Parent.js';
+import Student from '../models/Student.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok } from '../utils/apiResponse.js';
 import { signParentToken } from '../middleware/parentAuth.js';
@@ -12,7 +13,8 @@ const COOKIE_OPTS = (days) => ({
 });
 
 /* ── LOGIN ──────────────────────────────────────────────────────────
-   Identifier can be: portalEmail, fatherPhone, or motherPhone
+   Identifier is the Student ID (admissionNumber, e.g. VPS2026001).
+   Legacy portalEmail/phone lookup remains as a fallback for existing users.
    ────────────────────────────────────────────────────────────────── */
 export const parentLogin = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body;
@@ -20,33 +22,53 @@ export const parentLogin = asyncHandler(async (req, res) => {
     const e = new Error('Please provide identifier and password'); e.status = 400; throw e;
   }
 
-  const id = identifier.toLowerCase().trim();
+  const id = identifier.trim();
+  const normalizedStudentId = id.toUpperCase();
 
-  // Try portalEmail first, then fatherPhone, then motherPhone
-  const parent = await Parent.findOne({
-    $or: [
-      { portalEmail: id },
-      { fatherPhone: id },
-      { motherPhone: id }
-    ],
-    isPortalActive: true,
+  let parent = null;
+  const student = await Student.findOne({
+    admissionNumber: normalizedStudentId,
     isActive: true
-  }).select('+password');
+  }).select('parent admissionNumber').lean();
+
+  if (student?.parent) {
+    parent = await Parent.findOne({
+      _id: student.parent,
+      students: student._id,
+      isPortalActive: true,
+      isActive: true
+    }).select('+password');
+  }
+
+  // Backward-compatible fallback for existing accounts created before
+  // Student ID login became the official parent username.
+  if (!parent) {
+    const legacyId = id.toLowerCase();
+    parent = await Parent.findOne({
+      $or: [
+        { portalEmail: legacyId },
+        { fatherPhone: id },
+        { motherPhone: id }
+      ],
+      isPortalActive: true,
+      isActive: true
+    }).select('+password');
+  }
 
   if (!parent || !parent.password) {
-    await recordLoginAttempt({ portal: 'parent', identifier: id, userModel: 'Parent', success: false, reason: 'Portal access not activated', req });
+    await recordLoginAttempt({ portal: 'parent', identifier: normalizedStudentId, userModel: 'Parent', success: false, reason: 'Portal access not activated', req });
     const e = new Error('Parent portal access not activated. Contact school admin.'); e.status = 401; throw e;
   }
 
   const match = await parent.comparePassword(password);
   if (!match) {
-    await recordLoginAttempt({ portal: 'parent', identifier: id, user: parent, userModel: 'Parent', success: false, reason: 'Incorrect password', req });
+    await recordLoginAttempt({ portal: 'parent', identifier: normalizedStudentId, user: parent, userModel: 'Parent', success: false, reason: 'Incorrect password', req });
     const e = new Error('Incorrect password'); e.status = 401; throw e;
   }
 
   parent.lastLoginAt = new Date();
   await parent.save({ validateBeforeSave: false });
-  await recordLoginAttempt({ portal: 'parent', identifier: id, user: parent, userModel: 'Parent', success: true, req });
+  await recordLoginAttempt({ portal: 'parent', identifier: normalizedStudentId, user: parent, userModel: 'Parent', success: true, req });
 
   const token = signParentToken(parent._id);
   const jwtCookieDays = Number(process.env.JWT_COOKIE_EXPIRES_DAYS || 7);
