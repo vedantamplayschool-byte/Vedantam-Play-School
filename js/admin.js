@@ -597,6 +597,7 @@ const RESOURCES = {
       { name: 'religion',         label: 'Religion',                     type: 'text' },
       { name: 'category',         label: 'Caste / Category',             type: 'select',  options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
       { name: 'admissionDate',    label: 'Admission Date',               type: 'date' },
+      { name: 'parentPassword',   label: 'Parent Portal Password (Admin Set)', type: 'password' },
       /* ── Address ── */
       { name: '_s2',              label: 'Address',                      type: 'separator', icon: 'place',          wide: true },
       { name: 'address',          label: 'Full Address',                 type: 'textarea', wide: true },
@@ -1348,8 +1349,11 @@ async function updateAdmStatus(id, status) {
 
 async function convertAdmission(admissionId) {
   if (!confirm('Convert this admission to an enrolled student?\n\nA student profile will be created.')) return;
+  const parentPassword = prompt('Set parent portal password to share privately with parents (min 6 characters):');
+  if (!parentPassword) return;
+  if (parentPassword.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
   try {
-    const { parentCredentials } = await api(`/students/convert-admission/${admissionId}`, { method: 'POST' });
+    const { parentCredentials } = await api(`/students/convert-admission/${admissionId}`, { method: 'POST', body: JSON.stringify({ parentPassword }) });
     toast('Student enrolled successfully!', 'success');
     if (parentCredentials && parentCredentials.isNew) {
       showParentCredentialsModal(parentCredentials);
@@ -1362,7 +1366,7 @@ async function convertAdmission(admissionId) {
 
 /* Shown right after enrollment: the parent-portal login just generated for
    this family, so the admin can copy/share it immediately. */
-function showParentCredentialsModal({ portalEmail, password, admissionNumber, rollNumber }) {
+function showParentCredentialsModal({ studentId, portalEmail, password, admissionNumber, rollNumber }) {
   const wrap = document.createElement('div');
   wrap.className = 'modal-overlay';
   wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;overflow-y:auto';
@@ -1372,18 +1376,18 @@ function showParentCredentialsModal({ portalEmail, password, admissionNumber, ro
       <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">Student Admission Successful</h3>
       <p style="font-size:12px;color:var(--txt-sm);margin-bottom:18px;line-height:1.6">Share these details with the parent. <strong>Password can only be reset by admin.</strong></p>
       <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:18px;border:1px solid rgba(0,0,0,.06);display:grid;gap:12px">
-        ${admissionNumber ? `<div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Admission Number</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(admissionNumber)}</strong>
+        ${(studentId || admissionNumber) ? `<div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Student ID / Parent Username</div>
+          <strong style="font-size:14px;color:var(--primary)">${esc(studentId || admissionNumber)}</strong>
         </div>` : ''}
         ${rollNumber ? `<div>
           <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Roll Number</div>
           <strong style="font-size:14px;color:var(--primary)">${esc(rollNumber)}</strong>
         </div>` : ''}
-        <div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Parent Portal Login (User ID)</div>
+        ${portalEmail ? `<div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Contact Email</div>
           <strong style="font-size:14px;color:var(--primary)">${esc(portalEmail)}</strong>
-        </div>
+        </div>` : ''}
         <div>
           <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Password</div>
           <strong style="font-size:14px;color:var(--primary)">${esc(password)}</strong>
@@ -1397,9 +1401,10 @@ function showParentCredentialsModal({ portalEmail, password, admissionNumber, ro
   document.body.appendChild(wrap);
   wrap.querySelector('#pcCopyBtn').onclick = () => {
     const lines = ['Vedantam Play School — Student Admission Details'];
-    if (admissionNumber) lines.push(`Admission No: ${admissionNumber}`);
+    if (studentId || admissionNumber) lines.push(`Student ID / Parent Username: ${studentId || admissionNumber}`);
     if (rollNumber)      lines.push(`Roll No: ${rollNumber}`);
-    lines.push(`Parent Portal Login: ${portalEmail}`, `Password: ${password}`, 'Note: Password can only be reset by admin.');
+    if (portalEmail) lines.push(`Contact Email: ${portalEmail}`);
+    lines.push(`Password: ${password}`, 'Note: Password can only be reset by admin.');
     navigator.clipboard?.writeText(lines.join('\n'));
     toast('Details copied to clipboard', 'success');
   };
@@ -3602,7 +3607,7 @@ function renderPortalParentList(parents) {
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:13px">${name}</div>
         <div style="font-size:11px;color:var(--txt-sm)">${esc(p.fatherPhone||p.motherPhone||'')} · Children: ${children}</div>
-        ${p.portalEmail ? `<div style="font-size:11px;color:var(--txt-sm);font-family:monospace">📧 ${esc(p.portalEmail)}</div>` : ''}
+        ${(p.students || []).length ? `<div style="font-size:11px;color:var(--txt-sm);font-family:monospace">🆔 ${(p.students || []).map(s => esc(s.admissionNumber || '')).filter(Boolean).join(', ')}</div>` : ''}
         ${p.isPortalActive && p.mustChangePassword ? `<div style="font-size:10px;color:var(--txt-sm)">🔑 Using a temporary password — use "Reset" to set a new one if it needs to be re-shared</div>` : ''}
         ${p.autoGenerated ? `<div style="font-size:10px;color:var(--ok,#16a34a)">✨ Auto-generated at enrollment</div>` : ''}
         ${p.lastLoginAt ? `<div style="font-size:10px;color:var(--txt-sm)">Last login: ${fmtDate(p.lastLoginAt)}</div>` : ''}
@@ -3637,13 +3642,11 @@ function filterPortalParents(q) {
 window.filterPortalParents = filterPortalParents;
 
 async function activateParentPortal(id, name) {
-  const email = prompt(`Set portal email for ${name}:`);
-  if (!email) return;
-  const pw = prompt(`Set temporary password for ${name}:\n(min 6 characters)`);
+  const pw = prompt(`Set parent portal password for ${name}:\nUsername is the student's Student ID.\n(min 6 characters)`);
   if (!pw) return;
   if (pw.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
   try {
-    await api(`/admin-parent-portal/${id}/activate`, { method: 'POST', body: JSON.stringify({ portalEmail: email, password: pw }) });
+    await api(`/admin-parent-portal/${id}/activate`, { method: 'POST', body: JSON.stringify({ password: pw }) });
     toast(`Portal access set for ${name}. Share credentials securely.`, 'success');
     parentPortalAdminPage();
   } catch (err) { toast(err.message, 'error'); }

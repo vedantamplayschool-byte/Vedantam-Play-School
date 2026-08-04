@@ -6,18 +6,34 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok }           from '../utils/apiResponse.js';
 import { buildQuery, paginate } from '../utils/apiFeatures.js';
 import { uploadImage }  from '../services/uploadService.js';
-import { generateTempPassword, fallbackPortalEmail, assignAlphabeticalRollNumbers } from '../utils/generateCredentials.js';
+import { fallbackPortalEmail, assignAlphabeticalRollNumbers } from '../utils/generateCredentials.js';
 
-/* ── Admission-number generator: VPS/2026/001 ───────────────────── */
-async function generateAdmissionNumber() {
-  const year   = new Date().getFullYear();
-  const prefix = `VPS/${year}/`;
-  const last   = await Student.findOne(
-    { admissionNumber: { $regex: `^VPS/${year}/` } },
+/* ── Student ID generator: VPS2026001 ─────────────────────────────
+   VPS = Vedantam Play School, YYYY = admission/session year, and the
+   final 3 digits mirror the generated admission sequence. */
+async function generateAdmissionNumber(sessionId, admissionDate) {
+  let year = admissionDate ? new Date(admissionDate).getFullYear() : new Date().getFullYear();
+
+  if (sessionId) {
+    const session = await AcademicSession.findById(sessionId).lean();
+    const sessionYear = session?.startDate ? new Date(session.startDate).getFullYear() : parseInt(String(session?.name || '').match(/\d{4}/)?.[0], 10);
+    if (sessionYear) year = sessionYear;
+  }
+
+  const prefix = `VPS${year}`;
+  const last = await Student.findOne(
+    { admissionNumber: { $regex: `^${prefix}\\d{3}$` } },
     { admissionNumber: 1 }
-  ).sort({ admissionNumber: -1 });
-  const seq = last ? parseInt(last.admissionNumber.split('/')[2], 10) + 1 : 1;
+  ).sort({ admissionNumber: -1 }).lean();
+  const seq = last ? parseInt(last.admissionNumber.slice(-3), 10) + 1 : 1;
   return `${prefix}${String(seq).padStart(3, '0')}`;
+}
+
+function assertAdminParentPassword(password) {
+  if (!password || String(password).length < 6) {
+    const e = new Error('Parent portal password must be set by admin and be at least 6 characters');
+    e.status = 400; throw e;
+  }
 }
 
 /* ── LIST ────────────────────────────────────────────────────────── */
@@ -53,8 +69,13 @@ export const getStudent = asyncHandler(async (req, res) => {
 export const createStudent = asyncHandler(async (req, res) => {
   const payload = { ...req.body };
 
-  // Auto-generate admission number
-  if (!payload.admissionNumber) payload.admissionNumber = await generateAdmissionNumber();
+  if (!payload.session) {
+    const active = await AcademicSession.findOne({ isActive: true });
+    if (active) payload.session = active._id;
+  }
+
+  // Always auto-generate Student ID / admission number; admins never enter it manually.
+  payload.admissionNumber = await generateAdmissionNumber(payload.session, payload.admissionDate);
 
   // Roll number will be assigned after create via alphabetical reorder
   delete payload.rollNumber;
@@ -64,32 +85,24 @@ export const createStudent = asyncHandler(async (req, res) => {
     payload.photoUrl      = uploaded.url;
     payload.photoPublicId = uploaded.publicId;
   }
-  if (!payload.session) {
-    const active = await AcademicSession.findOne({ isActive: true });
-    if (active) payload.session = active._id;
-  }
 
-  /* ── Auto-create / link Parent record with portal credentials ─── */
+  /* ── Auto-create / link Parent record with admin-set portal password ─ */
+  const parentPassword = payload.parentPassword;
+  delete payload.parentPassword;
   let parentCredentials = null;
   if (!payload.parent) {
     const fPhone = (payload.fatherPhone || '').trim();
     const mPhone = (payload.motherPhone || '').trim();
-    const lookupPhone = fPhone || mPhone;
 
-    if (lookupPhone) {
-      // Build $or only from non-empty phone values to avoid matching
-      // documents where the phone field is null/missing (undefined clause bug).
+    if (fPhone || mPhone) {
       const phoneOrClauses = [];
       if (fPhone) phoneOrClauses.push({ fatherPhone: fPhone });
       if (mPhone) phoneOrClauses.push({ motherPhone: mPhone });
 
-      // Find existing parent or create new one
       let parent = await Parent.findOne({ $or: phoneOrClauses }).select('+password');
 
       if (!parent) {
-        const plainPassword = generateTempPassword(8);
-        const portalEmail   = fallbackPortalEmail(fPhone || mPhone);
-
+        assertAdminParentPassword(parentPassword);
         parent = await Parent.create({
           fatherName:       payload.fatherName       || undefined,
           fatherPhone:      fPhone                   || undefined,
@@ -100,21 +113,25 @@ export const createStudent = asyncHandler(async (req, res) => {
           guardianName:     payload.guardianName     || undefined,
           guardianPhone:    payload.guardianPhone     || undefined,
           guardianRelation: payload.guardianRelation  || undefined,
-          portalEmail,
-          password:          plainPassword,
+          portalEmail:       fallbackPortalEmail(fPhone || mPhone),
+          password:          parentPassword,
           mustChangePassword: false,
           isPortalActive:    true,
-          autoGenerated:     true
+          autoGenerated:     false
         });
 
         parentCredentials = {
-          isNew:       true,
-          portalEmail,
-          password:    plainPassword,
-          loginNote:   'Login via phone number or portal email. Password cannot be changed by parent — only admin can reset it.'
+          isNew: true,
+          studentId: payload.admissionNumber,
+          password: parentPassword,
+          loginNote: 'Parent Portal username is the Student ID. Password is set and reset only by admin.'
         };
-      } else {
-        payload.parent = parent._id;
+      } else if (parentPassword) {
+        parent.password = parentPassword;
+        parent.mustChangePassword = false;
+        parent.isPortalActive = true;
+        parent.autoGenerated = false;
+        await parent.save();
       }
 
       payload.parent = parent._id;
@@ -186,9 +203,10 @@ export const convertAdmission = asyncHandler(async (req, res) => {
   if (adm.student) {
     const e = new Error('Admission already converted to a student'); e.status = 409; throw e;
   }
-  const admNo  = await generateAdmissionNumber();
+  const { parentPassword, admissionNumber: _ignoredAdmissionNumber, ...studentOverrides } = req.body;
   const active = await AcademicSession.findOne({ isActive: true });
-  const program = req.body.program || adm.program;
+  const admNo  = await generateAdmissionNumber(active?._id, adm.admissionDate || adm.createdAt);
+  const program = studentOverrides.program || adm.program;
 
   const student = await Student.create({
     admission: adm._id, admissionNumber: admNo,
@@ -197,43 +215,45 @@ export const convertAdmission = asyncHandler(async (req, res) => {
     dateOfBirth: adm.dateOfBirth, address: adm.address,
     gender: adm.gender, session: active?._id, admissionDate: new Date(),
     status: 'Active',
-    ...req.body
+    ...studentOverrides,
+    admissionNumber: admNo
   });
 
   // Re-assign roll numbers alphabetically for the enrolled class
   await assignAlphabeticalRollNumbers(Student, program, req.body.section || '');
 
-  /* ── Auto-provision parent portal credentials ──────────────────────
-     As soon as an admission becomes an enrolled student, the family
-     gets parent-portal access automatically: reuse an existing Parent
-     record for the same phone (so siblings share one login), otherwise
-     create one and generate a temporary email/password pair. The
-     credentials are returned once in this response and also kept on the
-     Parent record (tempPasswordPlain) so admins can see them later in
-     the Parent Portal Accounts screen until the parent changes them. */
+  /* ── Provision parent portal credentials from admin-supplied password ─
+     Parent Portal username is the Student ID (student.admissionNumber). */
   let parent = await Parent.findOne({
     $or: [{ fatherPhone: adm.phone }, { motherPhone: adm.phone }]
-  });
+  }).select('+password');
 
   let parentCredentials = null;
   if (parent) {
+    if (parentPassword) {
+      parent.password = parentPassword;
+      parent.mustChangePassword = false;
+      parent.isPortalActive = true;
+      parent.autoGenerated = false;
+      await parent.save();
+    }
     await Parent.findByIdAndUpdate(parent._id, { $addToSet: { students: student._id } });
   } else {
-    const tempPassword = generateTempPassword();
-    const portalEmail  = (adm.email && adm.email.trim()) ? adm.email.trim().toLowerCase() : fallbackPortalEmail(adm.phone);
+    assertAdminParentPassword(parentPassword);
     parent = await Parent.create({
-      fatherName:  adm.parentName,
-      fatherPhone: adm.phone,
+      fatherName:  adm.fatherName || adm.parentName,
+      fatherPhone: adm.fatherPhone || adm.phone,
       fatherEmail: adm.email || '',
+      motherName:  adm.motherName,
+      motherPhone: adm.motherPhone,
       students:    [student._id],
-      portalEmail,
-      password:    tempPassword,
-      mustChangePassword: true,
+      portalEmail: (adm.email && adm.email.trim()) ? adm.email.trim().toLowerCase() : fallbackPortalEmail(adm.phone),
+      password:    parentPassword,
+      mustChangePassword: false,
       isPortalActive: true,
-      autoGenerated: true,
-      tempPasswordPlain: tempPassword
+      autoGenerated: false
     });
-    parentCredentials = { portalEmail, password: tempPassword, isNew: true };
+    parentCredentials = { studentId: admNo, password: parentPassword, isNew: true };
   }
 
   student.parent = parent._id;
