@@ -3000,6 +3000,49 @@ async function openPrintUrl(apiPath) {
 }
 window.openPrintUrl = openPrintUrl;
 
+function studentIdDetailsText(s) {
+  return [
+    ['STUDENT NAME', s.studentName],
+    ['CLASS', [s.program, s.section ? `Section ${s.section}` : ''].filter(Boolean).join(' ')],
+    ['STUDENT ID', s._id],
+    ['ADMISSION NO', s.admissionNumber],
+    ['DATE OF BIRTH', s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('en-IN') : ''],
+    ["FATHER'S NAME", s.fatherName || s.parentName],
+    ['MOBILE NUMBER', s.fatherPhone || s.phone || s.motherPhone || s.guardianPhone],
+    ['ADDRESS', s.address]
+  ].map(([label, value]) => `${label}: ${value || '—'}`).join('\n');
+}
+
+function studentPhotoUrl(s) {
+  return s.photoUrl || (s.documents || []).find(d => d.docType === 'Student Photo' || d.category === 'Photo')?.url || '';
+}
+
+async function copyStudentIdDetails(id) {
+  try {
+    const { data: s } = await api(`/students/${id}`);
+    await navigator.clipboard.writeText(studentIdDetailsText(s));
+    toast('Student ID details copied');
+  } catch (err) { toast(err.message || 'Unable to copy details', 'error'); }
+}
+window.copyStudentIdDetails = copyStudentIdDetails;
+
+async function downloadStudentPhoto(id) {
+  try {
+    const { data: s } = await api(`/students/${id}`);
+    const url = studentPhotoUrl(s);
+    if (!url) { toast('No student photo found', 'warning'); return; }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(s.studentName || 'student').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'student'}-photo`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (err) { toast(err.message || 'Unable to download photo', 'error'); }
+}
+window.downloadStudentPhoto = downloadStudentPhoto;
+
 async function genStudentIdCard(id) {
   const idVal = id || document.getElementById('studentIdInput')?.value?.trim();
   if (!idVal) { toast('Enter an admission number or search above', 'warning'); return; }
@@ -3026,6 +3069,8 @@ async function searchStudentForId() {
     el.innerHTML = data.map(s => `
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)">
         <div style="flex:1;font-size:13px"><strong>${esc(s.studentName)}</strong> <span style="color:var(--txt-sm)">${esc(s.admissionNumber||'')} · ${esc(s.program)}</span></div>
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="copyStudentIdDetails('${s._id}')">Copy Details</button>
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="downloadStudentPhoto('${s._id}')">Download Photo</button>
         <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="openPrintUrl('/qr/student/${s._id}/id-card')">ID Card</button>
         <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="showStudentQR('${s._id}','${esc(s.studentName)}')">QR</button>
       </div>`).join('');

@@ -5,6 +5,8 @@ import { ok } from '../utils/apiResponse.js';
 import { buildQuery, paginate } from '../utils/apiFeatures.js';
 import { uploadImage } from '../services/uploadService.js';
 
+const publicVisibilityFilter = { $or: [{ isPublished: true }, { isPublished: { $exists: false } }] };
+
 const findByIdOrSlug = (value, filter = {}) => Gallery.findOne({
   ...(mongoose.Types.ObjectId.isValid(value) ? { _id: value } : { slug: value }),
   ...filter
@@ -66,14 +68,15 @@ const normalize = async (req, existing) => {
 };
 
 export const listGallery = asyncHandler(async (req, res) => {
-  const base = req.admin ? {} : { isPublished: true };
-  const filter = { ...base, ...buildQuery(req.query, ['title', 'description', 'category']) };
+  const userFilter = buildQuery(req.query, ['title', 'description', 'category']);
+  if (!req.admin) delete userFilter.isPublished;
+  const filter = req.admin ? userFilter : { $and: [userFilter, publicVisibilityFilter] };
   const { items, pagination } = await paginate(Gallery, filter, { ...req.query, sort: req.query.sort || '-eventDate,-createdAt' });
   ok(res, { data: items, pagination });
 });
 
 export const getGallery = asyncHandler(async (req, res) => {
-  const doc = await findByIdOrSlug(req.params.idOrSlug, req.admin ? {} : { isPublished: true });
+  const doc = await findByIdOrSlug(req.params.idOrSlug, req.admin ? {} : publicVisibilityFilter);
   if (!doc) { const e = new Error('Gallery activity not found'); e.status = 404; throw e; }
   ok(res, { data: doc });
 });
