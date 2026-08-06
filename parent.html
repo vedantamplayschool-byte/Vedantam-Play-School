@@ -223,6 +223,7 @@
       .main-col .topbar { position: sticky; top: 0; }
     }
   </style>
+  <link rel="stylesheet" href="css/vedantam-theme.css" />
 </head>
 <body>
 
@@ -257,32 +258,19 @@
   </div>
 </div>
 
-<!-- ── FORCE CHANGE PASSWORD ──────────────────────────────────────── -->
-<div id="forceChangePage" style="display:none;min-height:100vh;background:linear-gradient(135deg,#f97316,#8b5cf6);align-items:center;justify-content:center;padding:24px;">
+<!-- ── ADMIN-MANAGED PASSWORD NOTICE ──────────────────────────────── -->
+<div id="forceChangePage" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;">
   <div class="login-card">
     <div class="login-logo">
-      <h1>Set Your Password</h1>
-      <p>Please create a new password to continue</p>
+      <img src="logo.png" alt="Vedantam Play School" onerror="this.style.display='none'">
+      <h1>Password Managed by School</h1>
+      <p>Parent portal passwords are created and maintained only by the school administrator.</p>
     </div>
-    <div class="alert-err" id="fcError"></div>
-    <form id="forceChangeForm">
-      <div class="form-group">
-        <label>Current (Temporary) Password</label>
-        <input type="password" name="currentPassword" required autocomplete="current-password">
-      </div>
-      <div class="form-group">
-        <label>New Password</label>
-        <input type="password" name="newPassword" required minlength="6" autocomplete="new-password">
-      </div>
-      <div class="form-group">
-        <label>Confirm New Password</label>
-        <input type="password" name="confirmPassword" required autocomplete="new-password">
-      </div>
-      <button type="submit" class="btn-primary" id="fcBtn">
-        <span id="fcBtnText">Set Password</span>
-        <span class="spin" id="fcSpin" style="display:none"></span>
-      </button>
-    </form>
+    <div class="alert-err" style="display:block;background:#fff7ed;border-color:#fed7aa;color:#9a3412">
+      If you forgot your password or need it changed, please contact the school administrator. Parents cannot reset or change passwords from this portal.
+    </div>
+    <button type="button" class="btn-primary" id="continueToPortalBtn">Continue to Portal</button>
+    <div class="back-link"><p style="margin-top:8px"><a href="/">← Back to School Website</a></p></div>
   </div>
 </div>
 

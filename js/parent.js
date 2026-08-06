@@ -2,7 +2,7 @@
 /* ================================================================
    VEDANTAM PLAY SCHOOL — PARENT PORTAL v3.0
    View-only portal: children, attendance, homework, fees, notices,
-   events, gallery, profile, change password.
+   events, gallery, and profile.
    ================================================================ */
 
 const API = (window.VedantamAPIConfig?.baseUrl || '/api/v1').replace(/\/$/, '');
@@ -131,9 +131,9 @@ async function dashboard() {
 
   area.innerHTML = `
     ${d.parent.mustChangePassword ? `
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
-      <span class="material-icons-round" style="color:#b91c1c">warning</span>
-      <span>Please <button onclick="navigate('profile')" style="background:none;border:none;color:#b91c1c;font-weight:600;cursor:pointer;font-size:inherit">change your password</button> — you are using a temporary password.</span>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:#9a3412">
+      <span class="material-icons-round" style="color:#f97316">admin_panel_settings</span>
+      <span>Your portal password is managed by the school administrator. Contact the school office if you need password help.</span>
     </div>` : ''}
 
     <div style="background:linear-gradient(135deg,#f97316,#8b5cf6);color:#fff;border-radius:14px;padding:20px;margin-bottom:14px">
@@ -513,19 +513,11 @@ async function profilePage() {
     </div>
 
     <div class="card">
-      <div class="card-head"><span class="card-title">Change Password</span></div>
+      <div class="card-head"><span class="card-title">Portal Password</span></div>
       <div class="card-body">
-        ${p.mustChangePassword ? `<div style="background:#fef9c3;border:1px solid #fef08a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#854d0e"><strong>Action required:</strong> Please change your temporary password.</div>` : ''}
-        <div class="pw-form">
-          <div id="pwError" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px;margin-bottom:12px"></div>
-          <form id="pwForm">
-            <div class="form-group"><label>Current Password</label><input type="password" name="currentPassword" required autocomplete="current-password"></div>
-            <div class="form-group"><label>New Password</label><input type="password" name="newPassword" required minlength="6" autocomplete="new-password"></div>
-            <div class="form-group"><label>Confirm New Password</label><input type="password" name="confirmPassword" required autocomplete="new-password"></div>
-            <button type="submit" style="padding:10px 20px;background:linear-gradient(135deg,#f97316,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
-              <span class="material-icons-round" style="font-size:18px">lock</span>Update Password
-            </button>
-          </form>
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:14px 16px;font-size:13px;color:#9a3412;display:flex;gap:10px;align-items:flex-start">
+          <span class="material-icons-round" style="color:#f97316">admin_panel_settings</span>
+          <div><strong>Admin-managed access:</strong> Parent passwords are created and maintained by Vedantam Play School administrators only. If you forget your password or need a change, please contact the school office.</div>
         </div>
       </div>
     </div>`;
@@ -545,26 +537,6 @@ async function profilePage() {
       errEl.style.display = '';
     }
   });
-
-  document.getElementById('pwForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const fd   = new FormData(e.target);
-    const curr = fd.get('currentPassword');
-    const nw   = fd.get('newPassword');
-    const conf = fd.get('confirmPassword');
-    const errEl = document.getElementById('pwError');
-    errEl.style.display = 'none';
-    if (nw !== conf) { errEl.textContent = 'Passwords do not match'; errEl.style.display = ''; return; }
-    try {
-      await api('/parent-auth/change-password', { method:'PUT', body: JSON.stringify({ currentPassword: curr, newPassword: nw }) });
-      toast('Password changed successfully!');
-      S.parent.mustChangePassword = false;
-      e.target.reset();
-    } catch (err) {
-      errEl.textContent = err.message;
-      errEl.style.display = '';
-    }
-  });
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -576,7 +548,7 @@ async function initApp() {
     const { data } = await api('/parent-auth/me');
     S.parent = data;
     mountShell();
-    if (data.mustChangePassword) showPage('forceChangePage');
+    if (data.mustChangePassword) { showPage('forceChangePage'); navigate('dashboard'); }
     else navigate('dashboard');
   } catch (_) {
     clearToken(); showPage('loginPage');
@@ -632,7 +604,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async e => {
     saveToken(data.token);
     S.parent = data.parent;
     mountShell();
-    if (data.mustChangePassword) showPage('forceChangePage');
+    if (data.mustChangePassword) { showPage('forceChangePage'); navigate('dashboard'); }
     else navigate('dashboard');
   } catch (ex) {
     err.textContent = ex.message;
@@ -642,32 +614,10 @@ document.getElementById('loginForm')?.addEventListener('submit', async e => {
   }
 });
 
-/* ── FORCE CHANGE PASSWORD FORM ───────────────────────────────────── */
-document.getElementById('forceChangeForm')?.addEventListener('submit', async e => {
-  e.preventDefault();
-  const fd  = new FormData(e.target);
-  const btn = document.getElementById('fcBtn');
-  const txt = document.getElementById('fcBtnText');
-  const spn = document.getElementById('fcSpin');
-  const err = document.getElementById('fcError');
-  err.style.display = 'none';
-  const nw   = fd.get('newPassword');
-  const conf = fd.get('confirmPassword');
-  if (nw !== conf) { err.textContent = 'Passwords do not match'; err.style.display = ''; return; }
-  btn.disabled = true; txt.textContent = 'Saving…'; spn.style.display = '';
-  try {
-    await api('/parent-auth/change-password', {
-      method: 'PUT',
-      body: JSON.stringify({ currentPassword: fd.get('currentPassword'), newPassword: nw })
-    });
-    if (S.parent) S.parent.mustChangePassword = false;
-    toast('Password set! Welcome.');
-    navigate('dashboard');
-  } catch (ex) {
-    err.textContent = ex.message; err.style.display = '';
-  } finally {
-    btn.disabled = false; txt.textContent = 'Set Password'; spn.style.display = 'none';
-  }
+/* ── ADMIN-MANAGED PASSWORD NOTICE ───────────────────────────────── */
+document.getElementById('continueToPortalBtn')?.addEventListener('click', () => {
+  showPage('parentShell');
+  navigate('dashboard');
 });
 
 /* ── BOOT ─────────────────────────────────────────────────────────── */
