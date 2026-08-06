@@ -701,23 +701,26 @@ const RESOURCES = {
   },
 
   gallery: {
-    label: 'Gallery', endpoint: '/gallery',
+    label: 'Gallery Activities', endpoint: '/gallery',
     getTitle: r => r.title,
-    getSubtitle: r => r.category,
-    badge: r => ({ text: r.isFeatured ? 'Featured' : 'Active', cls: r.isFeatured ? 'badge-approved' : 'badge-default' }),
-    columns: ['Photo', 'Title', 'Category', 'Status', 'Date', 'Actions'],
+    getSubtitle: r => `${r.category || 'Activity'} • ${(r.galleryImages?.length || r.photoCount || (r.imageUrl ? 1 : 0))} photos`,
+    badge: r => ({ text: r.isPublished === false ? 'Unpublished' : 'Published', cls: r.isPublished === false ? 'badge-inactive' : 'badge-approved' }),
+    columns: ['Cover', 'Activity', 'Category', 'Status', 'Date', 'Actions'],
     hasImage: true,
     renderCells: r => `
-      <td>${r.imageUrl ? `<img class="thumb" src="${esc(r.imageUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
-      <td><div class="td-main">${esc(r.title)}</div></td>
+      <td>${(r.coverImage || r.imageUrl) ? `<img class="thumb" src="${esc(r.coverImage || r.imageUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
+      <td><div class="td-main">${esc(r.title)}</div><div class="td-sub">${r.eventDate ? new Date(r.eventDate).toLocaleDateString() : ''} • ${esc(r.slug || '')}</div></td>
       <td>${esc(r.category || '')}</td>`,
     fields: [
-      { name: 'title',        label: 'Title',         type: 'text',     required: true },
-      { name: 'category',     label: 'Category',      type: 'text' },
-      { name: 'description',  label: 'Description',   type: 'textarea', wide: true },
-      { name: 'image',        label: 'Photo',         type: 'file',     wide: true },
-      { name: 'isFeatured',   label: 'Featured',      type: 'boolean' },
-      { name: 'displayOrder', label: 'Display Order', type: 'number' }
+      { name: 'title',         label: 'Activity Title',          type: 'text',     required: true },
+      { name: 'eventDate',     label: 'Event Date',              type: 'date',     required: true },
+      { name: 'category',      label: 'Category',                type: 'select',   options: ['Celebrations', 'Learning Activities', 'Art & Craft', 'Sports', 'Festivals', 'Competitions', 'Trips'], required: true },
+      { name: 'description',   label: 'Short Description',       type: 'textarea', wide: true },
+      { name: 'coverImage',    label: 'Cover Image',             type: 'file',     wide: true },
+      { name: 'galleryImages', label: 'Gallery Images',          type: 'file',     multiple: true, wide: true },
+      { name: 'isPublished',   label: 'Publish Activity',        type: 'boolean' },
+      { name: 'isFeatured',    label: 'Featured',                type: 'boolean' },
+      { name: 'displayOrder',  label: 'Display Order',           type: 'number' }
     ]
   },
 
@@ -1043,7 +1046,7 @@ function buildRow(key, config, item, showEdit, showDelete) {
   }
   acts += '</td>';
 
-  const skipDate = ['slides', 'testimonials', 'teachers', 'gallery'].includes(key);
+  const skipDate = ['slides', 'testimonials', 'teachers'].includes(key);
   return `<tr>${customCells}${badgeTd}${skipDate ? '' : dateTd}${acts}</tr>`;
 }
 
@@ -1294,7 +1297,7 @@ function renderField(f, value) {
   if (f.type === 'file') {
     const preview = value ? `<img src="${esc(value)}" alt="" style="height:58px;margin-top:8px;border-radius:8px;object-fit:cover">` : '';
     return `<div class="${wrapCls}">${label}
-      <input id="ff_${f.name}" name="${f.name}" type="file" accept="image/*" class="form-input" style="padding:8px">
+      <input id="ff_${f.name}" name="${f.name}" type="file" accept="image/*" class="form-input" style="padding:8px" ${f.multiple ? 'multiple' : ''}>
       ${preview}
     </div>`;
   }
