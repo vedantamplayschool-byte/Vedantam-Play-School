@@ -31,12 +31,12 @@ import securityRoutes          from './securityRoutes.js';
 /* CMS */
 import { crudRouter }  from './resourceRoutes.js';
 import Teacher         from '../models/Teacher.js';
-import Gallery         from '../models/Gallery.js';
 import Notice          from '../models/Notice.js';
 import Event           from '../models/Event.js';
 import Testimonial     from '../models/Testimonial.js';
 import HeroSlide       from '../models/HeroSlide.js';
 import Enquiry         from '../models/Enquiry.js';
+import galleryRoutes   from './galleryRoutes.js';
 
 const r = Router();
 
@@ -81,7 +81,7 @@ r.use('/security',               securityRoutes);
 
 /* ── CMS resources (existing crudRouter — unchanged) ─────────────── */
 r.use('/teachers',     crudRouter(Teacher,     { isActive: true }, ['name', 'qualification']));
-r.use('/gallery',      crudRouter(Gallery,     {}, ['title', 'category']));
+r.use('/gallery',      galleryRoutes);
 r.use('/notices',      crudRouter(Notice,      {
   isPublished: true,
   $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gte: new Date() } }]
