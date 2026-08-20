@@ -8,7 +8,10 @@ const schema = new mongoose.Schema(
     method:     { type: String, trim: true },
     path:       { type: String, trim: true, index: true },
     statusCode: { type: Number },
-    ipAddress:  { type: String, trim: true }
+    ipAddress:  { type: String, trim: true },
+    entity:     { type: String, trim: true, index: true },
+    entityId:   { type: mongoose.Schema.Types.ObjectId, index: true },
+    changes:    { type: mongoose.Schema.Types.Mixed }
   },
   { timestamps: true }
 );
