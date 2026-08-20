@@ -26,6 +26,29 @@ function primaryEmail(parent) {
   return parent.fatherEmail || parent.motherEmail || parent.portalEmail || '';
 }
 
+
+async function refreshParentStudentList(parentId) {
+  const linkedStudents = await Student.find({ parent: parentId }).select('_id').lean();
+  await Parent.findByIdAndUpdate(parentId, { students: linkedStudents.map(s => s._id) }, { runValidators: true });
+}
+
+async function syncStudentParentSnapshot(student, parent) {
+  student.parent = parent._id;
+  student.fatherName = parent.fatherName || student.fatherName;
+  student.fatherPhone = parent.fatherPhone || student.fatherPhone;
+  student.fatherOccupation = parent.fatherOccupation || student.fatherOccupation;
+  student.motherName = parent.motherName || student.motherName;
+  student.motherPhone = parent.motherPhone || student.motherPhone;
+  student.motherOccupation = parent.motherOccupation || student.motherOccupation;
+  student.guardianName = parent.guardianName || student.guardianName;
+  student.guardianPhone = parent.guardianPhone || student.guardianPhone;
+  student.guardianRelation = parent.guardianRelation || student.guardianRelation;
+  student.parentName = primaryParentName(parent) || student.parentName;
+  student.phone = primaryPhone(parent) || student.phone;
+  student.address = parent.address || student.address;
+  await student.save({ validateBeforeSave: false });
+}
+
 function profileCompletion(parent) {
   const missing = [];
   if (!primaryParentName(parent)) missing.push('PARENT/GUARDIAN NAME');
@@ -171,4 +194,45 @@ export const resetParentPassword = asyncHandler(async (req, res) => {
   parent.mustChangePassword = true;
   await parent.save();
   ok(res, { message: 'Password reset successfully. Parent must change password on next login.' });
+});
+
+
+/* ── REPAIR LINKED CHILDREN ─────────────────────────────────────── */
+export const linkStudentToParentByAdmin = asyncHandler(async (req, res) => {
+  const { studentId, admissionNumber } = req.body;
+  const parent = await Parent.findById(req.params.id);
+  if (!parent) { const e = new Error('Parent not found'); e.status = 404; throw e; }
+
+  const student = studentId
+    ? await Student.findById(studentId)
+    : await Student.findOne({ admissionNumber: String(admissionNumber || '').trim() });
+  if (!student) { const e = new Error('Student not found. Enter a valid Student ID or Admission Number.'); e.status = 404; throw e; }
+
+  const oldParentId = student.parent && String(student.parent) !== String(parent._id) ? student.parent : null;
+  if (oldParentId) await Parent.findByIdAndUpdate(oldParentId, { $pull: { students: student._id } });
+  await syncStudentParentSnapshot(student, parent);
+  await refreshParentStudentList(parent._id);
+
+  const synced = await getSyncedParent(parent._id);
+  const data = synced.toObject();
+  delete data.password;
+  ok(res, { message: 'Student linked to selected parent', data: { ...data, profileCompletion: profileCompletion(data) } });
+});
+
+export const unlinkStudentFromParentByAdmin = asyncHandler(async (req, res) => {
+  const parent = await Parent.findById(req.params.id);
+  if (!parent) { const e = new Error('Parent not found'); e.status = 404; throw e; }
+
+  const student = await Student.findById(req.params.studentId);
+  if (!student) { const e = new Error('Student not found'); e.status = 404; throw e; }
+  if (String(student.parent || '') === String(parent._id)) {
+    student.parent = undefined;
+    await student.save({ validateBeforeSave: false });
+  }
+  await refreshParentStudentList(parent._id);
+
+  const synced = await getSyncedParent(parent._id);
+  const data = synced.toObject();
+  delete data.password;
+  ok(res, { message: 'Student unlinked from this parent', data: { ...data, profileCompletion: profileCompletion(data) } });
 });

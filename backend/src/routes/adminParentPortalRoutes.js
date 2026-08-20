@@ -1,7 +1,7 @@
 import { Router }            from 'express';
 import { protect, authorize } from '../middleware/auth.js';
 import {
-  listPortalParents, getParentProfile, updateParentProfileByAdmin, activatePortal, deactivatePortal, resetParentPassword
+  listPortalParents, getParentProfile, updateParentProfileByAdmin, activatePortal, deactivatePortal, resetParentPassword, linkStudentToParentByAdmin, unlinkStudentFromParentByAdmin
 } from '../controllers/adminParentPortalController.js';
 
 const r = Router();
@@ -13,5 +13,7 @@ r.put('/:id/profile',                 updateParentProfileByAdmin);
 r.post('/:id/activate',             activatePortal);
 r.post('/:id/deactivate',           deactivatePortal);
 r.post('/:id/reset-password',       resetParentPassword);
+r.post('/:id/students/link',        linkStudentToParentByAdmin);
+r.delete('/:id/students/:studentId', unlinkStudentFromParentByAdmin);
 
 export default r;

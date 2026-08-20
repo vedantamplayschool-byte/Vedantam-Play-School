@@ -1860,7 +1860,7 @@ function buildPaymentsTable(items) {
 function openPaymentForm(id, item = {}) {
   const host = document.getElementById('paymentFormHost');
   const isEdit = !!id;
-  const feeTypes = ['Admission', 'Monthly', 'Transport', 'Activity', 'Exam', 'Annual', 'Other'];
+  const feeTypes = ['Registration Fees', 'Admission Fees', 'Term 1 Fees', 'Term 2 Fees', 'Term 3 Fees'];
   const payModes = ['Cash', 'Online', 'Cheque', 'Demand Draft', 'UPI'];
 
   host.innerHTML = `
@@ -2050,7 +2050,7 @@ function buildStructuresTable(items) {
 
 function openStructureForm(id) {
   const host = document.getElementById('structFormHost');
-  const feeTypes  = ['Admission Fee', 'Monthly Fee', 'Transport Fee', 'Activity Fee', 'Annual Fee', 'Exam Fee', 'Other'];
+  const feeTypes  = ['Registration Fees', 'Admission Fees', 'Term 1 Fees', 'Term 2 Fees', 'Term 3 Fees'];
   const freqTypes = ['Monthly', 'Annual', 'One-time', 'Term-wise'];
 
   host.innerHTML = `
@@ -3801,13 +3801,13 @@ function parentProfileField(label, name, value = '', type = 'text') {
 async function editParentProfile(id) {
   try {
     const { data: p } = await api(`/admin-parent-portal/${id}/profile`);
-    const studentRows = (p.students || []).map(s => `<tr><td>${esc(s.admissionNumber || '')}</td><td>${esc(s.studentName || '')}</td><td>${esc(s.program || '')}${s.section ? ' '+esc(s.section) : ''}</td><td style="font-family:monospace">${esc(s._id || '')}</td></tr>`).join('');
+    const studentRows = (p.students || []).map(s => `<tr><td>${esc(s.admissionNumber || '')}</td><td>${esc(s.studentName || '')}</td><td>${esc(s.program || '')}${s.section ? ' '+esc(s.section) : ''}</td><td style="font-family:monospace">${esc(s._id || '')}</td><td>${canEdit() ? `<button type="button" class="btn btn-danger btn-sm" onclick="unlinkPortalStudent('${p._id}','${s._id}')">Unlink</button>` : '—'}</td></tr>`).join('');
     const modal = document.createElement('div');
     modal.className = 'modal-backdrop';
     modal.innerHTML = `<div class="modal" style="max-width:760px"><div class="modal-header"><h3>Parent Profile — Edit Information</h3><button class="icon-btn" onclick="this.closest('.modal-backdrop').remove()"><span class="material-icons-round">close</span></button></div>
       <form id="parentProfileForm" class="modal-body" style="display:grid;gap:14px">
         <div class="alert alert-info">Student links use immutable Student Internal ID. Admission Number can change without disconnecting portal access.</div>
-        <h4>Student Information</h4><div style="overflow:auto"><table class="data-table"><thead><tr><th>ADM. NO.</th><th>STUDENT NAME</th><th>CLASS</th><th>Student Internal ID</th></tr></thead><tbody>${studentRows || '<tr><td colspan="4">No linked students</td></tr>'}</tbody></table></div>
+        <h4>Student Information</h4><div style="overflow:auto"><table class="data-table"><thead><tr><th>ADM. NO.</th><th>STUDENT NAME</th><th>CLASS</th><th>Student Internal ID</th><th>Action</th></tr></thead><tbody>${studentRows || '<tr><td colspan="5">No linked students</td></tr>'}</tbody></table></div><div class="alert alert-info" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>Fix wrong child links:</span><input id="linkStudentAdmNo" placeholder="Admission Number" style="padding:8px;border:1.5px solid var(--bd);border-radius:8px;min-width:180px"><button type="button" class="btn btn-secondary btn-sm" onclick="linkPortalStudent('${p._id}')">Link Student</button></div>
         <h4>Parent / Guardian Information</h4><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
           ${parentProfileField('PARENT/GUARDIAN NAME (Father)', 'fatherName', p.fatherName)}${parentProfileField('RELATION WITH STUDENT', 'guardianRelation', p.guardianRelation || 'Father')}${parentProfileField('MOBILE NUMBER', 'fatherPhone', p.fatherPhone)}${parentProfileField('ALTERNATE MOBILE NUMBER', 'motherPhone', p.motherPhone)}${parentProfileField('EMAIL', 'fatherEmail', p.fatherEmail)}${parentProfileField('Mother Name', 'motherName', p.motherName)}${parentProfileField('Guardian Name', 'guardianName', p.guardianName)}${parentProfileField('Guardian Phone', 'guardianPhone', p.guardianPhone)}${parentProfileField('City', 'city', p.city)}${parentProfileField('State', 'state', p.state)}${parentProfileField('Pincode', 'pincode', p.pincode)}
         </div><label style="display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600">ADDRESS<textarea name="address" style="padding:8px;border:1.5px solid var(--bd);border-radius:8px;min-height:70px">${esc(p.address || '')}</textarea></label>
@@ -3826,6 +3826,29 @@ async function editParentProfile(id) {
   } catch (err) { toast(err.message, 'error'); }
 }
 window.editParentProfile = editParentProfile;
+
+async function linkPortalStudent(parentId) {
+  const input = document.getElementById('linkStudentAdmNo');
+  const admissionNumber = input?.value.trim();
+  if (!admissionNumber) { toast('Enter Admission Number to link student', 'warning'); return; }
+  if (!confirm(`Link student ${admissionNumber} to this parent? Existing wrong parent link will be removed.`)) return;
+  await api(`/admin-parent-portal/${parentId}/students/link`, { method: 'POST', body: JSON.stringify({ admissionNumber }) });
+  toast('Student linked to parent', 'success');
+  document.querySelector('.modal-backdrop')?.remove();
+  editParentProfile(parentId);
+  parentPortalAdminPage();
+}
+window.linkPortalStudent = linkPortalStudent;
+
+async function unlinkPortalStudent(parentId, studentId) {
+  if (!confirm('Unlink this student from the selected parent?')) return;
+  await api(`/admin-parent-portal/${parentId}/students/${studentId}`, { method: 'DELETE' });
+  toast('Student unlinked from parent', 'success');
+  document.querySelector('.modal-backdrop')?.remove();
+  editParentProfile(parentId);
+  parentPortalAdminPage();
+}
+window.unlinkPortalStudent = unlinkPortalStudent;
 
 async function activateParentPortal(id, name) {
   const pw = prompt(`Set/reset parent portal password for ${name}:\nComplete and save the Parent Profile first. Username is the linked student's current Admission Number.\n(min 6 characters)`);
