@@ -597,6 +597,7 @@ const RESOURCES = {
       { name: 'religion',         label: 'Religion',                     type: 'text' },
       { name: 'category',         label: 'Caste / Category',             type: 'select',  options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
       { name: 'admissionDate',    label: 'Admission Date',               type: 'date' },
+      { name: 'admissionNumber',  label: 'Admission Number (editable after confirmation)', type: 'text' },
       { name: 'parentPassword',   label: 'Parent Portal Password (Admin Set)', type: 'password' },
       /* ── Address ── */
       { name: '_s2',              label: 'Address',                      type: 'separator', icon: 'place',          wide: true },
@@ -1193,6 +1194,20 @@ function openForm(key, config, id) {
           if (!fd.get('phone') || !fd.get('phone').trim()) {
             const fp = (fd.get('fatherPhone') || fd.get('motherPhone') || '').trim();
             if (fp) fd.set('phone', fp);
+          }
+        }
+      }
+
+      if (key === 'students' && id) {
+        const oldAdmNo = String(item.admissionNumber || '').trim();
+        const newAdmNo = String(fd.get('admissionNumber') || '').trim();
+        if (fd.has('admissionNumber')) fd.set('admissionNumber', newAdmNo);
+        if (!newAdmNo) throw new Error('Admission Number cannot be empty');
+        if (oldAdmNo && newAdmNo !== oldAdmNo) {
+          const okToChange = confirm(`Are you sure you want to change Admission Number from ${oldAdmNo} to ${newAdmNo}?\n\nThis updates the same student record everywhere; it will not create a duplicate student.`);
+          if (!okToChange) {
+            btn.disabled = false; txt.style.display = ''; spin.style.display = 'none';
+            return;
           }
         }
       }

@@ -2,6 +2,7 @@ import Student        from '../models/Student.js';
 import Parent         from '../models/Parent.js';
 import Admission      from '../models/Admission.js';
 import AcademicSession from '../models/AcademicSession.js';
+import AuditLog       from '../models/AuditLog.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok }           from '../utils/apiResponse.js';
 import { buildQuery, paginate } from '../utils/apiFeatures.js';
@@ -27,6 +28,99 @@ async function generateAdmissionNumber(sessionId, admissionDate) {
   ).sort({ admissionNumber: -1 }).lean();
   const seq = last ? parseInt(last.admissionNumber.slice(-3), 10) + 1 : 1;
   return `${prefix}${String(seq).padStart(3, '0')}`;
+}
+
+
+function sanitizeAdmissionNumber(value) {
+  if (value === undefined) return undefined;
+  return String(value).trim();
+}
+
+function isValidAdmissionNumber(value) {
+  // Keep existing VPS2026001 convention and allow the requested VPS/2026/001 display convention.
+  return /^VPS(?:\/)?\d{4}(?:\/)?\d{3,5}$/i.test(value);
+}
+
+async function validateAdmissionNumberForStudent(admissionNumber, studentId) {
+  const normalized = sanitizeAdmissionNumber(admissionNumber);
+  if (normalized === undefined) return undefined;
+  if (!normalized) {
+    const e = new Error('Admission Number cannot be empty');
+    e.status = 400; throw e;
+  }
+  if (!isValidAdmissionNumber(normalized)) {
+    const e = new Error('Admission Number format is invalid. Use existing VPS format, e.g. VPS2026001 or VPS/2026/001');
+    e.status = 400; throw e;
+  }
+  const duplicate = await Student.findOne({ admissionNumber: normalized, _id: { $ne: studentId } }).select('_id admissionNumber').lean();
+  if (duplicate) {
+    const e = new Error('Admission Number is already assigned to another student');
+    e.status = 409; throw e;
+  }
+  return normalized;
+}
+
+function changedStudentFields(oldDoc, nextDoc, fields) {
+  return fields.reduce((changes, field) => {
+    const oldValue = oldDoc?.[field] ?? '';
+    const newValue = nextDoc?.[field] ?? '';
+    if (String(oldValue) !== String(newValue)) changes[field] = { oldValue, newValue };
+    return changes;
+  }, {});
+}
+
+async function syncLinkedStudentMasterData(student) {
+  const parentName = student.parentName || student.fatherName || student.motherName || student.guardianName || '';
+  const phone = student.phone || student.fatherPhone || student.motherPhone || student.guardianPhone || '';
+
+  if (student.admission) {
+    await Admission.findByIdAndUpdate(student.admission, {
+      studentName: student.studentName,
+      parentName,
+      phone,
+      program: student.program,
+      dateOfBirth: student.dateOfBirth,
+      address: student.address,
+      gender: student.gender,
+      admissionDate: student.admissionDate,
+      fatherName: student.fatherName,
+      fatherPhone: student.fatherPhone,
+      fatherOccupation: student.fatherOccupation,
+      motherName: student.motherName,
+      motherPhone: student.motherPhone,
+      motherOccupation: student.motherOccupation,
+      student: student._id
+    }, { runValidators: true });
+  }
+
+  if (student.parent) {
+    await Parent.findByIdAndUpdate(student.parent, {
+      ...(student.fatherName !== undefined ? { fatherName: student.fatherName } : {}),
+      ...(student.fatherPhone !== undefined ? { fatherPhone: student.fatherPhone } : {}),
+      ...(student.fatherOccupation !== undefined ? { fatherOccupation: student.fatherOccupation } : {}),
+      ...(student.motherName !== undefined ? { motherName: student.motherName } : {}),
+      ...(student.motherPhone !== undefined ? { motherPhone: student.motherPhone } : {}),
+      ...(student.motherOccupation !== undefined ? { motherOccupation: student.motherOccupation } : {}),
+      ...(student.guardianName !== undefined ? { guardianName: student.guardianName } : {}),
+      ...(student.guardianPhone !== undefined ? { guardianPhone: student.guardianPhone } : {}),
+      ...(student.guardianRelation !== undefined ? { guardianRelation: student.guardianRelation } : {})
+    }, { runValidators: true });
+  }
+}
+
+async function recordStudentMasterChanges(req, studentId, changes) {
+  if (!Object.keys(changes).length || !req.admin) return;
+  await AuditLog.create({
+    admin: req.admin._id,
+    adminName: req.admin.name,
+    method: req.method,
+    path: req.originalUrl,
+    statusCode: 200,
+    ipAddress: req.ip || '',
+    entity: 'Student',
+    entityId: studentId,
+    changes
+  }).catch(err => console.error('Student master audit write failed:', err.message));
 }
 
 function assertAdminParentPassword(password) {
@@ -160,6 +254,9 @@ export const createStudent = asyncHandler(async (req, res) => {
 /* ── UPDATE ──────────────────────────────────────────────────────── */
 export const updateStudent = asyncHandler(async (req, res) => {
   const payload = { ...req.body };
+  if (payload.admissionNumber !== undefined) {
+    payload.admissionNumber = await validateAdmissionNumberForStudent(payload.admissionNumber, req.params.id);
+  }
   if (req.file) {
     const uploaded = await uploadImage(req.file, 'vedantam/students', req);
     payload.photoUrl      = uploaded.url;
@@ -167,6 +264,12 @@ export const updateStudent = asyncHandler(async (req, res) => {
   }
   const old = await Student.findById(req.params.id);
   if (!old) { const e = new Error('Student not found'); e.status = 404; throw e; }
+  if (payload.parentName === undefined && (payload.fatherName || payload.motherName || payload.guardianName)) {
+    payload.parentName = payload.fatherName || payload.motherName || payload.guardianName;
+  }
+  if (payload.phone === undefined && (payload.fatherPhone || payload.motherPhone || payload.guardianPhone)) {
+    payload.phone = payload.fatherPhone || payload.motherPhone || payload.guardianPhone;
+  }
   const doc = await Student.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true })
     .populate('parent session');
   if (payload.parent && String(payload.parent) !== String(old.parent)) {
@@ -180,8 +283,15 @@ export const updateStudent = asyncHandler(async (req, res) => {
     await assignAlphabeticalRollNumbers(Student, doc.program, doc.section || '');
     if (programChanged) await assignAlphabeticalRollNumbers(Student, old.program, old.section || '');
   }
+  const latest = await Student.findById(doc._id);
+  await syncLinkedStudentMasterData(latest);
+  const changes = changedStudentFields(old, latest, [
+    'admissionNumber', 'studentName', 'parentName', 'phone', 'program', 'dateOfBirth', 'address',
+    'fatherName', 'fatherPhone', 'motherName', 'motherPhone', 'guardianName', 'guardianPhone'
+  ]);
+  await recordStudentMasterChanges(req, doc._id, changes);
   const refreshed = await Student.findById(doc._id).populate('parent session');
-  ok(res, { message: 'Student updated', data: refreshed });
+  ok(res, { message: 'Student updated', data: refreshed, changes });
 });
 
 /* ── DELETE ──────────────────────────────────────────────────────── */
