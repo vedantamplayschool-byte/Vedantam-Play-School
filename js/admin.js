@@ -1751,6 +1751,7 @@ async function feesPage() {
 
 async function renderFeePayments(el) {
   const { data } = await api('/fees/payments?limit=100&sort=-paymentDate');
+  const selectedClass = _filters.fees?.program || 'All Classes';
 
   const addBtn = canEdit() ? `<button class="btn btn-primary" id="addPaymentBtn">
     <span class="material-icons-round" style="font-size:18px">add</span> Record Payment
@@ -1761,7 +1762,15 @@ async function renderFeePayments(el) {
     <div class="card" style="margin-top:16px">
       <div class="card-head">
         <span class="card-title">Fee Payments (${data.length})</span>
-        <div style="display:flex;gap:8px">${addBtn}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="feesExportClass" class="filter-select" aria-label="Export class filter">
+            ${['All Classes','Play Group','Nursery','LKG','UKG'].map(cls => `<option value="${esc(cls)}" ${selectedClass === cls ? 'selected' : ''}>${esc(cls)}</option>`).join('')}
+          </select>
+          <button class="btn btn-secondary" id="exportFeesBtn">
+            <span class="material-icons-round" style="font-size:18px">download</span> Export Fees
+          </button>
+          ${addBtn}
+        </div>
       </div>
       <div class="table-wrap">${buildPaymentsTable(data)}</div>
     </div>`;
@@ -1769,6 +1778,10 @@ async function renderFeePayments(el) {
   if (canEdit()) {
     document.getElementById('addPaymentBtn')?.addEventListener('click', () => openPaymentForm(null));
   }
+  document.getElementById('feesExportClass')?.addEventListener('change', e => {
+    (_filters.fees = _filters.fees || {}).program = e.target.value;
+  });
+  document.getElementById('exportFeesBtn')?.addEventListener('click', exportFeesReport);
 
   el.addEventListener('click', async e => {
     const btn = e.target.closest('[data-pay-action]');
@@ -1802,7 +1815,7 @@ function buildPaymentsTable(items) {
         <div class="td-sub">${esc(p.student?.admissionNumber || '')}</div>
       </td>
       <td>${esc(p.feeType || '—')}</td>
-      <td style="font-weight:600">${fmtCurrency(p.amountDue)}</td>
+      <td style="font-weight:600">${fmtCurrency(p.totalAmount)}</td>
       <td style="color:var(--green);font-weight:600">${fmtCurrency(p.amountPaid)}</td>
       <td style="color:var(--err)">${fmtCurrency(p.balance)}</td>
       <td><span class="badge ${statusCls}">${esc(p.status)}</span></td>
@@ -1832,25 +1845,34 @@ function buildPaymentsTable(items) {
 function openPaymentForm(id, item = {}) {
   const host = document.getElementById('paymentFormHost');
   const isEdit = !!id;
-  const feeTypes = ['Admission Fee', 'Monthly Fee', 'Transport Fee', 'Activity Fee', 'Annual Fee', 'Exam Fee', 'Other'];
-  const payModes = ['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'Online'];
+  const feeTypes = ['Admission', 'Monthly', 'Transport', 'Activity', 'Exam', 'Annual', 'Other'];
+  const payModes = ['Cash', 'Online', 'Cheque', 'Demand Draft', 'UPI'];
 
   host.innerHTML = `
     <div class="form-card">
       <h2>${isEdit ? 'Edit' : 'Record'} Fee Payment</h2>
+      <p style="color:var(--txt-sm);font-size:13px;margin:0 0 14px">Search/select an existing student, then maintain fee details. Fees Due is calculated as Total Fees − Fees Paid.</p>
       <form id="paymentForm" novalidate>
         <div class="form-grid">
-          ${renderField({name:'studentId', label:'Student ID (MongoDB)', type:'text', required:true, wide:true}, item.student?._id || item.student)}
+          ${renderField({name:'studentSearch', label:'Search Student', type:'text', wide:true}, item.student?.studentName || '')}
+          <div class="col-full" id="studentSearchResults"></div>
+          ${renderField({name:'student', label:'Selected Student ID', type:'text', required:true, wide:true}, item.student?._id || item.student)}
           ${renderField({name:'feeType',   label:'Fee Type',            type:'select', required:true, options:feeTypes}, item.feeType)}
-          ${renderField({name:'month',     label:'Month (e.g. June 2025)', type:'text'}, item.month)}
-          ${renderField({name:'amountDue', label:'Amount Due (₹)',      type:'number', required:true}, item.amountDue)}
-          ${renderField({name:'amountPaid',label:'Amount Paid (₹)',     type:'number', required:true}, item.amountPaid)}
+          ${renderField({name:'month',     label:'Month', type:'select', options:['','January','February','March','April','May','June','July','August','September','October','November','December']}, item.month)}
+          ${renderField({name:'year',      label:'Year', type:'number'}, item.year || new Date().getFullYear())}
+          ${renderField({name:'baseAmount', label:'Total Fees (₹)',      type:'number', required:true}, item.baseAmount ?? item.totalAmount)}
+          ${renderField({name:'amountPaid',label:'Fees Paid (₹)',     type:'number', required:true}, item.amountPaid)}
+          ${renderField({name:'registrationFee', label:'Registration Fee (₹)', type:'number'}, item.registrationFee)}
+          ${renderField({name:'admissionFee', label:'Admission Fee (₹)', type:'number'}, item.admissionFee)}
+          ${renderField({name:'term1Fee', label:'Term 1 Fee (₹)', type:'number'}, item.term1Fee)}
+          ${renderField({name:'term2Fee', label:'Term 2 Fee (₹)', type:'number'}, item.term2Fee)}
+          ${renderField({name:'term3Fee', label:'Term 3 Fee (₹)', type:'number'}, item.term3Fee)}
           ${renderField({name:'paymentDate',label:'Payment Date',       type:'date',   required:true}, item.paymentDate ? new Date(item.paymentDate).toISOString().slice(0,10) : '')}
           ${renderField({name:'paymentMode',label:'Payment Mode',       type:'select', options:payModes}, item.paymentMode)}
           ${renderField({name:'transactionId',label:'Transaction / Ref No.',type:'text'}, item.transactionId)}
           ${renderField({name:'discount',  label:'Discount (₹)',        type:'number'}, item.discount)}
           ${renderField({name:'lateFee',   label:'Late Fee (₹)',        type:'number'}, item.lateFee)}
-          ${renderField({name:'remarks',   label:'Remarks',             type:'textarea', wide:true}, item.remarks)}
+          ${renderField({name:'notes',   label:'Remarks',             type:'textarea', wide:true}, item.notes)}
           <div class="form-actions col-full">
             <button type="submit" class="btn btn-primary" id="paySaveBtn">
               <span id="paySaveTxt">Save</span>
@@ -1865,6 +1887,8 @@ function openPaymentForm(id, item = {}) {
 
   host.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('payCancel').addEventListener('click', () => { host.innerHTML = ''; });
+  document.querySelector('[name="student"]')?.setAttribute('readonly', 'readonly');
+  document.querySelector('[name="studentSearch"]')?.addEventListener('input', debounce(searchFeeStudents, 250));
 
   document.getElementById('paymentForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -1874,6 +1898,11 @@ function openPaymentForm(id, item = {}) {
     btn.disabled = true; txt.style.display = 'none'; spin.style.display = '';
     try {
       const body = Object.fromEntries(new FormData(e.target));
+      delete body.studentSearch;
+      ['baseAmount','amountPaid','registrationFee','admissionFee','term1Fee','term2Fee','term3Fee','discount','lateFee','year'].forEach(k => {
+        if (body[k] === '') delete body[k];
+        else body[k] = Number(body[k]);
+      });
       const method   = id ? 'PATCH' : 'POST';
       const endpoint = id ? `/fees/payments/${id}` : '/fees/payments';
       await api(endpoint, { method, body: JSON.stringify(body) });
@@ -1885,6 +1914,61 @@ function openPaymentForm(id, item = {}) {
       btn.disabled = false; txt.style.display = ''; spin.style.display = 'none';
     }
   });
+}
+
+function debounce(fn, wait = 250) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), wait);
+  };
+}
+
+async function searchFeeStudents(e) {
+  const q = e.target.value.trim();
+  const results = document.getElementById('studentSearchResults');
+  if (!results) return;
+  if (q.length < 2) {
+    results.innerHTML = '<div style="font-size:12px;color:var(--txt-sm)">Type at least 2 characters to search existing students.</div>';
+    return;
+  }
+  try {
+    const { data } = await api(`/students?search=${encodeURIComponent(q)}&limit=8&sort=studentName`);
+    results.innerHTML = data.length ? data.map(s => `
+      <button type="button" class="btn btn-secondary btn-sm" style="margin:0 6px 6px 0" data-student-id="${esc(s._id)}" data-student-name="${esc(s.studentName)}">
+        ${esc(s.studentName)} · ${esc(s.admissionNumber || 'No ADM')} · ${esc(s.program || '')}
+      </button>
+    `).join('') : '<div style="font-size:12px;color:var(--txt-sm)">No students found.</div>';
+    results.querySelectorAll('[data-student-id]').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelector('[name="student"]').value = btn.dataset.studentId;
+      document.querySelector('[name="studentSearch"]').value = btn.dataset.studentName;
+      results.innerHTML = `<div style="font-size:12px;color:var(--green)">Selected: ${esc(btn.dataset.studentName)}</div>`;
+    }));
+  } catch (err) {
+    results.innerHTML = `<div class="alert alert-error"><span class="material-icons-round">error</span>${esc(err.message)}</div>`;
+  }
+}
+
+async function exportFeesReport() {
+  const program = document.getElementById('feesExportClass')?.value || 'All Classes';
+  const qs = new URLSearchParams();
+  if (program && program !== 'All Classes') qs.set('program', program);
+  const res = await fetch(`${API}/fees/export${qs.toString() ? `?${qs}` : ''}`, {
+    headers: S.token ? { Authorization: `Bearer ${S.token}` } : {},
+    credentials: 'include'
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `Export failed (${res.status})` }));
+    toast(err.message || 'Export failed', 'error');
+    return;
+  }
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Fees_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Fees Excel exported successfully', 'success');
 }
 
 async function renderFeeStructures(el) {
