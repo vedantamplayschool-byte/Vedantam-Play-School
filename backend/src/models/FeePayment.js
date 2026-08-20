@@ -27,6 +27,11 @@ const schema = new mongoose.Schema(
     totalAmount:      { type: Number, required: true },
     amountPaid:       { type: Number, required: true, default: 0 },
     balance:          { type: Number, default: 0 },
+    registrationFee:  { type: Number, default: 0, min: 0 },
+    admissionFee:     { type: Number, default: 0, min: 0 },
+    term1Fee:         { type: Number, default: 0, min: 0 },
+    term2Fee:         { type: Number, default: 0, min: 0 },
+    term3Fee:         { type: Number, default: 0, min: 0 },
 
     paymentDate:   { type: Date, default: Date.now },
     paymentMode:   { type: String, enum: PAYMENT_MODES, default: 'Cash' },
