@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const FEE_TYPES = ['Admission', 'Monthly', 'Transport', 'Activity', 'Exam', 'Annual', 'Other'];
+const FEE_TYPES = ['Registration Fees', 'Admission Fees', 'Term 1 Fees', 'Term 2 Fees', 'Term 3 Fees'];
 const PROGRAMS  = ['Play Group', 'Nursery', 'LKG', 'UKG', 'All'];
 
 const schema = new mongoose.Schema(

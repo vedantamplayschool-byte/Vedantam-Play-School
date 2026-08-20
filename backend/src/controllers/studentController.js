@@ -335,9 +335,14 @@ export const convertAdmission = asyncHandler(async (req, res) => {
 
   /* ── Provision parent portal credentials from admin-supplied password ─
      Parent Portal username is the Student ID (student.admissionNumber). */
-  let parent = await Parent.findOne({
-    $or: [{ fatherPhone: adm.phone }, { motherPhone: adm.phone }]
-  }).select('+password');
+  const parentLookupClauses = [];
+  const admissionFatherPhone = (adm.fatherPhone || adm.phone || '').trim();
+  const admissionMotherPhone = (adm.motherPhone || '').trim();
+  if (admissionFatherPhone) parentLookupClauses.push({ fatherPhone: admissionFatherPhone });
+  if (admissionMotherPhone) parentLookupClauses.push({ motherPhone: admissionMotherPhone });
+  let parent = parentLookupClauses.length
+    ? await Parent.findOne({ $or: parentLookupClauses }).select('+password')
+    : null;
 
   let parentCredentials = null;
   if (parent) {
