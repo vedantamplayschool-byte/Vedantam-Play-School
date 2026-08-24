@@ -1131,22 +1131,7 @@ function openForm(key, config, id) {
   if (key === 'students' && isEdit) {
     api(`/students/${id}`).then(({ data: s }) => {
       const el = document.getElementById('existingDocsSection');
-      if (!el || !s?.documents?.length) return;
-      el.innerHTML = `<div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px">
-        <div style="font-weight:700;font-size:12px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">
-          📎 Uploaded Documents (${s.documents.length})
-        </div>
-        ${s.documents.map(d => `
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px">
-            <span class="material-icons-round" style="color:var(--primary);font-size:20px">${(d.fileType||'').includes('pdf') ? 'picture_as_pdf' : 'image'}</span>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600">${esc(d.label||d.docType)}</div>
-              <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase">${esc(d.docType||'')}</div>
-            </div>
-            <a href="${esc(d.url)}" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px">View</a>
-            ${canAdmin() ? `<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="deleteStudentDoc('${id}','${esc(d._id||'')}')">Delete</button>` : ''}
-          </div>`).join('')}
-      </div>`;
+      renderStudentDocuments(el, s);
     }).catch(() => {});
   }
 
@@ -1275,13 +1260,75 @@ async function deleteStudentDoc(studentId, docId) {
     api(`/students/${studentId}`).then(({ data: s }) => {
       const el = document.getElementById('existingDocsSection');
       if (!el) return;
-      if (!s?.documents?.length) { el.innerHTML = ''; return; }
-      // Re-render
-      el.querySelector('div') && (el.innerHTML = el.innerHTML); // trigger re-render via edit form reload
+      renderStudentDocuments(el, s);
     }).catch(() => {});
   } catch (err) { toast(err.message, 'error'); }
 }
 window.deleteStudentDoc = deleteStudentDoc;
+
+function renderStudentDocuments(el, student) {
+  if (!el) return;
+  const files = [
+    ...(student?.photoUrl ? [{ id: 'student-photo', label: 'Student Photo', docType: 'Photo', url: student.photoUrl, fileType: 'image', isPhoto: true }] : []),
+    ...(student?.documents || []).filter(d => d?.url)
+  ];
+  if (!files.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = `<div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px">
+    <div style="font-weight:700;font-size:12px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">
+      📎 Uploaded Documents (${files.length})
+    </div>
+    ${files.map(file => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px">
+        <span class="material-icons-round" style="color:var(--primary);font-size:20px">${(file.fileType || '').includes('pdf') ? 'picture_as_pdf' : 'image'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${esc(file.label || file.docType || 'Document')}</div>
+          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase">${esc(file.docType || '')}</div>
+        </div>
+        <a href="${esc(file.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="font-size:11px">View</a>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="downloadStudentDocument('${student._id}','${file.id || file._id}')">Download</button>
+        ${canAdmin() && !file.isPhoto ? `<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="deleteStudentDoc('${student._id}','${esc(file._id || '')}')">Delete</button>` : ''}
+      </div>`).join('')}
+  </div>`;
+}
+
+function studentDownloadName(studentName, label, url) {
+  const safe = value => String(value || '').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+  const base = [safe(studentName) || 'student', safe(label) || 'document'].join('-');
+  const extension = String(url || '').split('?')[0].match(/\.([a-z0-9]{2,5})$/i)?.[1];
+  return `${base}.${extension || 'download'}`;
+}
+
+async function downloadStudentDocument(studentId, documentId) {
+  try {
+    const { data: student } = await api(`/students/${studentId}`);
+    const file = documentId === 'student-photo'
+      ? { label: 'Student Photo', url: student.photoUrl }
+      : (student.documents || []).find(d => String(d._id) === String(documentId));
+    if (!file?.url) throw new Error('Document not found');
+
+    const link = document.createElement('a');
+    link.download = studentDownloadName(student.studentName, file.label || file.docType, file.url);
+    try {
+      const response = await fetch(file.url);
+      if (!response.ok) throw new Error('Download request failed');
+      link.href = URL.createObjectURL(await response.blob());
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch (_) {
+      // Some storage providers do not allow cross-origin file reads; let the browser download/open the original file instead.
+      link.href = file.url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+  } catch (err) { toast(err.message || 'Unable to download document', 'error'); }
+}
+window.downloadStudentDocument = downloadStudentDocument;
 
 function renderField(f, value) {
   const wrapCls = f.wide ? 'form-group col-full' : 'form-group';
