@@ -127,6 +127,12 @@ const NAV_GROUPS = [
     ]
   },
   {
+    label: 'Academic',
+    items: [
+      { key: 'marks', label: 'Marks Management', icon: 'grading', admin: true }
+    ]
+  },
+  {
     label: 'Content',
     items: [
       { key: 'gallery',  label: 'Gallery',  icon: 'photo_library' },
@@ -261,6 +267,7 @@ function navigate(key) {
     sessions:          sessionsPage,
     fees:              feesPage,
     attendance:        attendancePage,
+    marks:             marksManagementPage,
     reports:           reportsPage,
     parents:           parentsPage,
     'qr-cards':        qrCardsPage,
@@ -1975,6 +1982,192 @@ const attendance = attendanceData?.records || [];
       }
     });
   }
+}
+
+// ── 16b. MARKS MANAGEMENT PAGE ─────────────────────────────────────
+async function marksManagementPage() {
+  const area = document.getElementById('contentArea');
+  area.innerHTML = '<div id="marksPageRoot"></div>';
+  const root = document.getElementById('marksPageRoot');
+
+  const [{ data: students }, { data: marks }] = await Promise.all([
+    api('/students?limit=500&sort=rollNumber,studentName'),
+    api('/marks').catch(() => ({ data: [] }))
+  ]);
+
+  const state = {
+    students: students || [],
+    marks: marks || [],
+    examName: '',
+    subject: '',
+    maxMarks: 100
+  };
+
+  const refreshMarks = async () => {
+    const qs = new URLSearchParams();
+    if (state.examName) qs.set('examName', state.examName);
+    if (state.subject) qs.set('subject', state.subject);
+    const { data } = await api(`/marks${qs.toString() ? '?' + qs : ''}`);
+    state.marks = data || [];
+  };
+
+  const render = () => {
+    const visibleMarks = state.marks.filter(m => {
+      const studentId = m.student?._id || m.student;
+      return state.students.some(s => String(s._id) === String(studentId)) &&
+        (!state.examName || m.examName === state.examName) &&
+        (!state.subject || m.subject === state.subject);
+    });
+    const byStudent = {};
+    visibleMarks.forEach(m => { byStudent[String(m.student?._id || m.student)] = m; });
+
+    root.innerHTML = `
+      <div class="page-header">
+        <div>
+          <div class="page-header-title">Marks Management</div>
+          <div class="page-header-sub">${state.students.length} students · Add or update exam marks</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><span class="card-title">Select Exam & Subject</span></div>
+        <div class="card-body">
+          <form id="marksFilterForm" class="form-grid">
+            ${renderField({ name:'examName', label:'Exam / Assessment Name', type:'text', required:true }, state.examName)}
+            ${renderField({ name:'subject', label:'Subject', type:'text', required:true }, state.subject)}
+            ${renderField({ name:'maxMarks', label:'Maximum Marks', type:'number', required:true }, state.maxMarks)}
+            <div class="form-actions" style="align-self:end">
+              <button type="submit" class="btn btn-primary">
+                <span class="material-icons-round" style="font-size:16px">filter_alt</span> Load Marks
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <span class="card-title">Student Marks</span>
+            ${state.examName && state.subject
+              ? `<div class="td-sub">${esc(state.examName)} · ${esc(state.subject)} · Max ${state.maxMarks}</div>`
+              : `<div class="td-sub">Enter exam and subject above before saving marks</div>`}
+          </div>
+          ${canEdit() ? `<button type="submit" form="marksGridForm" class="btn btn-primary btn-sm">
+            <span class="material-icons-round" style="font-size:16px">save</span> Save All Marks
+          </button>` : ''}
+        </div>
+        <form id="marksGridForm">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Student</th><th>Program / Section</th><th>Marks</th><th>Remarks</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                ${state.students.length ? state.students.map((s, i) => {
+                  const mark = byStudent[String(s._id)];
+                  const percentage = mark ? Math.round((mark.marks / mark.maxMarks) * 100) : null;
+                  const status = percentage == null ? 'Not entered' : `${percentage}%`;
+                  return `<tr>
+                    <td style="font-size:12px;color:var(--txt-sm)">${i + 1}</td>
+                    <td>
+                      <div class="td-main">${esc(s.studentName)}</div>
+                      <div class="td-sub">${esc(s.admissionNumber || s.rollNumber || '')}</div>
+                    </td>
+                    <td>${esc(s.program)}${s.section ? ' · ' + esc(s.section) : ''}</td>
+                    <td style="min-width:130px">
+                      <input class="form-input" type="number" min="0" max="${esc(state.maxMarks)}" step="0.01"
+                        data-mark-student="${esc(s._id)}" value="${mark ? esc(mark.marks) : ''}"
+                        placeholder="0–${esc(state.maxMarks)}" ${canEdit() ? '' : 'disabled'}>
+                    </td>
+                    <td style="min-width:180px">
+                      <input class="form-input" type="text" data-mark-remarks="${esc(s._id)}"
+                        value="${mark ? esc(mark.remarks || '') : ''}" placeholder="Optional" ${canEdit() ? '' : 'disabled'}>
+                    </td>
+                    <td><span class="badge ${percentage == null ? 'badge-default' : percentage >= 40 ? 'badge-approved' : 'badge-rejected'}">${status}</span></td>
+                    <td class="td-actions">
+                      ${mark && canAdmin() ? `<button type="button" class="btn btn-danger btn-sm" data-mark-delete="${esc(mark._id)}" title="Delete mark">
+                        <span class="material-icons-round" style="font-size:14px">delete</span>
+                      </button>` : '—'}
+                    </td>
+                  </tr>`;
+                }).join('') : `<tr><td colspan="7"><div class="empty-state"><p>No students found</p></div></td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </form>
+      </div>`;
+  };
+
+  // One stable delegated listener: it continues working after every table re-render.
+  root.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (e.target.id === 'marksFilterForm') {
+      const fd = new FormData(e.target);
+      state.examName = String(fd.get('examName') || '').trim();
+      state.subject = String(fd.get('subject') || '').trim();
+      state.maxMarks = Number(fd.get('maxMarks')) || 100;
+      try {
+        await refreshMarks();
+        render();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+      return;
+    }
+
+    if (e.target.id !== 'marksGridForm') return;
+    if (!state.examName || !state.subject) {
+      toast('Select an exam name and subject first', 'error');
+      return;
+    }
+
+    const entries = [...root.querySelectorAll('[data-mark-student]')]
+      .map(input => ({
+        student: input.dataset.markStudent,
+        marks: input.value.trim(),
+        remarks: root.querySelector(`[data-mark-remarks="${input.dataset.markStudent}"]`)?.value.trim() || ''
+      }))
+      .filter(row => row.marks !== '');
+
+    if (!entries.length) {
+      toast('Enter marks for at least one student', 'error');
+      return;
+    }
+
+    try {
+      await Promise.all(entries.map(row => api('/marks', {
+        method: 'POST',
+        body: JSON.stringify({
+          student: row.student,
+          examName: state.examName,
+          subject: state.subject,
+          marks: Number(row.marks),
+          maxMarks: state.maxMarks,
+          remarks: row.remarks
+        })
+      })));
+      toast(`${entries.length} mark record(s) saved successfully`, 'success');
+      await refreshMarks();
+      render();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  });
+
+  root.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-mark-delete]');
+    if (!btn || !canAdmin()) return;
+    if (!confirm('Delete this mark record?')) return;
+    try {
+      await api(`/marks/${btn.dataset.markDelete}`, { method: 'DELETE' });
+      toast('Mark record deleted', 'success');
+      await refreshMarks();
+      render();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  });
+
+  render();
 }
 
 async function renderHolidays(el) {
