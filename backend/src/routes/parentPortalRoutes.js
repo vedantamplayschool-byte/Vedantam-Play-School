@@ -5,6 +5,7 @@ import {
   myChildHomework, myChildFees, feeReceipt, feeReceiptPdf,
   schoolNotices, schoolEvents, schoolGallery
 } from '../controllers/parentPortalController.js';
+import { parentResults } from '../controllers/marksController.js';
 
 const r = Router();
 r.use(protectParent);
@@ -19,5 +20,6 @@ r.get('/fees/:id/receipt/pdf', feeReceiptPdf);
 r.get('/notices',     schoolNotices);
 r.get('/events',      schoolEvents);
 r.get('/gallery',     schoolGallery);
+r.get('/results',     parentResults);
 
 export default r;

@@ -82,7 +82,7 @@ function navigate(page) {
   area.innerHTML = '<div style="text-align:center;padding:48px"><span class="spin" style="width:28px;height:28px;border-width:3px;border-color:var(--bd);border-top-color:var(--primary)"></span></div>';
   const pages = {
     dashboard, children: childrenPage, attendance: attendancePage,
-    homework: homeworkPage, fees: feesPage, notices: noticesPage,
+    homework: homeworkPage, fees: feesPage, results: resultsPage, notices: noticesPage,
     events: eventsPage, gallery: galleryPage, profile: profilePage
   };
   Promise.resolve((pages[page] || dashboard)()).catch(err => {
@@ -184,6 +184,17 @@ async function dashboard() {
       </div>
       <div>${noticeHtml}</div>
     </div>`;
+}
+
+/* Published-only results. The API scopes records to the authenticated parent's linked children. */
+async function resultsPage() {
+  const { data: results } = await api('/parent-portal/results');
+  const area = document.getElementById('contentArea');
+  if (!results.length) { area.innerHTML = `<div class="card"><div class="card-body" style="text-align:center;padding:36px"><span class="material-icons-round" style="font-size:36px;color:var(--txt-sm)">school</span><p style="font-weight:600;margin-top:8px">No published results yet</p><p style="color:var(--txt-sm);font-size:12px;margin-top:4px">Draft and incomplete results are not visible here.</p></div></div>`; return; }
+  area.innerHTML = `<div class="card"><div class="card-head"><div class="card-title">Examination Results</div></div><div class="card-body">${results.map((r, index) => {
+    const definitions = new Map(); (r.configuration?.subjects || []).forEach(s => s.components?.length ? s.components.forEach(c => definitions.set(`${s._id}:${c._id}`, `${s.name} — ${c.name} / ${c.maxMarks}`)) : definitions.set(`${s._id}:`, `${s.name} / ${s.maxMarks}`));
+    return `<details ${index === 0 ? 'open' : ''} style="border-bottom:1px solid var(--bd);padding:12px 0"><summary style="cursor:pointer;font-weight:600">${esc(r.student?.studentName)} · ${esc(r.examination)}<span style="float:right;color:var(--primary)">${r.percentage.toFixed(2)}%</span></summary><div style="margin-top:12px;font-size:12px;color:var(--txt-sm)">${esc(r.session?.name || '')} · ${esc(r.program)} · Adm# ${esc(r.student?.admissionNumber || '—')}</div><table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:12px"><thead><tr><th style="text-align:left;padding:6px">Subject</th><th style="text-align:right;padding:6px">Obtained / Maximum</th></tr></thead><tbody>${(r.marks || []).map(m => `<tr><td style="padding:6px;border-top:1px solid var(--bd)">${esc(definitions.get(`${m.subject}:${m.component || ''}`) || 'Assessment')}</td><td style="padding:6px;border-top:1px solid var(--bd);text-align:right">${m.status === 'absent' ? 'Absent' : `${m.value} / ${String(definitions.get(`${m.subject}:${m.component || ''}`) || '').split('/ ').pop()}`}</td></tr>`).join('')}<tr><th style="padding:7px;border-top:1px solid var(--bd)">Total</th><th style="padding:7px;border-top:1px solid var(--bd);text-align:right">${r.totalObtained} / ${r.maximumTotal}</th></tr></tbody></table><button class="btn-icon" style="margin-top:8px;color:var(--primary)" onclick="window.print()"><span class="material-icons-round">print</span> Print marksheet</button></details>`;
+  }).join('')}</div></div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════════

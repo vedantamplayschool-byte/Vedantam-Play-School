@@ -28,6 +28,7 @@ import adminParentPortalRoutes from './adminParentPortalRoutes.js';
 import storageRoutes           from './storageRoutes.js';
 import archiveRoutes           from './archiveRoutes.js';
 import securityRoutes          from './securityRoutes.js';
+import marksRoutes             from './marksRoutes.js';
 /* CMS */
 import { crudRouter }  from './resourceRoutes.js';
 import Teacher         from '../models/Teacher.js';
@@ -78,6 +79,7 @@ r.use('/admin-parent-portal',    adminParentPortalRoutes);
 r.use('/storage',                storageRoutes);
 r.use('/archive',                archiveRoutes);
 r.use('/security',               securityRoutes);
+r.use('/marks',                  marksRoutes);
 
 /* ── CMS resources (existing crudRouter — unchanged) ─────────────── */
 r.use('/teachers',     crudRouter(Teacher,     { isActive: true }, ['name', 'qualification']));

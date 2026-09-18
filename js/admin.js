@@ -140,6 +140,7 @@ const NAV_GROUPS = [
   {
     label: 'Reports',
     items: [
+      { key: 'marks', label: 'Marks Management', icon: 'grading', admin: true },
       { key: 'reports', label: 'Reports & Export', icon: 'assessment', admin: true }
     ]
   },
@@ -266,6 +267,7 @@ function navigate(key) {
     fees:              feesPage,
     attendance:        attendancePage,
     reports:           reportsPage,
+    marks:             marksPage,
     parents:           parentsPage,
     'qr-cards':        qrCardsPage,
     certificates:      certificatesPage,
@@ -1566,6 +1568,52 @@ function exportCSV(key, items) {
 }
 
 // ── 14. PARENTS PAGE ──────────────────────────────────────────────
+/* ════════════════════════════════════════════════════════════════════
+   MARKS MANAGEMENT — subjects are rows, current-class students columns
+   ════════════════════════════════════════════════════════════════════ */
+const MARKS_EXAMS = ['1st Term', '2nd Term', '3rd Term', 'Final/Annual Examination'];
+let _marksState = { subjects: [], students: [], results: [] };
+const marksKey = (subject, component = '') => `${subject}:${component || ''}`;
+function marksMax(subject) { return subject.components?.length ? subject.components.reduce((n, c) => n + Number(c.maxMarks || 0), 0) : Number(subject.maxMarks || 0); }
+function marksEntries(result) { return new Map((result?.marks || []).map(m => [marksKey(m.subject, m.component), m])); }
+async function marksPage() {
+  const area = document.getElementById('contentArea');
+  const [sessionsRes, activeRes] = await Promise.all([api('/academic-sessions?limit=100'), api('/academic-sessions/active').catch(() => ({ data: null }))]);
+  const sessions = sessionsRes.data || []; const active = activeRes.data;
+  const f = _filters.marks || {}; const session = f.session || active?._id || sessions[0]?._id || '';
+  const program = f.program || 'Play Group'; const examination = f.examination || MARKS_EXAMS[0];
+  area.innerHTML = `<div class="page-header"><div><div class="page-header-title">Marks Management</div><div class="page-header-sub">Enter assessment marks by class, session and examination.</div></div></div>
+    <div class="form-card"><div class="form-grid">
+      ${renderField({name:'marksSession',label:'Academic Session',type:'select',required:true,options:sessions.map(s => ({value:s._id,label:s.name}))},session)}
+      ${renderField({name:'marksProgram',label:'Class',type:'select',required:true,options:PROGRAMS},program)}
+      ${renderField({name:'marksExam',label:'Examination',type:'select',required:true,options:MARKS_EXAMS},examination)}
+    </div><div class="form-actions"><button class="btn btn-secondary" id="marksConfigure"><span class="material-icons-round">tune</span> Configure Subjects</button><button class="btn btn-secondary" id="marksExport"><span class="material-icons-round">download</span> Export CSV</button><button class="btn btn-primary" id="marksSave"><span class="material-icons-round">save</span> Save Draft</button><button class="btn btn-success" id="marksPublish"><span class="material-icons-round">publish</span> Publish Results</button></div></div><div id="marksGrid"><div class="loader-center"><span class="spin spin-lg"></span></div></div>`;
+  const update = () => { _filters.marks = { session: $('#marksSession').value, program: $('#marksProgram').value, examination: $('#marksExam').value }; marksPage(); };
+  ['marksSession','marksProgram','marksExam'].forEach(id => document.getElementById(id).addEventListener('change', update));
+  document.getElementById('marksConfigure').onclick = () => marksConfiguration(session, program, examination);
+  document.getElementById('marksSave').onclick = () => saveMarks(false);
+  document.getElementById('marksPublish').onclick = () => publishMarks();
+  document.getElementById('marksExport').onclick = () => exportMarksCsv();
+  await loadMarksGrid(session, program, examination);
+}
+async function loadMarksGrid(session, program, examination) {
+  const host = document.getElementById('marksGrid'); const { data } = await api(`/marks/grid?session=${encodeURIComponent(session)}&program=${encodeURIComponent(program)}&examination=${encodeURIComponent(examination)}`);
+  _marksState = { ...data, session, program, examination }; const subjects = data.configuration?.subjects || []; const students = data.students || [];
+  if (!subjects.length) { host.innerHTML = `<div class="empty-state"><span class="material-icons-round">tune</span><p class="empty-title">Set up assessments first</p><p class="empty-sub">Add subjects and their maximum marks for this class and examination.</p></div>`; return; }
+  if (!students.length) { host.innerHTML = `<div class="empty-state"><span class="material-icons-round">group_off</span><p class="empty-title">No active students in ${esc(program)}</p></div>`; return; }
+  const rows = subjects.flatMap(s => s.components?.length ? s.components.map(c => ({ subject:s, component:c, label:`${s.name} — ${c.name}`, max:c.maxMarks })) : [{ subject:s, component:null, label:s.name, max:s.maxMarks }]);
+  const resultByStudent = new Map((data.results || []).map(r => [String(r.student), r]));
+  const cell = (student, row) => { const entry = marksEntries(resultByStudent.get(String(student._id))).get(marksKey(row.subject._id, row.component?._id)); const val = entry?.status === 'entered' ? entry.value : ''; return `<div class="marks-cell"><input type="number" min="0" max="${row.max}" value="${val}" data-mark data-student="${student._id}" data-subject="${row.subject._id}" data-component="${row.component?._id || ''}" data-max="${row.max}" aria-label="${esc(row.label)} marks for ${esc(student.studentName)}"><select data-mark-status data-student="${student._id}" data-subject="${row.subject._id}" data-component="${row.component?._id || ''}"><option value="entered" ${!entry || entry.status === 'entered' ? 'selected':''}>Marks</option><option value="absent" ${entry?.status === 'absent' ? 'selected':''}>Absent</option><option value="pending" ${entry?.status === 'pending' ? 'selected':''}>Pending</option></select></div>`; };
+  host.innerHTML = `<div class="table-card marks-table-wrap"><table class="data-table marks-table"><thead><tr><th class="marks-subject">Subject / Assessment</th>${students.map(s => `<th><strong>${esc(s.studentName)}</strong><small>${esc(s.admissionNumber || s._id)}</small></th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr><th class="marks-subject">${esc(row.label)} <small>/ ${row.max}</small></th>${students.map(s => `<td>${cell(s,row)}</td>`).join('')}</tr>`).join('')}<tr class="marks-total"><th class="marks-subject">Total</th>${students.map(s => `<td data-total="${s._id}"></td>`).join('')}</tr><tr class="marks-total"><th class="marks-subject">Percentage</th>${students.map(s => `<td data-percent="${s._id}"></td>`).join('')}</tr></tbody></table></div><p class="marks-note">Blank marks are pending, not zero. “Absent” remains incomplete and cannot be published.</p>`;
+  host.querySelectorAll('[data-mark], [data-mark-status]').forEach(el => el.addEventListener('input', () => updateMarksTotals())); updateMarksTotals();
+}
+function collectMarks() { const records = _marksState.students.map(student => ({ student: student._id, marks: [] })); const record = new Map(records.map(r => [r.student, r])); document.querySelectorAll('[data-mark]').forEach(input => { const status = document.querySelector(`[data-mark-status][data-student="${input.dataset.student}"][data-subject="${input.dataset.subject}"][data-component="${input.dataset.component}"]`).value; record.get(input.dataset.student).marks.push({ subject:input.dataset.subject, component:input.dataset.component || undefined, value:input.value, status }); }); return records; }
+function updateMarksTotals() { const max = (_marksState.configuration.subjects || []).reduce((n,s) => n + marksMax(s), 0); collectMarks().forEach(r => { let total = 0; let complete = true; r.marks.forEach(m => { if (m.status !== 'entered' || m.value === '') complete=false; else total += Number(m.value); }); const t=document.querySelector(`[data-total="${r.student}"]`), p=document.querySelector(`[data-percent="${r.student}"]`); if(t)t.textContent=`${total}/${max}${complete?'':' · Incomplete'}`; if(p)p.textContent= max ? `${(total/max*100).toFixed(2)}%` : '—'; }); }
+async function saveMarks(confirmPublishedEdit) { const body = { session:_marksState.session, program:_marksState.program, examination:_marksState.examination, records:collectMarks(), confirmPublishedEdit }; try { await api('/marks/save',{method:'POST',body:JSON.stringify(body)}); toast('Draft marks saved', 'success'); await loadMarksGrid(_marksState.session,_marksState.program,_marksState.examination); } catch(e) { if (e.status===409 && confirm('These are published results. Confirm correction and save?')) return saveMarks(true); toast(e.message,'error'); } }
+async function publishMarks() { if (!confirm('Publish these completed results? Parents will be able to view them.')) return; try { await api('/marks/publish',{method:'POST',body:JSON.stringify(_marksState)}); toast('Results published for parents', 'success'); await loadMarksGrid(_marksState.session,_marksState.program,_marksState.examination); } catch(e) { toast(e.message,'error'); } }
+async function marksConfiguration(session, program, examination) { const { data } = await api(`/marks/configuration?session=${session}&program=${encodeURIComponent(program)}&examination=${encodeURIComponent(examination)}`); const subjects = data.subjects || []; const text = prompt('Subjects: one per line as Subject | Maximum, or Subject | Component:Maximum | Component:Maximum\nExample: English | Written:50 | Oral:50', subjects.map(s => s.components?.length ? `${s.name} | ${s.components.map(c=>`${c.name}:${c.maxMarks}`).join(' | ')}` : `${s.name} | ${s.maxMarks}`).join('\n')); if (text === null) return; try { const parsed = text.split('\n').filter(Boolean).map(line => { const bits=line.split('|').map(x=>x.trim()).filter(Boolean); const old=subjects.find(s=>s.name===bits[0]); const parts=bits.slice(1); const components=parts.filter(x=>x.includes(':')).map(x=>{const [name,maxMarks]=x.split(':');return {_id:old?.components?.find(c=>c.name===name)?._id,name,maxMarks:Number(maxMarks)};}); return components.length ? {_id:old?._id,name:bits[0],components} : {_id:old?._id,name:bits[0],maxMarks:Number(parts[0])}; }); await api('/marks/configuration',{method:'PUT',body:JSON.stringify({session,program,examination,subjects:parsed})}); toast('Assessment configuration saved'); await loadMarksGrid(session,program,examination); } catch(e) { toast(e.message,'error'); } }
+function exportMarksCsv() { const rows=[['S. No.','Admission No.','Student ID','Student Name','Class',...(_marksState.configuration.subjects||[]).map(s=>s.name),'Total Obtained','Maximum Total','Percentage']]; const entries=collectMarks(); entries.forEach((r,i)=>{const s=_marksState.students.find(x=>x._id===r.student); const vals=(_marksState.configuration.subjects||[]).map(sub=>r.marks.filter(m=>m.subject===sub._id&&m.status==='entered').reduce((n,m)=>n+Number(m.value||0),0)); const total=vals.reduce((n,v)=>n+v,0), max=(_marksState.configuration.subjects||[]).reduce((n,sub)=>n+marksMax(sub),0); rows.push([i+1,s.admissionNumber||'',s._id,s.studentName,s.program,...vals,total,max,max?`${(total/max*100).toFixed(2)}%`:'' ]);}); const blob=new Blob([rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n')],{type:'text/csv'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`marks-${_marksState.program}-${_marksState.examination}.csv`;a.click();URL.revokeObjectURL(a.href); }
+
 async function parentsPage() {
   const search = _search['parents'] || '';
   const params = new URLSearchParams({ limit: 100, sort: '-createdAt' });
