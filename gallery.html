@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Activity Gallery | Vedantam Play School</title>
+<meta name="description" content="Browse Vedantam Play School activities, celebrations, festivals, sports, trips, competitions and classroom learning galleries.">
+<link rel="stylesheet" href="css/style.css">
+<script defer src="js/api-config.js">
+</script>
+<script defer src="js/gallery.js">
+</script>
+</head>
+<body>
+<nav class="navbar scrolled">
+<div class="nav-container">
+<a class="brand" href="index.html#home">
+<img src="logo.png" alt="Vedantam Play School">
+<span>Vedantam Play School</span>
+</a>
+<div class="nav-links open">
+<a href="index.html#home">Home</a>
+<a href="gallery.html" class="active">Gallery</a>
+<a href="index.html#contact">Contact</a>
+</div>
+</div>
+</nav>
+<main class="gallery-page">
+<section class="section">
+<div class="container">
+<div class="section-head">
+<span class="eyebrow">Event Gallery</span>
+<h1>Activities & Celebrations</h1>
+<p>Explore every Vedantam Play School moment by event, category and timeline.</p>
+</div>
+<div class="gallery-tools">
+<input id="gallerySearch" type="search" placeholder="Search activities by title...">
+<div class="filter-pills">
+<button data-filter="All" class="active">All</button>
+<button data-filter="Celebrations" class="">Celebrations</button>
+<button data-filter="Learning Activities" class="">Learning Activities</button>
+<button data-filter="Art & Craft" class="">Art & Craft</button>
+<button data-filter="Sports" class="">Sports</button>
+<button data-filter="Festivals" class="">Festivals</button>
+<button data-filter="Competitions" class="">Competitions</button>
+<button data-filter="Trips" class="">Trips</button>
+</div>
+</div>
+<div class="activity-layout">
+<div class="activity-grid" id="activityGrid">
+</div>
+<aside class="timeline-panel">
+<h2>Timeline</h2>
+<div id="galleryTimeline">
+</div>
+</aside>
+</div>
+<div id="activityDetail">
+</div>
+</div>
+</section>
+</main>
+<div class="lightbox" id="lightbox" aria-hidden="true">
+<button data-close class="lb-close">×</button>
+<button data-prev class="lb-prev">‹</button>
+<img id="lightboxImg" alt="Gallery preview">
+<button data-next class="lb-next">›</button>
+<button data-zoom class="lb-zoom">Zoom</button>
+</div>
+</body>
+</html>

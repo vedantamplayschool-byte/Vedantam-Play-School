@@ -18,8 +18,13 @@ export const uploadImage = async (file, folder = 'vedantam-play-school', req = n
     const urlPath = `/uploads/${filename}`;
     return { url: req ? `${requestBaseUrl(req)}${urlPath}` : urlPath, publicId: null };
   }
+  /* PDFs and non-image files must use resource_type 'raw'; images use 'image' */
+  const resourceType = file.mimetype === 'application/pdf' ? 'raw' : 'image';
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream({ folder, resource_type: 'image' }, (err, result) => err ? reject(err) : resolve({ url: result.secure_url, publicId: result.public_id }));
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: resourceType },
+      (err, result) => err ? reject(err) : resolve({ url: result.secure_url, publicId: result.public_id })
+    );
     stream.end(file.buffer);
   });
 };

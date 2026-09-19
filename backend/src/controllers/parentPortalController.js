@@ -8,6 +8,7 @@ import Gallery          from '../models/Gallery.js';
 import AcademicSession  from '../models/AcademicSession.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok }           from '../utils/apiResponse.js';
+import PDFDocument      from 'pdfkit';
 
 /* ── HELPERS ─────────────────────────────────────────────────────── */
 const todayRange = () => {
@@ -177,6 +178,62 @@ export const feeReceipt = asyncHandler(async (req, res) => {
   ok(res, { data: payment });
 });
 
+/* ── FEE RECEIPT (PDF download) ──────────────────────────────────── */
+export const feeReceiptPdf = asyncHandler(async (req, res) => {
+  const payment = await FeePayment.findById(req.params.id)
+    .populate('student', 'studentName admissionNumber program section')
+    .populate('session', 'name')
+    .lean();
+
+  if (!payment) { const e = new Error('Receipt not found'); e.status = 404; throw e; }
+
+  const allowed = (req.parent.students || []).map(String);
+  if (!allowed.includes(String(payment.student?._id || payment.student))) {
+    const e = new Error('Access denied'); e.status = 403; throw e;
+  }
+
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="receipt-${payment.receiptNumber || payment._id}.pdf"`);
+  doc.pipe(res);
+
+  doc.fontSize(18).text('Vedantam Play School', { align: 'center' });
+  doc.fontSize(11).text('Fee Payment Receipt', { align: 'center' });
+  doc.moveDown(1.5);
+
+  doc.fontSize(10);
+  doc.text(`Receipt No: ${payment.receiptNumber || '-'}`);
+  doc.text(`Payment Date: ${new Date(payment.paymentDate).toLocaleDateString('en-IN')}`);
+  doc.moveDown();
+
+  doc.text(`Student Name: ${payment.student?.studentName || '-'}`);
+  doc.text(`Admission No: ${payment.student?.admissionNumber || '-'}`);
+  doc.text(`Class: ${payment.student?.program || '-'} ${payment.student?.section || ''}`);
+  doc.text(`Session: ${payment.session?.name || '-'}`);
+  doc.moveDown();
+
+  doc.text(`Fee Type: ${payment.feeType}${payment.month ? ' (' + payment.month + (payment.year ? ' ' + payment.year : '') + ')' : ''}`);
+  doc.text(`Payment Mode: ${payment.paymentMode}`);
+  if (payment.transactionId) doc.text(`Transaction ID: ${payment.transactionId}`);
+  doc.moveDown();
+
+  doc.text(`Base Amount: Rs. ${payment.baseAmount}`);
+  if (payment.discount)    doc.text(`Discount: Rs. ${payment.discount}`);
+  if (payment.scholarship) doc.text(`Scholarship: Rs. ${payment.scholarship}`);
+  if (payment.lateFee)     doc.text(`Late Fee: Rs. ${payment.lateFee}`);
+  doc.moveDown(0.3);
+  doc.fontSize(12).text(`Total Amount: Rs. ${payment.totalAmount}`, { continued: false });
+  doc.text(`Amount Paid: Rs. ${payment.amountPaid}`);
+  doc.text(`Balance: Rs. ${payment.balance}`);
+  doc.moveDown();
+  doc.fontSize(10).text(`Status: ${payment.status}`);
+
+  doc.moveDown(2);
+  doc.fontSize(9).fillColor('gray').text('This is a system-generated receipt and does not require a signature.', { align: 'center' });
+
+  doc.end();
+});
+
 /* ── NOTICES ─────────────────────────────────────────────────────── */
 export const schoolNotices = asyncHandler(async (req, res) => {
   const filter = {
@@ -197,10 +254,11 @@ export const schoolNotices = asyncHandler(async (req, res) => {
 export const schoolEvents = asyncHandler(async (req, res) => {
   const filter = { isPublished: true };
   if (req.query.upcoming === 'true') filter.eventDate = { $gte: new Date() };
+  if (req.query.category) filter.category = req.query.category;
 
   const events = await Event.find(filter)
     .sort('eventDate')
-    .limit(20)
+    .limit(50)
     .lean();
 
   ok(res, { data: events });

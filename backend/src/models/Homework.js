@@ -10,7 +10,11 @@ const schema = new mongoose.Schema(
     title:       { type: String, required: true, trim: true, maxlength: 200 },
     description: { type: String, trim: true, maxlength: 2000 },
     dueDate:     { type: Date, required: true, index: true },
-    isActive:    { type: Boolean, default: true, index: true }
+    isActive:    { type: Boolean, default: true, index: true },
+
+    // Optional image attachment (worksheet scan, reference photo, etc.)
+    imageUrl:      String,
+    imagePublicId: String
   },
   { timestamps: true }
 );

@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import routes from './routes/index.js';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { auditAdminActions } from './middleware/auditLog.js';
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -95,6 +96,37 @@ app.use(
  * to the existing API-only production behavior on Render.
  */
 const frontendRoot = path.join(__dirname, '..', '..');
+
+/**
+ * Hidden admin access: the admin login page is never reachable at the
+ * predictable /admin.html URL. It is only served at a secret path defined
+ * by the ADMIN_SECRET_PATH secret. Direct requests to /admin.html 404 just
+ * like any other unknown route.
+ */
+if (env.adminSecretPath) {
+  app.get(`/${env.adminSecretPath}`, (req, res) => {
+    res.sendFile(path.join(frontendRoot, 'admin.html'));
+  });
+}
+
+/**
+ * Returns the current admin secret path so the homepage's hidden entry
+ * gesture (logo taps on mobile, keyboard combo on desktop) can redirect
+ * there without the path ever being hardcoded into a static, committed
+ * file. Not linked from any visible page — only called by that gesture.
+ * This is convenience/obscurity, not the access control boundary: the
+ * boundary is /admin.html always 404ing and the admin page only ever
+ * being served at the secret path itself.
+ */
+app.get('/api/v1/admin-entry', (req, res) => {
+  if (!env.adminSecretPath) return res.status(404).json({ success: false, message: 'Not configured' });
+  res.json({ success: true, path: env.adminSecretPath });
+});
+
+// Block direct, guessable access to the admin page before the static
+// middleware below ever gets a chance to serve the file.
+app.get('/admin.html', notFound);
+
 app.use(
   express.static(frontendRoot, {
     maxAge: env.nodeEnv === 'production' ? '1h' : 0,
@@ -102,7 +134,7 @@ app.use(
   })
 );
 
-app.use('/api/v1', routes);
+app.use('/api/v1', auditAdminActions, routes);
 
 /**
  * Root Route (Health Check)

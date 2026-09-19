@@ -1,0 +1,165 @@
+/* ═══════════════════════════════════════════════════════════════════
+   File Compressor — page-specific styles
+   Reuses the site's design tokens/buttons from style.css.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.fc-hero {
+  padding: 150px 0 40px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 10% 20%, #fff6a6 0 14%, transparent 15%),
+    radial-gradient(circle at 90% 15%, #ffd5e8 0 12%, transparent 13%),
+    linear-gradient(145deg, #eaf8ff 0%, #fff7ca 45%, #fff0f8 100%);
+}
+.fc-hero-inner { max-width: 640px; margin: 0 auto; }
+.fc-hero h1 {
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  font-weight: 900;
+  color: var(--ink);
+  margin: 16px 0 12px;
+  letter-spacing: -.5px;
+}
+.fc-hero p { color: var(--muted); font-size: 1.05rem; }
+
+.fc-tool { padding-top: 56px; }
+
+.fc-card {
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 36px;
+  border: 1.5px solid rgba(255, 200, 120, .18);
+}
+
+.fc-dropzone {
+  border: 2.5px dashed rgba(255, 159, 90, .4);
+  border-radius: var(--radius-sm);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .25s;
+  background: linear-gradient(145deg, #fff9ef, #fffef7);
+}
+.fc-dropzone:hover,
+.fc-dropzone:focus-visible,
+.fc-dropzone.fc-dragover {
+  border-color: var(--orange);
+  background: linear-gradient(145deg, #fff3e0, #fff9ef);
+  transform: translateY(-2px);
+}
+.fc-drop-icon { font-size: 2.6rem; margin-bottom: 8px; }
+.fc-drop-title { font-weight: 900; color: var(--ink); font-size: 1.05rem; margin-bottom: 4px; }
+.fc-drop-sub { color: var(--muted); font-size: .88rem; margin-bottom: 20px; }
+
+.fc-file-info { margin-top: 4px; }
+.fc-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fbfaf6;
+  border-radius: 18px;
+  padding: 14px 18px;
+  border: 1.5px solid rgba(255, 200, 120, .2);
+}
+.fc-file-name { font-weight: 900; color: var(--ink); word-break: break-all; }
+.fc-file-sub { font-size: .84rem; color: var(--muted); margin-top: 2px; }
+.fc-remove-btn {
+  border: none;
+  background: rgba(255, 95, 95, .1);
+  color: #d9455a;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: .2s;
+}
+.fc-remove-btn:hover { background: rgba(255, 95, 95, .2); }
+
+.fc-preview-img {
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: 18px;
+  margin: 18px auto;
+  box-shadow: var(--shadow-sm);
+  object-fit: contain;
+  display: block;
+}
+
+.fc-controls {
+  display: flex;
+  gap: 14px;
+  align-items: end;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.fc-target-label {
+  flex: 1;
+  min-width: 160px;
+  font-weight: 800;
+  font-size: .85rem;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fc-target-label input {
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(97, 112, 140, .22);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .2s;
+}
+.fc-target-label input:focus { border-color: var(--orange); }
+
+.fc-status {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: .92rem;
+}
+.fc-status.info    { background: #eef9ff; color: #1594d2; }
+.fc-status.error   { background: #fdecec; color: #c93455; }
+.fc-status.success { background: #eafff3; color: #15865b; }
+
+.fc-result { margin-top: 22px; }
+.fc-result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.fc-stat {
+  background: #fbfaf6;
+  border-radius: 16px;
+  padding: 14px;
+  text-align: center;
+  border: 1.5px solid rgba(255, 200, 120, .2);
+}
+.fc-stat span { display: block; font-size: .74rem; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.fc-stat strong { font-size: 1.05rem; color: var(--ink); }
+.fc-stat-accent { background: linear-gradient(135deg, #fff3e0, #fff0fb); border-color: rgba(255, 159, 90, .3); }
+.fc-stat-accent strong { color: #ef7f3b; }
+
+.fc-download-btn { width: 100%; margin-top: 18px; }
+
+.fc-footnote {
+  max-width: 640px;
+  margin: 28px auto 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: .84rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 620px) {
+  .fc-card { padding: 24px; }
+  .fc-controls { flex-direction: column; align-items: stretch; }
+  .fc-result-stats { grid-template-columns: 1fr; }
+}

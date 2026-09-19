@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vedantam Play School — ID Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { zoom: 0.88; }
+
+  body {
+    background: #DDE3EF;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 50px;
+    padding: 52px 44px;
+    min-height: 100vh;
+    width: 1456px; /* 1280/0.88 so content fills viewport after zoom */
+  }
+
+  h2 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #5a6478;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  /* ── CR80 = 85.6 × 54 mm → rendered at 8px per mm = 684.8 × 432 px ── */
+  .card {
+    width: 685px;
+    height: 432px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow:
+      0 30px 80px rgba(0,0,0,0.18),
+      0 8px 24px rgba(0,0,0,0.10),
+      inset 0 1px 0 rgba(255,255,255,0.9);
+    flex-shrink: 0;
+  }
+
+  /* ══════════════════════════════════════════════
+     STUDENT CARD
+  ══════════════════════════════════════════════ */
+
+  /* — rainbow top bar — */
+  .s-topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(90deg,
+      #EF4EA2 0%, #F7941D 18%, #FFCF01 35%,
+      #4DB848 52%, #00B5AD 68%, #29ABE2 84%, #7B2D8B 100%);
+  }
+
+  /* — top-right decorative bubble cluster — */
+  .s-bubbles {
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 200px; height: 200px;
+  }
+
+  /* — bottom-left wave — */
+  .s-wave {
+    position: absolute;
+    bottom: -1px; left: -1px;
+  }
+
+  /* — bottom-right QR area background — */
+  .s-qr-bg {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 140px; height: 80px;
+    background: linear-gradient(135deg, #f9f9f9, #f0f4ff);
+    border-top-left-radius: 24px;
+  }
+
+  /* — header section — */
+  .s-header {
+    position: absolute;
+    top: 16px; left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  .s-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .s-logo img { width: 48px; height: 48px; object-fit: contain; }
+
+  .s-school-name {
+    line-height: 1.15;
+  }
+
+  .s-school-name .s1 {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #1a2340;
+    letter-spacing: 0.2px;
+  }
+
+  .s-school-name .s2 {
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #7B2D8B;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* — ID type badge — */
+  .s-badge {
+    position: absolute;
+    top: 20px; right: 22px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    z-index: 10;
+  }
+
+  .s-badge.student {
+    background: linear-gradient(135deg, #F7941D, #EF4EA2);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(247,148,29,0.4);
+  }
+
+  .s-badge.teacher {
+    background: linear-gradient(135deg, #00B5AD, #4DB848);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(0,181,173,0.4);
+  }
+
+  /* — divider line — */
+  .s-divider {
+    position: absolute;
+    top: 80px; left: 20px; right: 22px;
+    height: 1px;
+    background: linear-gradient(90deg, #e0e0e0 60%, transparent 100%);
+    z-index: 5;
+  }
+
+  /* — photo frame — */
+  .s-photo {
+    position: absolute;
+    top: 94px; left: 22px;
+    width: 148px;
+    height: 188px;
+    border-radius: 14px;
+    overflow: hidden;
+    z-index: 5;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.14);
+  }
+
+  .s-photo.student-photo { border: 3px solid transparent;
+    background: linear-gradient(#fff,#fff) padding-box,
+                linear-gradient(135deg, #F7941D, #EF4EA2, #FFCF01) border-box; }
+
+  .s-photo.teacher-photo { border: 3px solid transparent;
+    background: linear-gradient(#fff,#fff) padding-box,
+                linear-gradient(135deg, #00B5AD, #4DB848, #29ABE2) border-box; }
+
+  .s-photo .photo-inner {
+    width: 100%; height: 100%;
+    background: linear-gradient(160deg, #f5f5f5, #e8ecf5);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+  }
+
+  .photo-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: #dde3f0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .photo-icon svg { width: 28px; height: 28px; fill: #b0b8d0; }
+
+  .photo-label {
+    font-size: 9px;
+    font-weight: 500;
+    color: #b0b8d0;
+    letter-spacing: 1px;
+  }
+
+  /* — info area — */
+  .s-info {
+    position: absolute;
+    top: 94px;
+    left: 188px;
+    right: 22px;
+    z-index: 5;
+  }
+
+  .s-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a2340;
+    line-height: 1.2;
+    margin-bottom: 6px;
+    max-width: 100%;
+    word-break: break-word;
+  }
+
+  .s-name-line {
+    width: 32px;
+    height: 3px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+
+  .s-name-line.student { background: linear-gradient(90deg, #F7941D, #EF4EA2); }
+  .s-name-line.teacher { background: linear-gradient(90deg, #00B5AD, #4DB848); }
+
+  .s-field {
+    margin-bottom: 9px;
+  }
+
+  .s-field-label {
+    font-size: 7.5px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #9aa3b8;
+    margin-bottom: 2px;
+  }
+
+  .s-field-value {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #2a3150;
+    line-height: 1.3;
+  }
+
+  /* — QR code — */
+  .s-qr {
+    position: absolute;
+    bottom: 18px;
+    right: 22px;
+    width: 70px;
+    height: 70px;
+    z-index: 10;
+  }
+
+  /* — tagline — */
+  .s-tagline {
+    position: absolute;
+    bottom: 14px;
+    left: 22px;
+    z-index: 10;
+  }
+
+  .s-tagline .tl {
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #9aa3b8;
+  }
+
+  .s-tagline .tl span { margin: 0 4px; }
+
+  .s-tagline .addr {
+    font-size: 7px;
+    color: #b0b8c8;
+    margin-top: 3px;
+    font-weight: 400;
+  }
+
+  /* ── QR Code SVG ── */
+  .qr-wrap {
+    width: 70px; height: 70px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     STUDENT ID CARD
+════════════════════════════════════════ -->
+<div>
+  <h2>🎒 Student ID Card &nbsp;·&nbsp; CR80 (85.6 × 54 mm)</h2>
+  <div class="card" id="student-card">
+
+    <!-- Rainbow top bar -->
+    <div class="s-topbar"></div>
+
+    <!-- Top-right bubble cluster (decorative) -->
+    <svg class="s-bubbles" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="170" cy="30"  r="55" fill="#FFCF01" opacity="0.18"/>
+      <circle cx="145" cy="55"  r="40" fill="#F7941D" opacity="0.20"/>
+      <circle cx="190" cy="70"  r="32" fill="#EF4EA2" opacity="0.16"/>
+      <circle cx="155" cy="10"  r="22" fill="#FFCF01" opacity="0.25"/>
+      <circle cx="185" cy="20"  r="15" fill="#F7941D" opacity="0.30"/>
+      <!-- tiny dots -->
+      <circle cx="105" cy="20"  r="5"  fill="#29ABE2" opacity="0.4"/>
+      <circle cx="118" cy="45"  r="3.5" fill="#EF4EA2" opacity="0.5"/>
+      <circle cx="95"  cy="42"  r="2.5" fill="#FFCF01" opacity="0.6"/>
+      <!-- star shape -->
+      <polygon points="125,12 127,18 133,18 128,22 130,28 125,24 120,28 122,22 117,18 123,18"
+               fill="#F7941D" opacity="0.55"/>
+    </svg>
+
+    <!-- Bottom-left wave -->
+    <svg class="s-wave" width="220" height="110" viewBox="0 0 220 110" fill="none">
+      <path d="M0 110 Q55 55 110 75 Q165 95 220 40 L220 110 Z"
+            fill="url(#waveGradS)" opacity="0.18"/>
+      <path d="M0 110 Q45 70 95 82 Q145 94 220 60 L220 110 Z"
+            fill="url(#waveGradS2)" opacity="0.28"/>
+      <defs>
+        <linearGradient id="waveGradS" x1="0" y1="0" x2="220" y2="0">
+          <stop offset="0%" stop-color="#4DB848"/>
+          <stop offset="100%" stop-color="#29ABE2"/>
+        </linearGradient>
+        <linearGradient id="waveGradS2" x1="0" y1="0" x2="220" y2="0">
+          <stop offset="0%" stop-color="#00B5AD"/>
+          <stop offset="100%" stop-color="#7B2D8B"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <!-- Header -->
+    <div class="s-header">
+      <div class="s-logo">
+        <img src="../logo.png" alt="Vedantam Logo">
+      </div>
+      <div class="s-school-name">
+        <div class="s1">Vedantam Play School</div>
+        <div class="s2">Play · Learn · Grow</div>
+      </div>
+    </div>
+
+    <!-- Badge -->
+    <div class="s-badge student">Student ID</div>
+
+    <!-- Divider -->
+    <div class="s-divider"></div>
+
+    <!-- Photo -->
+    <div class="s-photo student-photo">
+      <div class="photo-inner">
+        <div class="photo-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </div>
+        <div class="photo-label">PHOTO</div>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="s-info">
+      <div class="s-name">Aarav Sharma</div>
+      <div class="s-name-line student"></div>
+
+      <div class="s-field">
+        <div class="s-field-label">Class / Program</div>
+        <div class="s-field-value">Play Group — A</div>
+      </div>
+
+      <div class="s-field">
+        <div class="s-field-label">Admission No.</div>
+        <div class="s-field-value" style="font-family:monospace;font-size:13px;color:#4DB848;font-weight:700">VPS/2025/00001</div>
+      </div>
+
+      <div class="s-field">
+        <div class="s-field-label">Academic Year</div>
+        <div class="s-field-value">2025 – 2026</div>
+      </div>
+
+      <div class="s-field" style="margin-top:4px">
+        <div class="s-field-label">Parent Contact</div>
+        <div class="s-field-value" style="font-size:11.5px">+91 98765 43210</div>
+      </div>
+    </div>
+
+    <!-- QR Code -->
+    <div class="s-qr">
+      <div class="qr-wrap">
+        <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <!-- QR code visual (realistic pattern) -->
+          <!-- Top-left finder -->
+          <rect x="2"  y="2"  width="16" height="16" rx="2" fill="#1a2340"/>
+          <rect x="5"  y="5"  width="10" height="10" rx="1" fill="#fff"/>
+          <rect x="7"  y="7"  width="6"  height="6"  rx="0.5" fill="#1a2340"/>
+          <!-- Top-right finder -->
+          <rect x="42" y="2"  width="16" height="16" rx="2" fill="#1a2340"/>
+          <rect x="45" y="5"  width="10" height="10" rx="1" fill="#fff"/>
+          <rect x="47" y="7"  width="6"  height="6"  rx="0.5" fill="#1a2340"/>
+          <!-- Bottom-left finder -->
+          <rect x="2"  y="42" width="16" height="16" rx="2" fill="#1a2340"/>
+          <rect x="5"  y="45" width="10" height="10" rx="1" fill="#fff"/>
+          <rect x="7"  y="47" width="6"  height="6"  rx="0.5" fill="#1a2340"/>
+          <!-- Data modules (scattered pattern) -->
+          <rect x="20" y="2"  width="4" height="4" fill="#1a2340"/>
+          <rect x="26" y="2"  width="4" height="4" fill="#1a2340"/>
+          <rect x="34" y="2"  width="6" height="4" fill="#1a2340"/>
+          <rect x="20" y="8"  width="4" height="4" fill="#1a2340"/>
+          <rect x="28" y="8"  width="6" height="4" fill="#1a2340"/>
+          <rect x="36" y="8"  width="4" height="4" fill="#1a2340"/>
+          <rect x="20" y="14" width="6" height="4" fill="#1a2340"/>
+          <rect x="30" y="14" width="4" height="4" fill="#1a2340"/>
+          <rect x="36" y="14" width="6" height="4" fill="#1a2340"/>
+          <rect x="2"  y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="8"  y="20" width="6" height="4" fill="#1a2340"/>
+          <rect x="20" y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="26" y="20" width="6" height="4" fill="#1a2340"/>
+          <rect x="34" y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="40" y="20" width="6" height="4" fill="#1a2340"/>
+          <rect x="48" y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="54" y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="2"  y="26" width="6" height="4" fill="#1a2340"/>
+          <rect x="12" y="26" width="4" height="4" fill="#1a2340"/>
+          <rect x="22" y="26" width="4" height="4" fill="#1a2340"/>
+          <rect x="28" y="26" width="6" height="4" fill="#1a2340"/>
+          <rect x="38" y="26" width="4" height="4" fill="#1a2340"/>
+          <rect x="44" y="26" width="4" height="4" fill="#1a2340"/>
+          <rect x="52" y="26" width="6" height="4" fill="#1a2340"/>
+          <rect x="2"  y="32" width="4" height="4" fill="#1a2340"/>
+          <rect x="10" y="32" width="6" height="4" fill="#1a2340"/>
+          <rect x="20" y="32" width="6" height="4" fill="#1a2340"/>
+          <rect x="30" y="32" width="4" height="4" fill="#1a2340"/>
+          <rect x="36" y="32" width="6" height="4" fill="#1a2340"/>
+          <rect x="46" y="32" width="4" height="4" fill="#1a2340"/>
+          <rect x="52" y="32" width="6" height="4" fill="#1a2340"/>
+          <rect x="2"  y="38" width="6" height="4" fill="#1a2340"/>
+          <rect x="12" y="38" width="4" height="4" fill="#1a2340"/>
+          <rect x="20" y="38" width="4" height="4" fill="#1a2340"/>
+          <rect x="26" y="38" width="6" height="4" fill="#1a2340"/>
+          <rect x="36" y="38" width="4" height="4" fill="#1a2340"/>
+          <rect x="42" y="38" width="6" height="4" fill="#1a2340"/>
+          <rect x="50" y="38" width="4" height="4" fill="#1a2340"/>
+          <rect x="20" y="44" width="4" height="4" fill="#1a2340"/>
+          <rect x="26" y="44" width="6" height="4" fill="#1a2340"/>
+          <rect x="36" y="44" width="4" height="4" fill="#1a2340"/>
+          <rect x="44" y="44" width="4" height="4" fill="#1a2340"/>
+          <rect x="50" y="44" width="8" height="4" fill="#1a2340"/>
+          <rect x="20" y="50" width="6" height="4" fill="#1a2340"/>
+          <rect x="30" y="50" width="4" height="4" fill="#1a2340"/>
+          <rect x="38" y="50" width="6" height="4" fill="#1a2340"/>
+          <rect x="46" y="50" width="4" height="4" fill="#1a2340"/>
+          <rect x="54" y="50" width="4" height="4" fill="#1a2340"/>
+          <rect x="20" y="56" width="4" height="4" fill="#1a2340"/>
+          <rect x="28" y="56" width="6" height="4" fill="#1a2340"/>
+          <rect x="36" y="56" width="4" height="4" fill="#1a2340"/>
+          <rect x="44" y="56" width="8" height="4" fill="#1a2340"/>
+          <rect x="54" y="56" width="4" height="4" fill="#1a2340"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Tagline -->
+    <div class="s-tagline">
+      <div class="tl">
+        <span style="color:#4DB848">Play</span>
+        <span>·</span>
+        <span style="color:#29ABE2">Learn</span>
+        <span>·</span>
+        <span style="color:#F7941D">Grow</span>
+      </div>
+      <div class="addr">Vedantam Play School, Damoh — vedantamplayschool.in</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     TEACHER ID CARD
+════════════════════════════════════════ -->
+<div>
+  <h2>👩‍🏫 Teacher ID Card &nbsp;·&nbsp; CR80 (85.6 × 54 mm)</h2>
+  <div class="card" id="teacher-card">
+
+    <!-- Top bar — green-blue gradient for teacher -->
+    <div class="s-topbar" style="background:linear-gradient(90deg,
+      #4DB848 0%, #00B5AD 25%, #29ABE2 50%, #7B2D8B 75%, #4DB848 100%)"></div>
+
+    <!-- Top-right decorative — professional curves, green-blue -->
+    <svg class="s-bubbles" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="170" cy="30"  r="55" fill="#29ABE2" opacity="0.13"/>
+      <circle cx="145" cy="55"  r="40" fill="#00B5AD" opacity="0.16"/>
+      <circle cx="190" cy="70"  r="32" fill="#4DB848" opacity="0.12"/>
+      <circle cx="155" cy="10"  r="22" fill="#7B2D8B" opacity="0.15"/>
+      <circle cx="185" cy="20"  r="15" fill="#29ABE2" opacity="0.22"/>
+      <!-- tiny dots -->
+      <circle cx="105" cy="20"  r="5"  fill="#4DB848" opacity="0.45"/>
+      <circle cx="118" cy="45"  r="3.5" fill="#29ABE2" opacity="0.5"/>
+      <circle cx="95"  cy="42"  r="2.5" fill="#00B5AD" opacity="0.6"/>
+      <!-- diamond -->
+      <polygon points="125,10 130,17 125,24 120,17"
+               fill="#29ABE2" opacity="0.5"/>
+    </svg>
+
+    <!-- Bottom-left wave — teacher green-blue -->
+    <svg class="s-wave" width="220" height="110" viewBox="0 0 220 110" fill="none">
+      <path d="M0 110 Q55 55 110 75 Q165 95 220 40 L220 110 Z"
+            fill="url(#waveGradT)" opacity="0.18"/>
+      <path d="M0 110 Q45 70 95 82 Q145 94 220 60 L220 110 Z"
+            fill="url(#waveGradT2)" opacity="0.28"/>
+      <defs>
+        <linearGradient id="waveGradT" x1="0" y1="0" x2="220" y2="0">
+          <stop offset="0%" stop-color="#4DB848"/>
+          <stop offset="100%" stop-color="#29ABE2"/>
+        </linearGradient>
+        <linearGradient id="waveGradT2" x1="0" y1="0" x2="220" y2="0">
+          <stop offset="0%" stop-color="#00B5AD"/>
+          <stop offset="100%" stop-color="#7B2D8B"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <!-- Header -->
+    <div class="s-header">
+      <div class="s-logo">
+        <img src="../logo.png" alt="Vedantam Logo">
+      </div>
+      <div class="s-school-name">
+        <div class="s1">Vedantam Play School</div>
+        <div class="s2" style="color:#00B5AD">Play · Learn · Grow</div>
+      </div>
+    </div>
+
+    <!-- Badge -->
+    <div class="s-badge teacher">Teacher ID</div>
+
+    <!-- Divider -->
+    <div class="s-divider"></div>
+
+    <!-- Photo -->
+    <div class="s-photo teacher-photo">
+      <div class="photo-inner">
+        <div class="photo-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </div>
+        <div class="photo-label">PHOTO</div>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="s-info">
+      <div class="s-name">Priya Verma</div>
+      <div class="s-name-line teacher"></div>
+
+      <div class="s-field">
+        <div class="s-field-label">Designation</div>
+        <div class="s-field-value">Head Teacher</div>
+      </div>
+
+      <div class="s-field">
+        <div class="s-field-label">Employee ID</div>
+        <div class="s-field-value" style="font-family:monospace;font-size:13px;color:#00B5AD;font-weight:700">VPS/T/2025/001</div>
+      </div>
+
+      <div class="s-field">
+        <div class="s-field-label">Department</div>
+        <div class="s-field-value">Play Group & Nursery</div>
+      </div>
+
+      <div class="s-field" style="margin-top:4px">
+        <div class="s-field-label">Contact</div>
+        <div class="s-field-value" style="font-size:11.5px">+91 98765 00001</div>
+      </div>
+    </div>
+
+    <!-- QR Code (same pattern, different accent) -->
+    <div class="s-qr">
+      <div class="qr-wrap">
+        <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2"  y="2"  width="16" height="16" rx="2" fill="#00B5AD"/>
+          <rect x="5"  y="5"  width="10" height="10" rx="1" fill="#fff"/>
+          <rect x="7"  y="7"  width="6"  height="6"  rx="0.5" fill="#00B5AD"/>
+          <rect x="42" y="2"  width="16" height="16" rx="2" fill="#00B5AD"/>
+          <rect x="45" y="5"  width="10" height="10" rx="1" fill="#fff"/>
+          <rect x="47" y="7"  width="6"  height="6"  rx="0.5" fill="#00B5AD"/>
+          <rect x="2"  y="42" width="16" height="16" rx="2" fill="#00B5AD"/>
+          <rect x="5"  y="45" width="10" height="10" rx="1" fill="#fff"/>
+          <rect x="7"  y="47" width="6"  height="6"  rx="0.5" fill="#00B5AD"/>
+          <rect x="20" y="2"  width="4" height="4" fill="#4DB848"/>
+          <rect x="26" y="2"  width="4" height="4" fill="#1a2340"/>
+          <rect x="34" y="2"  width="6" height="4" fill="#4DB848"/>
+          <rect x="20" y="8"  width="4" height="4" fill="#1a2340"/>
+          <rect x="28" y="8"  width="6" height="4" fill="#00B5AD"/>
+          <rect x="36" y="8"  width="4" height="4" fill="#1a2340"/>
+          <rect x="20" y="14" width="6" height="4" fill="#4DB848"/>
+          <rect x="30" y="14" width="4" height="4" fill="#1a2340"/>
+          <rect x="36" y="14" width="6" height="4" fill="#00B5AD"/>
+          <rect x="2"  y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="8"  y="20" width="6" height="4" fill="#4DB848"/>
+          <rect x="20" y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="26" y="20" width="6" height="4" fill="#00B5AD"/>
+          <rect x="34" y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="40" y="20" width="6" height="4" fill="#4DB848"/>
+          <rect x="48" y="20" width="4" height="4" fill="#1a2340"/>
+          <rect x="54" y="20" width="4" height="4" fill="#00B5AD"/>
+          <rect x="2"  y="26" width="6" height="4" fill="#4DB848"/>
+          <rect x="12" y="26" width="4" height="4" fill="#1a2340"/>
+          <rect x="22" y="26" width="4" height="4" fill="#00B5AD"/>
+          <rect x="28" y="26" width="6" height="4" fill="#1a2340"/>
+          <rect x="38" y="26" width="4" height="4" fill="#4DB848"/>
+          <rect x="44" y="26" width="4" height="4" fill="#1a2340"/>
+          <rect x="52" y="26" width="6" height="4" fill="#00B5AD"/>
+          <rect x="2"  y="32" width="4" height="4" fill="#1a2340"/>
+          <rect x="10" y="32" width="6" height="4" fill="#4DB848"/>
+          <rect x="20" y="32" width="6" height="4" fill="#1a2340"/>
+          <rect x="30" y="32" width="4" height="4" fill="#00B5AD"/>
+          <rect x="36" y="32" width="6" height="4" fill="#1a2340"/>
+          <rect x="46" y="32" width="4" height="4" fill="#4DB848"/>
+          <rect x="52" y="32" width="6" height="4" fill="#1a2340"/>
+          <rect x="2"  y="38" width="6" height="4" fill="#00B5AD"/>
+          <rect x="12" y="38" width="4" height="4" fill="#1a2340"/>
+          <rect x="20" y="38" width="4" height="4" fill="#4DB848"/>
+          <rect x="26" y="38" width="6" height="4" fill="#1a2340"/>
+          <rect x="36" y="38" width="4" height="4" fill="#00B5AD"/>
+          <rect x="42" y="38" width="6" height="4" fill="#1a2340"/>
+          <rect x="50" y="38" width="4" height="4" fill="#4DB848"/>
+          <rect x="20" y="44" width="4" height="4" fill="#1a2340"/>
+          <rect x="26" y="44" width="6" height="4" fill="#00B5AD"/>
+          <rect x="36" y="44" width="4" height="4" fill="#1a2340"/>
+          <rect x="44" y="44" width="4" height="4" fill="#4DB848"/>
+          <rect x="50" y="44" width="8" height="4" fill="#1a2340"/>
+          <rect x="20" y="50" width="6" height="4" fill="#4DB848"/>
+          <rect x="30" y="50" width="4" height="4" fill="#1a2340"/>
+          <rect x="38" y="50" width="6" height="4" fill="#00B5AD"/>
+          <rect x="46" y="50" width="4" height="4" fill="#1a2340"/>
+          <rect x="54" y="50" width="4" height="4" fill="#4DB848"/>
+          <rect x="20" y="56" width="4" height="4" fill="#1a2340"/>
+          <rect x="28" y="56" width="6" height="4" fill="#00B5AD"/>
+          <rect x="36" y="56" width="4" height="4" fill="#4DB848"/>
+          <rect x="44" y="56" width="8" height="4" fill="#1a2340"/>
+          <rect x="54" y="56" width="4" height="4" fill="#00B5AD"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Tagline -->
+    <div class="s-tagline">
+      <div class="tl">
+        <span style="color:#4DB848">Play</span>
+        <span>·</span>
+        <span style="color:#29ABE2">Learn</span>
+        <span>·</span>
+        <span style="color:#00B5AD">Grow</span>
+      </div>
+      <div class="addr">Vedantam Play School, Damoh — vedantamplayschool.in</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

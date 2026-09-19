@@ -91,12 +91,31 @@ The app runs on port 5000. The workflow "Start application" manages this.
 | `/api/v1/reports` | CSV/data exports |
 
 ## Secrets Required
-- `MONGODB_URI` — MongoDB Atlas connection string
-- `JWT_SECRET` — shared JWT signing secret (all portals)
-- `SESSION_SECRET` — Express session secret
-- `CLOUDINARY_CLOUD_NAME` — Cloudinary cloud name
-- `CLOUDINARY_API_KEY` — Cloudinary API key
-- `CLOUDINARY_API_SECRET` — Cloudinary API secret
+- `MONGODB_URI` — MongoDB Atlas connection string (configured)
+- `JWT_SECRET` — shared JWT signing secret, auto-generated on setup (configured)
+- `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` — Cloudinary media storage (configured)
+- `SESSION_SECRET` — present but currently unused by backend code
+
+## Setup Status (July 2026 re-import)
+- Dependencies installed via `npm install --prefix backend`.
+- All required secrets configured; "Start application" workflow boots cleanly, connects to MongoDB, and serves the site.
+- An admin account already exists in the connected database, so the JWT/bootstrap flow was skipped — log in with existing admin credentials.
+- Re-imported again on July 15, 2026: dependencies were missing (`node_modules` not present) and all secrets (`MONGODB_URI`, `JWT_SECRET`, `CLOUDINARY_*`, `ADMIN_SECRET_PATH`) had been dropped by the re-import. Reinstalled deps and re-collected secrets (JWT_SECRET/ADMIN_SECRET_PATH freshly generated, Mongo/Cloudinary re-entered by the user). Verified the workflow boots, connects to MongoDB, and the homepage renders.
+
+## Hidden Admin Access
+- The Admin Portal is intentionally **not listed** on the public homepage — only Teacher and Parent portal cards show under "School Management Portals".
+- `/admin.html` always 404s directly (blocked in `backend/src/app.js`). The admin page is only served at a secret URL: your domain + `/` + the `ADMIN_SECRET_PATH` secret value (a random slug generated on setup, stored as a shared env var). Bookmark that URL — it works identically on phone and desktop.
+- A convenience shortcut also exists on the homepage: tapping/clicking the footer copyright line 5 times within 2 seconds navigates to that same secret URL (see `js/script.js`). The real access boundary is the server-side block, not this gesture.
+- If `ADMIN_SECRET_PATH` is ever rotated (new value via `setEnvVars`), update the hardcoded fallback in `js/script.js` to match, or the footer gesture will point at a stale path.
+
+## Parent Portal Credentials — Auto-Generated at Enrollment
+- Converting an approved Admission into a Student (`POST /api/v1/students/convert-admission/:admissionId`) now automatically provisions parent portal access: it reuses an existing `Parent` record if the phone number matches (so siblings share one login), otherwise creates one with a generated `portalEmail` (falls back to `<phone>@parent.vedantam.school` when the admission has no email) and an 8-character temporary password, and activates the portal immediately (`isPortalActive: true`).
+- The generated credentials are returned once in the conversion response and shown to the admin in a popup (`showParentCredentialsModal` in `js/admin.js`) to copy/share with the family.
+- Until the parent changes their password, the plaintext temp password is also visible in Admin → Parent Portal Accounts (`Parent.tempPasswordPlain`, cleared automatically once the parent sets their own password via `changeParentPassword`).
+- Manually activating/resetting a parent's portal from the admin UI also populates `tempPasswordPlain` the same way, so the credentials list behaves consistently regardless of how the account was created.
+
+## Known Production Issue (not fixable from Replit dev)
+- The GitHub Pages frontend (`vedantamplayschool-byte.github.io`) calls the Render-hosted backend for API requests. As of July 2026, that Render deployment returns "Route not found" for `/api/v1/security/login-history` even though the route exists in this codebase (`backend/src/routes/securityRoutes.js`) and works correctly in this dev environment (verified: returns `401 Authentication required`, not a 404). This means the Render deployment is running an older commit — it needs to be redeployed from the latest `main` branch (Render auto-deploys on push if `render.yaml`'s branch tracking is enabled, otherwise trigger a manual deploy from the Render dashboard).
 
 ## User Preferences
 - Existing APIs and collections must never be removed — all changes are additive

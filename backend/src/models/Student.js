@@ -55,7 +55,7 @@ const schema = new mongoose.Schema(
     gender:      { type: String, enum: ['Male', 'Female', 'Other'] },
     bloodGroup:  { type: String, enum: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] },
     religion:    { type: String, trim: true },
-    category:    { type: String, enum: ['General', 'OBC', 'SC', 'ST', 'Minority'] },
+    category:    { type: String, enum: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
     nationality: { type: String, trim: true, default: 'Indian' },
     motherTongue:{ type: String, trim: true },
 

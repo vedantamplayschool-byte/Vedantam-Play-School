@@ -2,7 +2,7 @@
 /* ================================================================
    VEDANTAM PLAY SCHOOL — PARENT PORTAL v3.0
    View-only portal: children, attendance, homework, fees, notices,
-   events, gallery, profile, change password.
+   events, gallery, and profile.
    ================================================================ */
 
 const API = (window.VedantamAPIConfig?.baseUrl || '/api/v1').replace(/\/$/, '');
@@ -60,6 +60,10 @@ function showPage(id) {
   ['loginPage','forceChangePage','parentShell'].forEach(p => {
     const el = document.getElementById(p);
     if (!el) return;
+    if (p === 'parentShell') {
+      el.classList.toggle('hidden', p !== id);
+      return;
+    }
     el.style.display = p === id ? '' : 'none';
     if (p === 'forceChangePage' && p === id) el.style.display = 'flex';
   });
@@ -78,7 +82,7 @@ function navigate(page) {
   area.innerHTML = '<div style="text-align:center;padding:48px"><span class="spin" style="width:28px;height:28px;border-width:3px;border-color:var(--bd);border-top-color:var(--primary)"></span></div>';
   const pages = {
     dashboard, children: childrenPage, attendance: attendancePage,
-    homework: homeworkPage, fees: feesPage, notices: noticesPage,
+    homework: homeworkPage, fees: feesPage, results: resultsPage, notices: noticesPage,
     events: eventsPage, gallery: galleryPage, profile: profilePage
   };
   Promise.resolve((pages[page] || dashboard)()).catch(err => {
@@ -127,9 +131,9 @@ async function dashboard() {
 
   area.innerHTML = `
     ${d.parent.mustChangePassword ? `
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
-      <span class="material-icons-round" style="color:#b91c1c">warning</span>
-      <span>Please <button onclick="navigate('profile')" style="background:none;border:none;color:#b91c1c;font-weight:600;cursor:pointer;font-size:inherit">change your password</button> — you are using a temporary password.</span>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:#9a3412">
+      <span class="material-icons-round" style="color:#f97316">admin_panel_settings</span>
+      <span>Your portal password is managed by the school administrator. Contact the school office if you need password help.</span>
     </div>` : ''}
 
     <div style="background:linear-gradient(135deg,#f97316,#8b5cf6);color:#fff;border-radius:14px;padding:20px;margin-bottom:14px">
@@ -180,6 +184,17 @@ async function dashboard() {
       </div>
       <div>${noticeHtml}</div>
     </div>`;
+}
+
+/* Published-only results. The API scopes records to the authenticated parent's linked children. */
+async function resultsPage() {
+  const { data: results } = await api('/parent-portal/results');
+  const area = document.getElementById('contentArea');
+  if (!results.length) { area.innerHTML = `<div class="card"><div class="card-body" style="text-align:center;padding:36px"><span class="material-icons-round" style="font-size:36px;color:var(--txt-sm)">school</span><p style="font-weight:600;margin-top:8px">No published results yet</p><p style="color:var(--txt-sm);font-size:12px;margin-top:4px">Draft and incomplete results are not visible here.</p></div></div>`; return; }
+  area.innerHTML = `<div class="card"><div class="card-head"><div class="card-title">Examination Results</div></div><div class="card-body">${results.map((r, index) => {
+    const definitions = new Map(); (r.configuration?.subjects || []).forEach(s => s.components?.length ? s.components.forEach(c => definitions.set(`${s._id}:${c._id}`, `${s.name} — ${c.name} / ${c.maxMarks}`)) : definitions.set(`${s._id}:`, `${s.name} / ${s.maxMarks}`));
+    return `<details ${index === 0 ? 'open' : ''} style="border-bottom:1px solid var(--bd);padding:12px 0"><summary style="cursor:pointer;font-weight:600">${esc(r.student?.studentName)} · ${esc(r.examination)}<span style="float:right;color:var(--primary)">${r.percentage.toFixed(2)}%</span></summary><div style="margin-top:12px;font-size:12px;color:var(--txt-sm)">${esc(r.session?.name || '')} · ${esc(r.program)} · Adm# ${esc(r.student?.admissionNumber || '—')}</div><table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:12px"><thead><tr><th style="text-align:left;padding:6px">Subject</th><th style="text-align:right;padding:6px">Obtained / Maximum</th></tr></thead><tbody>${(r.marks || []).map(m => `<tr><td style="padding:6px;border-top:1px solid var(--bd)">${esc(definitions.get(`${m.subject}:${m.component || ''}`) || 'Assessment')}</td><td style="padding:6px;border-top:1px solid var(--bd);text-align:right">${m.status === 'absent' ? 'Absent' : `${m.value} / ${String(definitions.get(`${m.subject}:${m.component || ''}`) || '').split('/ ').pop()}`}</td></tr>`).join('')}<tr><th style="padding:7px;border-top:1px solid var(--bd)">Total</th><th style="padding:7px;border-top:1px solid var(--bd);text-align:right">${r.totalObtained} / ${r.maximumTotal}</th></tr></tbody></table><button class="btn-icon" style="margin-top:8px;color:var(--primary)" onclick="window.print()"><span class="material-icons-round">print</span> Print marksheet</button></details>`;
+  }).join('')}</div></div>`;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -348,9 +363,27 @@ async function feesPage() {
           <div><div style="color:var(--txt-sm)">Balance</div><div style="font-weight:600;color:${(p.balance||0)>0?'var(--red)':'var(--green)'}">${fmtCur(p.balance)}</div></div>
         </div>
         ${p.paymentDate ? `<div style="font-size:11px;color:var(--txt-sm);margin-top:8px">Paid on: ${fmtDate(p.paymentDate)} · ${esc(p.paymentMode||'')}</div>` : ''}
+        ${p.amountPaid ? `<div style="margin-top:10px"><button class="btn-icon" style="background:var(--bg);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--primary)" onclick="downloadReceipt('${p._id}')"><span class="material-icons-round" style="font-size:16px">picture_as_pdf</span>&nbsp;Download Receipt</button></div>` : ''}
       </div>
     </div>`).join('') : `<div class="empty"><span class="material-icons-round">payments</span><p>No fee records found</p></div>`}`;
 }
+
+async function downloadReceipt(paymentId) {
+  try {
+    const res = await fetch(`${API}/parent-portal/fees/${paymentId}/receipt/pdf`, {
+      headers: S.token ? { Authorization: `Bearer ${S.token}` } : {},
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Could not generate receipt');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `receipt-${paymentId}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) { toast(err.message, 'error'); }
+}
+window.downloadReceipt = downloadReceipt;
 
 /* ════════════════════════════════════════════════════════════════════
    NOTICES
@@ -378,11 +411,21 @@ async function noticesPage() {
 /* ════════════════════════════════════════════════════════════════════
    EVENTS
    ════════════════════════════════════════════════════════════════════ */
-async function eventsPage() {
-  const { data: events } = await api('/parent-portal/events');
+async function eventsPage(category) {
+  const qs = category ? `?category=${encodeURIComponent(category)}` : '';
+  const { data: events } = await api(`/parent-portal/events${qs}`);
   const area = document.getElementById('contentArea');
 
-  area.innerHTML = events.length ? events.map(ev => {
+  const categories = ['General','PTM','Exam','Holiday','Sports','Cultural','Other'];
+  const filterBar = `
+    <div class="filter-bar">
+      <select id="eventCatFilter" onchange="eventsPage(this.value)">
+        <option value="">All Categories</option>
+        ${categories.map(c => `<option value="${c}" ${category===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>`;
+
+  const list = events.length ? events.map(ev => {
     const isPast = ev.eventDate && new Date(ev.eventDate) < new Date();
     return `
     <div class="card">
@@ -390,10 +433,13 @@ async function eventsPage() {
         <div style="display:flex;gap:14px;align-items:flex-start">
           <div style="flex-shrink:0;width:50px;height:50px;border-radius:12px;background:${isPast?'var(--bg)':'#eff6ff'};display:flex;flex-direction:column;align-items:center;justify-content:center">
             <div style="font-size:16px;font-weight:700;color:${isPast?'var(--txt-sm)':'var(--blue)'}">${ev.eventDate?new Date(ev.eventDate).getDate():'?'}</div>
-            <div style="font-size:9px;color:${isPast?'var(--txt-sm)':'var(--blue)';font-weight:600}">${ev.eventDate?new Date(ev.eventDate).toLocaleString('en-IN',{month:'short'}):''}</div>
+            <div style="font-size:9px;font-weight:600;color:${isPast?'var(--txt-sm)':'var(--blue)'}">${ev.eventDate?new Date(ev.eventDate).toLocaleString('en-IN',{month:'short'}):''}</div>
           </div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">${esc(ev.title)}</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="font-weight:600;font-size:14px">${esc(ev.title)}</div>
+              ${ev.category && ev.category !== 'General' ? `<span class="badge badge-normal">${esc(ev.category)}</span>` : ''}
+            </div>
             ${ev.description ? `<div style="font-size:13px;color:var(--txt-sm);margin-top:4px">${esc(ev.description)}</div>` : ''}
             ${ev.location ? `<div style="font-size:12px;color:var(--txt-sm);margin-top:4px"><span class="material-icons-round" style="font-size:14px;vertical-align:middle">place</span> ${esc(ev.location)}</div>` : ''}
           </div>
@@ -402,7 +448,10 @@ async function eventsPage() {
       </div>
     </div>`;
   }).join('') : `<div class="empty"><span class="material-icons-round">event</span><p>No events found</p></div>`;
+
+  area.innerHTML = filterBar + list;
 }
+window.eventsPage = eventsPage;
 
 /* ════════════════════════════════════════════════════════════════════
    GALLERY
@@ -454,37 +503,46 @@ async function profilePage() {
     </div>
 
     <div class="card">
-      <div class="card-head"><span class="card-title">Change Password</span></div>
+      <div class="card-head"><span class="card-title">Update Contact Info</span></div>
       <div class="card-body">
-        ${p.mustChangePassword ? `<div style="background:#fef9c3;border:1px solid #fef08a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#854d0e"><strong>Action required:</strong> Please change your temporary password.</div>` : ''}
-        <div class="pw-form">
-          <div id="pwError" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px;margin-bottom:12px"></div>
-          <form id="pwForm">
-            <div class="form-group"><label>Current Password</label><input type="password" name="currentPassword" required autocomplete="current-password"></div>
-            <div class="form-group"><label>New Password</label><input type="password" name="newPassword" required minlength="6" autocomplete="new-password"></div>
-            <div class="form-group"><label>Confirm New Password</label><input type="password" name="confirmPassword" required autocomplete="new-password"></div>
+        <div id="profileError" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px;font-size:13px;margin-bottom:12px"></div>
+        <form id="profileForm" class="pw-form" style="max-width:none;display:grid;grid-template-columns:1fr 1fr;gap:14px 16px">
+          <div class="form-group"><label>Father's Phone</label><input type="text" name="fatherPhone" value="${esc(p.fatherPhone||'')}"></div>
+          <div class="form-group"><label>Mother's Phone</label><input type="text" name="motherPhone" value="${esc(p.motherPhone||'')}"></div>
+          <div class="form-group"><label>Guardian Phone</label><input type="text" name="guardianPhone" value="${esc(p.guardianPhone||'')}"></div>
+          <div class="form-group"><label>Address</label><input type="text" name="address" value="${esc(p.address||'')}"></div>
+          <div class="form-group"><label>City</label><input type="text" name="city" value="${esc(p.city||'')}"></div>
+          <div class="form-group"><label>State</label><input type="text" name="state" value="${esc(p.state||'')}"></div>
+          <div class="form-group"><label>Pincode</label><input type="text" name="pincode" value="${esc(p.pincode||'')}"></div>
+          <div style="grid-column:1/-1">
             <button type="submit" style="padding:10px 20px;background:linear-gradient(135deg,#f97316,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
-              <span class="material-icons-round" style="font-size:18px">lock</span>Update Password
+              <span class="material-icons-round" style="font-size:18px">save</span>Save Contact Info
             </button>
-          </form>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title">Portal Password</span></div>
+      <div class="card-body">
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:14px 16px;font-size:13px;color:#9a3412;display:flex;gap:10px;align-items:flex-start">
+          <span class="material-icons-round" style="color:#f97316">admin_panel_settings</span>
+          <div><strong>Admin-managed access:</strong> Parent passwords are created and maintained by Vedantam Play School administrators only. If you forget your password or need a change, please contact the school office.</div>
         </div>
       </div>
     </div>`;
 
-  document.getElementById('pwForm').addEventListener('submit', async e => {
+  document.getElementById('profileForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const fd   = new FormData(e.target);
-    const curr = fd.get('currentPassword');
-    const nw   = fd.get('newPassword');
-    const conf = fd.get('confirmPassword');
-    const errEl = document.getElementById('pwError');
+    const fd = new FormData(e.target);
+    const errEl = document.getElementById('profileError');
     errEl.style.display = 'none';
-    if (nw !== conf) { errEl.textContent = 'Passwords do not match'; errEl.style.display = ''; return; }
+    const body = Object.fromEntries(fd.entries());
     try {
-      await api('/parent-auth/change-password', { method:'PUT', body: JSON.stringify({ currentPassword: curr, newPassword: nw }) });
-      toast('Password changed successfully!');
-      S.parent.mustChangePassword = false;
-      e.target.reset();
+      const { data } = await api('/parent-auth/profile', { method: 'PUT', body: JSON.stringify(body) });
+      S.parent = { ...S.parent, ...data };
+      toast('Contact info updated');
     } catch (err) {
       errEl.textContent = err.message;
       errEl.style.display = '';
@@ -501,7 +559,7 @@ async function initApp() {
     const { data } = await api('/parent-auth/me');
     S.parent = data;
     mountShell();
-    if (data.mustChangePassword) showPage('forceChangePage');
+    if (data.mustChangePassword) { showPage('forceChangePage'); navigate('dashboard'); }
     else navigate('dashboard');
   } catch (_) {
     clearToken(); showPage('loginPage');
@@ -557,7 +615,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async e => {
     saveToken(data.token);
     S.parent = data.parent;
     mountShell();
-    if (data.mustChangePassword) showPage('forceChangePage');
+    if (data.mustChangePassword) { showPage('forceChangePage'); navigate('dashboard'); }
     else navigate('dashboard');
   } catch (ex) {
     err.textContent = ex.message;
@@ -567,32 +625,10 @@ document.getElementById('loginForm')?.addEventListener('submit', async e => {
   }
 });
 
-/* ── FORCE CHANGE PASSWORD FORM ───────────────────────────────────── */
-document.getElementById('forceChangeForm')?.addEventListener('submit', async e => {
-  e.preventDefault();
-  const fd  = new FormData(e.target);
-  const btn = document.getElementById('fcBtn');
-  const txt = document.getElementById('fcBtnText');
-  const spn = document.getElementById('fcSpin');
-  const err = document.getElementById('fcError');
-  err.style.display = 'none';
-  const nw   = fd.get('newPassword');
-  const conf = fd.get('confirmPassword');
-  if (nw !== conf) { err.textContent = 'Passwords do not match'; err.style.display = ''; return; }
-  btn.disabled = true; txt.textContent = 'Saving…'; spn.style.display = '';
-  try {
-    await api('/parent-auth/change-password', {
-      method: 'PUT',
-      body: JSON.stringify({ currentPassword: fd.get('currentPassword'), newPassword: nw })
-    });
-    if (S.parent) S.parent.mustChangePassword = false;
-    toast('Password set! Welcome.');
-    navigate('dashboard');
-  } catch (ex) {
-    err.textContent = ex.message; err.style.display = '';
-  } finally {
-    btn.disabled = false; txt.textContent = 'Set Password'; spn.style.display = 'none';
-  }
+/* ── ADMIN-MANAGED PASSWORD NOTICE ───────────────────────────────── */
+document.getElementById('continueToPortalBtn')?.addEventListener('click', () => {
+  showPage('parentShell');
+  navigate('dashboard');
 });
 
 /* ── BOOT ─────────────────────────────────────────────────────────── */

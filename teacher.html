@@ -63,7 +63,8 @@
     }
 
     /* ── SHELL ────────────────────────────────────────────────────── */
-    #teacherShell { display: none; min-height: 100vh; }
+    #teacherShell { min-height: 100vh; }
+    .hidden { display: none !important; }
 
     .topbar {
       background: var(--surface); border-bottom: 1px solid var(--bd);
@@ -187,6 +188,7 @@
       .bottom-nav { display: none; }
     }
   </style>
+  <link rel="stylesheet" href="css/vedantam-theme.css" />
 </head>
 <body>
 
@@ -250,7 +252,7 @@
 </div>
 
 <!-- ── TEACHER SHELL ──────────────────────────────────────────────── -->
-<div id="teacherShell">
+<div id="teacherShell" class="hidden">
   <div class="topbar">
     <span class="material-icons-round" style="color:var(--primary)">school</span>
     <div class="topbar-logo">Teacher Portal <span>Vedantam Play School</span></div>

@@ -4,6 +4,7 @@ import { ok } from '../utils/apiResponse.js';
 import { signToken } from '../middleware/auth.js';
 import { uploadImage } from '../services/uploadService.js';
 import { env } from '../config/env.js';
+import { recordLoginAttempt } from '../middleware/auditLog.js';
 
 const cookieOptions = {
   httpOnly: true,
@@ -41,17 +42,20 @@ export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const admin = await Admin.findOne({ email }).select('+password');
   if (!admin || !(await admin.comparePassword(password))) {
+    await recordLoginAttempt({ portal: 'admin', identifier: email, userModel: 'Admin', success: false, reason: 'Invalid email or password', req });
     const e = new Error('Invalid email or password');
     e.status = 401;
     throw e;
   }
   if (!admin.isActive) {
+    await recordLoginAttempt({ portal: 'admin', identifier: email, user: admin, userModel: 'Admin', success: false, reason: 'Account deactivated', req });
     const e = new Error('Your account has been deactivated. Contact the principal.');
     e.status = 403;
     throw e;
   }
   admin.lastLoginAt = new Date();
   await admin.save({ validateBeforeSave: false });
+  await recordLoginAttempt({ portal: 'admin', identifier: email, user: admin, userModel: 'Admin', success: true, req });
   const token = signToken(admin._id);
   res.cookie('token', token, cookieOptions);
   ok(res, {
