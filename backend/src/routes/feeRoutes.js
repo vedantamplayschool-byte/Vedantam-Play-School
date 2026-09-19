@@ -5,7 +5,7 @@ import { validate } from '../middleware/validate.js';
 import {
   listFeeStructures, getFeeStructure, createFeeStructure, updateFeeStructure, deleteFeeStructure,
   listFeePayments, getFeePayment, createFeePayment, updateFeePayment, deleteFeePayment,
-  studentFeeSummary, monthlyCollection, exportFees
+  studentFeeSummary, monthlyCollection
 } from '../controllers/feeController.js';
 
 const r = Router();
@@ -34,7 +34,6 @@ r.delete('/structures/:id',
 /* ── Fee Payments ─────────────────────────────────────────────────── */
 r.get('/payments',              pagination, validate, listFeePayments);
 r.get('/payments/monthly',      monthlyCollection);
-r.get('/export',                exportFees);
 r.get('/payments/:id',          idParam, validate, getFeePayment);
 r.get('/student/:studentId',    studentFeeSummary);
 r.post('/payments',

@@ -1,6 +1,6 @@
 import { Router }           from 'express';
 import { protect, authorize } from '../middleware/auth.js';
-import { upload } from '../middleware/upload.js';
+import { upload }             from '../middleware/upload.js';
 import { idParam, pagination } from '../validators/common.js';
 import { validate }           from '../middleware/validate.js';
 import {

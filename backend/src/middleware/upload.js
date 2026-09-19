@@ -1,4 +1,5 @@
 import multer from 'multer';
+import { env } from '../config/env.js';
 
 const storage = multer.memoryStorage();
 
@@ -7,6 +8,7 @@ const ALLOWED_DOC_TYPES   = [...ALLOWED_IMAGE_TYPES, 'application/pdf'];
 
 export const upload = multer({
   storage,
+  limits: { fileSize: env.maxFileSizeMb * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     /* Document fields accept PDFs + images; all other fields (photo, etc.) are image-only */
     const isDocField = ['document', 'file', 'attachment'].includes(file.fieldname);
@@ -19,4 +21,3 @@ export const upload = multer({
     cb(null, true);
   }
 });
-

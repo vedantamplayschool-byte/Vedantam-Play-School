@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
 
@@ -40,4 +40,4 @@ CLIENT_ORIGINS = "https://vedantamplayschool-byte.github.io"
 JWT_COOKIE_EXPIRES_DAYS = "7"
 JWT_EXPIRES_IN = "7d"
 MAX_FILE_SIZE_MB = "5"
-NODE_ENV = "development"
+NODE_ENV = "production"

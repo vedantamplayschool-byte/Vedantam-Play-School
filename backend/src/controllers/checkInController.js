@@ -1,7 +1,6 @@
 import TeacherAttendance from '../models/TeacherAttendance.js';
 import { asyncHandler }  from '../utils/asyncHandler.js';
 import { ok }            from '../utils/apiResponse.js';
-import { uploadImage }   from '../services/uploadService.js';
 
 /* School timings — adjust via env if needed */
 const EXPECTED_CHECK_IN_HOUR   = Number(process.env.SCHOOL_START_HOUR   || 8);   // 08:00
@@ -46,13 +45,6 @@ export const checkIn = asyncHandler(async (req, res) => {
   const dateOnly = new Date(now);
   dateOnly.setHours(0, 0, 0, 0);
 
-  // Optional selfie capture — camera-captured photo sent as multipart file
-  let checkInImageUrl = null;
-  if (req.file) {
-    const uploaded = await uploadImage(req.file, 'vedantam/checkin-photos', req);
-    checkInImageUrl = uploaded.url;
-  }
-
   const attendance = await TeacherAttendance.findOneAndUpdate(
     { teacher: teacher._id, date: dateOnly },
     {
@@ -66,7 +58,8 @@ export const checkIn = asyncHandler(async (req, res) => {
         ipAddress:    req.ip || '',
         ...(gpsLat !== undefined ? { gpsLat } : {}),
         ...(gpsLng !== undefined ? { gpsLng } : {}),
-        checkInImageUrl
+        // future-ready — always null (Module 3 spec)
+        checkInImageUrl: null
       }
     },
     { upsert: true, new: true, runValidators: true }
@@ -112,12 +105,6 @@ export const checkOut = asyncHandler(async (req, res) => {
   const gpsLat = req.body.gpsLat ? parseFloat(req.body.gpsLat) : undefined;
   const gpsLng = req.body.gpsLng ? parseFloat(req.body.gpsLng) : undefined;
 
-  let checkOutImageUrl = null;
-  if (req.file) {
-    const uploaded = await uploadImage(req.file, 'vedantam/checkin-photos', req);
-    checkOutImageUrl = uploaded.url;
-  }
-
   const updated = await TeacherAttendance.findByIdAndUpdate(
     existing._id,
     {
@@ -125,7 +112,8 @@ export const checkOut = asyncHandler(async (req, res) => {
       checkOut:     timeStr,
       workingHours: workingHrs,
       earlyExit:    isEarlyExit,
-      checkOutImageUrl,
+      // future-ready
+      checkOutImageUrl: null,
       ...(gpsLat !== undefined ? { gpsLat } : {}),
       ...(gpsLng !== undefined ? { gpsLng } : {})
     },

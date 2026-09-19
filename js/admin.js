@@ -13,10 +13,8 @@ const S = {
   admin: null,
   page:  'dashboard'
 };
-const _cache   = {};
-const _search  = {};
-const _filters = {};
-window._updateFilter = (key, name, val) => { (_filters[key] = _filters[key] || {})[name] = val; navigate(key); };
+const _cache  = {};
+const _search = {};
 
 // ── 3. DOM HELPERS ────────────────────────────────────────────────
 const $  = s => document.querySelector(s);
@@ -97,6 +95,31 @@ function showPage(id) {
   });
 }
 
+// Bind UI handlers defensively. Admin pages are rendered dynamically and some
+// older cached HTML builds do not contain every optional control. A missing
+// control must not abort the whole Admin Portal boot sequence.
+const _boundHandlers = new WeakMap();
+function bindOnce(elementOrId, event, handler, options) {
+  const el = typeof elementOrId === 'string'
+    ? document.getElementById(elementOrId)
+    : elementOrId;
+  if (!el) {
+    console.warn(`[admin] skipped ${event} binding; element not found`, elementOrId);
+    return null;
+  }
+
+  let events = _boundHandlers.get(el);
+  if (!events) {
+    events = new Set();
+    _boundHandlers.set(el, events);
+  }
+  const key = `${event}:${handler}`;
+  if (events.has(key)) return el;
+  el.addEventListener(event, handler, options);
+  events.add(key);
+  return el;
+}
+
 const canAdmin = () => ['super_admin', 'admin', 'principal'].includes(S.admin?.role);
 const canEdit  = () => canAdmin() || S.admin?.role === 'office_staff';
 
@@ -146,7 +169,6 @@ const NAV_GROUPS = [
   {
     label: 'Reports',
     items: [
-      { key: 'marks', label: 'Marks Management', icon: 'grading', admin: true },
       { key: 'reports', label: 'Reports & Export', icon: 'assessment', admin: true }
     ]
   },
@@ -175,9 +197,7 @@ const NAV_GROUPS = [
     items: [
       { key: 'storage-monitor', label: 'Storage Monitor',  icon: 'storage',   admin: true },
       { key: 'archive',         label: 'Archive Manager',  icon: 'archive',   admin: true },
-      { key: 'backup',          label: 'Backup & Export',  icon: 'backup',    admin: true },
-      { key: 'login-history',   label: 'Login History',    icon: 'history',   admin: true },
-      { key: 'audit-logs',      label: 'Audit Logs',       icon: 'fact_check',admin: true }
+      { key: 'backup',          label: 'Backup & Export',  icon: 'backup',    admin: true }
     ]
   },
   {
@@ -274,7 +294,6 @@ function navigate(key) {
     attendance:        attendancePage,
     marks:             marksManagementPage,
     reports:           reportsPage,
-    marks:             marksPage,
     parents:           parentsPage,
     'qr-cards':        qrCardsPage,
     certificates:      certificatesPage,
@@ -286,8 +305,6 @@ function navigate(key) {
     'storage-monitor':     storageMonitorPage,
     archive:               archivePage,
     backup:                backupPage,
-    'login-history':       loginHistoryPage,
-    'audit-logs':          auditLogsPage,
     students:          () => resourcePage(RESOURCES.students),
     admissions:        () => resourcePage(RESOURCES.admissions),
     enquiries:         () => resourcePage(RESOURCES.enquiries),
@@ -573,10 +590,9 @@ const RESOURCES = {
       const cls = st === 'Active' ? 'badge-active' : st === 'Transferred' ? 'badge-approved' : 'badge-inactive';
       return { text: st, cls };
     },
-    columns: ['', 'Roll No.', 'Student', 'Adm. No.', 'Parent / Phone', 'Program', 'Status', 'Admitted', 'Actions'],
+    columns: ['', 'Student', 'Adm. No.', 'Parent / Phone', 'Program', 'Status', 'Admitted', 'Actions'],
     renderCells: r => `
       <td>${r.photoUrl ? `<img class="thumb" src="${esc(r.photoUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
-      <td style="font-family:monospace;font-size:14px;font-weight:700;color:var(--primary);text-align:center">${esc(r.rollNumber || '—')}</td>
       <td>
         <div class="td-main">${esc(r.studentName)}</div>
         ${r.gender ? `<div class="td-sub">${esc(r.gender)}</div>` : ''}
@@ -587,47 +603,71 @@ const RESOURCES = {
         <div class="td-sub">${esc(r.phone)}</div>
       </td>
       <td>${esc(r.program)}</td>`,
-    hasImage: false,
+    hasImage: true,
     studentActions: true,
-    filters: [
-      { name: 'program', label: 'Class',  options: ['','Play Group','Nursery','LKG','UKG'],                  labels: ['All Classes','Play Group','Nursery','LKG','UKG'] },
-      { name: 'status',  label: 'Status', options: ['','Active','Inactive','Transferred'],                   labels: ['All Status','Active','Inactive','Transferred'] },
-      { name: 'sort',    label: 'Sort by',options: ['studentName','-studentName','rollNumber','-createdAt'], labels: ['Name A→Z','Name Z→A','Roll No.','Latest First'] }
-    ],
     fields: [
-      /* ── Child Details ── */
-      { name: '_s1',              label: 'Child Details',                type: 'separator', icon: 'child_care',     wide: true },
-      { name: 'photo',            label: 'Student Photo',                type: 'file',    wide: true },
-      { name: 'studentName',      label: 'Name of the Child',            type: 'text',    required: true },
-      { name: 'program',          label: 'Class Applied For',            type: 'select',  required: true, options: PROGRAMS },
-      { name: 'gender',           label: 'Gender',                       type: 'select',  options: ['Male', 'Female', 'Other'] },
-      { name: 'dateOfBirth',      label: 'Date of Birth',                type: 'date' },
-      { name: 'nationality',      label: 'Nationality',                  type: 'text' },
-      { name: 'religion',         label: 'Religion',                     type: 'text' },
-      { name: 'category',         label: 'Caste / Category',             type: 'select',  options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
-      { name: 'admissionDate',    label: 'Admission Date',               type: 'date' },
-      { name: 'admissionNumber',  label: 'Admission Number (editable after confirmation)', type: 'text' },
-      { name: 'parentPassword',   label: 'Parent Portal Password (Admin Set)', type: 'password' },
-      /* ── Address ── */
-      { name: '_s2',              label: 'Address',                      type: 'separator', icon: 'place',          wide: true },
-      { name: 'address',          label: 'Full Address',                 type: 'textarea', wide: true },
+      /* ── Student Information ── */
+      { name: '_s1',           label: 'Student Information',              type: 'separator', icon: 'child_care',        wide: true },
+      { name: 'studentName',   label: 'Student Name',                     type: 'text',     required: true },
+      { name: 'admissionNumber',label:'Admission No.',                    type: 'text',     placeholder: 'Auto-generated if blank' },
+      { name: 'program',       label: 'Program',                          type: 'select',   required: true, options: PROGRAMS },
+      { name: 'section',       label: 'Section',                          type: 'text' },
+      { name: 'rollNumber',    label: 'Roll Number',                      type: 'text' },
+      { name: 'gender',        label: 'Gender',                           type: 'select',   options: ['Male', 'Female', 'Other'] },
+      { name: 'dateOfBirth',   label: 'Date of Birth',                    type: 'date' },
+      { name: 'admissionDate', label: 'Admission Date',                   type: 'date' },
+      { name: 'status',        label: 'Status',                           type: 'select',   options: ['Active', 'Inactive', 'Transferred', 'Graduated', 'Dropped'] },
+      /* ── Personal Details ── */
+      { name: '_s2',           label: 'Personal Details',                 type: 'separator', icon: 'badge',             wide: true },
+      { name: 'bloodGroup',    label: 'Blood Group',                      type: 'select',   options: BLOOD_GROUPS },
+      { name: 'religion',      label: 'Religion',                         type: 'text' },
+      { name: 'category',      label: 'Caste / Category',                 type: 'select',   options: ['General', 'OBC', 'SC', 'ST', 'Minority', 'Other'] },
+      { name: 'nationality',   label: 'Nationality',                      type: 'text' },
+      { name: 'motherTongue',  label: 'Mother Tongue',                    type: 'text' },
+      { name: 'previousSchool',label: 'Previous School',                  type: 'text',     wide: true },
       /* ── Father's Information ── */
-      { name: '_s3',              label: "Father's Information",         type: 'separator', icon: 'man',            wide: true },
-      { name: 'fatherName',       label: "Father's Name",                type: 'text' },
-      { name: 'fatherPhone',      label: "Father's Mobile Number",       type: 'tel' },
-      { name: 'fatherOccupation', label: "Father's Occupation",          type: 'text' },
+      { name: '_s3',           label: "Father's Information",             type: 'separator', icon: 'man',               wide: true },
+      { name: 'fatherName',    label: "Father's Name",                    type: 'text' },
+      { name: 'fatherPhone',   label: "Father's Phone / Mobile",          type: 'tel' },
+      { name: 'fatherOccupation',label:"Father's Occupation",             type: 'text' },
       /* ── Mother's Information ── */
-      { name: '_s4',              label: "Mother's Information",         type: 'separator', icon: 'woman',          wide: true },
-      { name: 'motherName',       label: "Mother's Name",                type: 'text' },
-      { name: 'motherPhone',      label: "Mother's Mobile Number",       type: 'tel' },
-      { name: 'motherOccupation', label: "Mother's Occupation",          type: 'text' },
-      /* ── Documents ── */
-      { name: '_s5',              label: 'Documents  (PDF or Image)',    type: 'separator', icon: 'folder_special', wide: true },
-      { name: 'doc_aadhar',        label: 'Child Aadhar Card',           type: 'docfile', docType: 'student_aadhar', wide: true },
-      { name: 'doc_birth',         label: 'Birth Certificate',           type: 'docfile', docType: 'birth_cert',    wide: true },
-      { name: 'doc_father_aadhar', label: "Father's Aadhar Card",        type: 'docfile', docType: 'father_aadhar', wide: true },
-      { name: 'doc_mother_aadhar', label: "Mother's Aadhar Card",        type: 'docfile', docType: 'mother_aadhar', wide: true },
-      { name: 'doc_samagra',       label: 'Samagra ID',                  type: 'docfile', docType: 'samagra_id',    wide: true }
+      { name: '_s4',           label: "Mother's Information",             type: 'separator', icon: 'woman',             wide: true },
+      { name: 'motherName',    label: "Mother's Name",                    type: 'text' },
+      { name: 'motherPhone',   label: "Mother's Phone / Mobile",          type: 'tel' },
+      { name: 'motherOccupation',label:"Mother's Occupation",             type: 'text' },
+      /* ── Primary Contact (used in records) ── */
+      { name: '_s5',           label: 'Primary Contact (for records & certificates)', type: 'separator', icon: 'contacts', wide: true },
+      { name: 'parentName',    label: 'Parent / Guardian Name (Primary)', type: 'text',     required: true },
+      { name: 'phone',         label: 'Contact Phone',                    type: 'tel',      required: true },
+      /* ── Guardian ── */
+      { name: '_s6',           label: 'Guardian (if different from parents)', type: 'separator', icon: 'supervisor_account', wide: true },
+      { name: 'guardianName',  label: 'Guardian Name',                    type: 'text' },
+      { name: 'guardianPhone', label: 'Guardian Phone',                   type: 'tel' },
+      { name: 'guardianRelation', label: 'Guardian Relation',             type: 'text' },
+      /* ── Address ── */
+      { name: '_s7',           label: 'Address',                          type: 'separator', icon: 'place',             wide: true },
+      { name: 'address',       label: 'Full Address',                     type: 'textarea', wide: true },
+      /* ── Emergency Contact ── */
+      { name: '_s8',           label: 'Emergency Contact',                type: 'separator', icon: 'emergency',         wide: true },
+      { name: 'emergencyContact.name',     label: 'Emergency Contact Name',     type: 'text' },
+      { name: 'emergencyContact.phone',    label: 'Emergency Contact Phone',    type: 'tel' },
+      { name: 'emergencyContact.relation', label: 'Emergency Contact Relation', type: 'text' },
+      /* ── Health ── */
+      { name: '_s9',           label: 'Health Information',               type: 'separator', icon: 'local_hospital',    wide: true },
+      { name: 'medicalNotes',  label: 'Medical Notes / Allergies',        type: 'textarea', wide: true },
+      /* ── Photo ── */
+      { name: '_s10',          label: 'Student Photo',                    type: 'separator', icon: 'photo_camera',      wide: true },
+      { name: 'photo',         label: 'Upload Photo',                     type: 'file',     wide: true },
+      /* ── Important Documents ── */
+      { name: '_s11',          label: 'Important Documents  (PDF or Image — saved to student file)', type: 'separator', icon: 'folder_special', wide: true },
+      { name: 'doc_aadhar',    label: 'Student Aadhar Card',              type: 'docfile', docType: 'aadhar',     wide: true },
+      { name: 'doc_birth',     label: 'Birth Certificate',                type: 'docfile', docType: 'birth_cert', wide: true },
+      { name: 'doc_parent_id', label: 'Parent Aadhar / ID Proof',         type: 'docfile', docType: 'parent_id',  wide: true },
+      { name: 'doc_address',   label: 'Address Proof',                    type: 'docfile', docType: 'address',    wide: true },
+      { name: 'doc_other',     label: 'Any Other Important Document',     type: 'docfile', docType: 'other',      wide: true },
+      /* ── Notes ── */
+      { name: '_s12',          label: 'Internal Notes',                   type: 'separator', icon: 'notes',             wide: true },
+      { name: 'notes',         label: 'Notes',                            type: 'textarea', wide: true }
     ]
   },
 
@@ -651,38 +691,14 @@ const RESOURCES = {
     noCreate: true,
     admissionActions: true,
     fields: [
-      /* ── Student Details ── */
-      { name: '_a1',            label: 'Student Details',              type: 'separator', icon: 'child_care',  wide: true },
-      { name: 'studentName',    label: 'Name of the Child',            type: 'text',    required: true },
-      { name: 'program',        label: 'Class Applied For',            type: 'select',  required: true, options: PROGRAMS },
-      { name: 'gender',         label: 'Gender',                       type: 'select',  options: ['Male', 'Female', 'Other'] },
-      { name: 'dateOfBirth',    label: 'Date of Birth',                type: 'date' },
-      { name: 'age',            label: 'Age',                          type: 'text' },
-      { name: 'nationality',    label: 'Nationality',                  type: 'text' },
-      { name: 'religion',       label: 'Religion',                     type: 'text' },
-      { name: 'caste',          label: 'Caste / Category',             type: 'text' },
-      { name: 'admissionDate',  label: 'Admission Date',               type: 'date' },
-      /* ── Address ── */
-      { name: '_a2',            label: 'Address',                      type: 'separator', icon: 'place',       wide: true },
-      { name: 'address',        label: 'Full Address',                 type: 'textarea', wide: true },
-      /* ── Father's Information ── */
-      { name: '_a3',            label: "Father's Information",         type: 'separator', icon: 'man',         wide: true },
-      { name: 'fatherName',     label: "Father's Name",               type: 'text' },
-      { name: 'fatherPhone',    label: "Father's Mobile Number",      type: 'tel' },
-      { name: 'fatherOccupation', label: "Father's Occupation",       type: 'text' },
-      /* ── Mother's Information ── */
-      { name: '_a4',            label: "Mother's Information",         type: 'separator', icon: 'woman',       wide: true },
-      { name: 'motherName',     label: "Mother's Name",               type: 'text' },
-      { name: 'motherPhone',    label: "Mother's Mobile Number",      type: 'tel' },
-      { name: 'motherOccupation', label: "Mother's Occupation",       type: 'text' },
-      /* ── Primary Contact ── */
-      { name: '_a5',            label: 'Primary Contact (for records)',type: 'separator', icon: 'contacts',    wide: true },
-      { name: 'parentName',     label: 'Parent / Guardian Name',      type: 'text',    required: true },
-      { name: 'phone',          label: 'Contact Mobile Number',       type: 'tel',     required: true },
-      { name: 'email',          label: 'Email (optional)',            type: 'email' },
-      /* ── Notes ── */
-      { name: '_a6',            label: 'Additional Notes',             type: 'separator', icon: 'notes',       wide: true },
-      { name: 'message',        label: 'Notes / Remarks',             type: 'textarea', wide: true }
+      { name: 'studentName', label: 'Student Name', type: 'text',    required: true },
+      { name: 'parentName',  label: 'Parent Name',  type: 'text',    required: true },
+      { name: 'phone',       label: 'Phone',        type: 'tel',     required: true },
+      { name: 'email',       label: 'Email',        type: 'email' },
+      { name: 'age',         label: 'Age',          type: 'text',    required: true },
+      { name: 'gender',      label: 'Gender',       type: 'select',  options: ['Male', 'Female', 'Other'] },
+      { name: 'program',     label: 'Program',      type: 'select',  required: true, options: PROGRAMS },
+      { name: 'message',     label: 'Notes',        type: 'textarea', wide: true }
     ]
   },
 
@@ -711,26 +727,23 @@ const RESOURCES = {
   },
 
   gallery: {
-    label: 'Gallery Activities', endpoint: '/gallery',
+    label: 'Gallery', endpoint: '/gallery',
     getTitle: r => r.title,
-    getSubtitle: r => `${r.category || 'Activity'} • ${(r.galleryImages?.length || r.photoCount || (r.imageUrl ? 1 : 0))} photos`,
-    badge: r => ({ text: r.isPublished === false ? 'Unpublished' : 'Published', cls: r.isPublished === false ? 'badge-inactive' : 'badge-approved' }),
-    columns: ['Cover', 'Activity', 'Category', 'Status', 'Date', 'Actions'],
+    getSubtitle: r => r.category,
+    badge: r => ({ text: r.isFeatured ? 'Featured' : 'Active', cls: r.isFeatured ? 'badge-approved' : 'badge-default' }),
+    columns: ['Photo', 'Title', 'Category', 'Status', 'Date', 'Actions'],
     hasImage: true,
     renderCells: r => `
-      <td>${(r.coverImage || r.imageUrl) ? `<img class="thumb" src="${esc(r.coverImage || r.imageUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
-      <td><div class="td-main">${esc(r.title)}</div><div class="td-sub">${r.eventDate ? new Date(r.eventDate).toLocaleDateString() : ''} • ${esc(r.slug || '')}</div></td>
+      <td>${r.imageUrl ? `<img class="thumb" src="${esc(r.imageUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
+      <td><div class="td-main">${esc(r.title)}</div></td>
       <td>${esc(r.category || '')}</td>`,
     fields: [
-      { name: 'title',         label: 'Activity Title',          type: 'text',     required: true },
-      { name: 'eventDate',     label: 'Event Date',              type: 'date',     required: true },
-      { name: 'category',      label: 'Category',                type: 'select',   options: ['Celebrations', 'Learning Activities', 'Art & Craft', 'Sports', 'Festivals', 'Competitions', 'Trips'], required: true },
-      { name: 'description',   label: 'Short Description',       type: 'textarea', wide: true },
-      { name: 'coverImage',    label: 'Cover Image',             type: 'file',     wide: true },
-      { name: 'galleryImages', label: 'Gallery Images',          type: 'file',     multiple: true, wide: true },
-      { name: 'isPublished',   label: 'Publish Activity',        type: 'boolean' },
-      { name: 'isFeatured',    label: 'Featured',                type: 'boolean' },
-      { name: 'displayOrder',  label: 'Display Order',           type: 'number' }
+      { name: 'title',        label: 'Title',         type: 'text',     required: true },
+      { name: 'category',     label: 'Category',      type: 'text' },
+      { name: 'description',  label: 'Description',   type: 'textarea', wide: true },
+      { name: 'image',        label: 'Photo',         type: 'file',     wide: true },
+      { name: 'isFeatured',   label: 'Featured',      type: 'boolean' },
+      { name: 'displayOrder', label: 'Display Order', type: 'number' }
     ]
   },
 
@@ -759,6 +772,7 @@ const RESOURCES = {
       { name: 'gender',        label: 'Gender',         type: 'select',   options: ['Male', 'Female', 'Other'] },
       { name: 'dateOfBirth',   label: 'Date of Birth',  type: 'date' },
       { name: 'joiningDate',   label: 'Joining Date',   type: 'date' },
+      { name: 'salary',        label: 'Salary (₹)',     type: 'number' },
       { name: 'experience',    label: 'Experience',     type: 'text' },
       { name: 'description',   label: 'About',          type: 'textarea', wide: true },
       { name: 'image',         label: 'Photo',          type: 'file',     wide: true },
@@ -772,17 +786,15 @@ const RESOURCES = {
     getTitle: r => r.title,
     getSubtitle: r => r.location,
     badge: r => ({ text: r.isPublished !== false ? 'Published' : 'Draft', cls: r.isPublished !== false ? 'badge-approved' : 'badge-inactive' }),
-    columns: ['Photo', 'Event', 'Category', 'Location', 'Date', 'Status', 'Actions'],
+    columns: ['Photo', 'Event', 'Location', 'Date', 'Status', 'Actions'],
     hasImage: true,
     renderCells: r => `
       <td>${r.imageUrl ? `<img class="thumb" src="${esc(r.imageUrl)}" alt="">` : '<div class="thumb" style="background:var(--bg)"></div>'}</td>
       <td><div class="td-main">${esc(r.title)}</div></td>
-      <td><span class="badge badge-default">${esc(r.category || 'General')}</span></td>
       <td>${esc(r.location || '')}</td>
       <td>${fmtDate(r.eventDate)}</td>`,
     fields: [
       { name: 'title',       label: 'Event Title',  type: 'text',     required: true },
-      { name: 'category',    label: 'Category',     type: 'select',   options: ['General','PTM','Exam','Holiday','Sports','Cultural','Other'] },
       { name: 'location',    label: 'Location',     type: 'text' },
       { name: 'eventDate',   label: 'Event Date',   type: 'date' },
       { name: 'description', label: 'Description',  type: 'textarea', wide: true },
@@ -897,18 +909,10 @@ const RESOURCES = {
 
 // ── 12. RESOURCE PAGE ──────────────────────────────────────────────
 async function resourcePage(config) {
-  const key         = Object.keys(RESOURCES).find(k => RESOURCES[k] === config);
-  const search      = _search[key] || '';
-  const filterState = _filters[key] || {};
-  const sortVal     = (config.filters && filterState.sort) ? filterState.sort : '-createdAt';
-
-  const params = new URLSearchParams({ limit: 200, sort: sortVal });
+  const key    = Object.keys(RESOURCES).find(k => RESOURCES[k] === config);
+  const search = _search[key] || '';
+  const params = new URLSearchParams({ limit: 100, sort: '-createdAt' });
   if (search) params.set('search', search);
-  if (config.filters) {
-    for (const f of config.filters) {
-      if (f.name !== 'sort' && filterState[f.name]) params.set(f.name, filterState[f.name]);
-    }
-  }
 
   const { data } = await api(`${config.endpoint}?${params}`);
   _cache[key] = data;
@@ -916,12 +920,6 @@ async function resourcePage(config) {
   const showNew    = !config.noCreate && canEdit();
   const showDelete = canAdmin();
   const showEdit   = canEdit();
-
-  const filterDropdowns = (config.filters || []).map(f => `
-    <select style="padding:6px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:12px;background:var(--card);color:var(--txt);cursor:pointer"
-      onchange="_updateFilter('${key}','${f.name}',this.value)">
-      ${f.options.map((o, i) => `<option value="${esc(o)}" ${(filterState[f.name]||'')===(o)?'selected':''}>${esc(f.labels?.[i] || o || 'All')}</option>`).join('')}
-    </select>`).join('');
 
   document.getElementById('contentArea').innerHTML = `
     <div class="page-header">
@@ -941,18 +939,14 @@ async function resourcePage(config) {
     <div id="formHost"></div>
     <div class="card">
       <div class="card-head" style="padding:12px 16px">
-        <div class="table-toolbar" style="width:100%;margin:0;border:none;gap:8px;flex-wrap:wrap">
-          ${filterDropdowns}
-          <div class="search-wrap" style="flex:1;min-width:160px">
+        <div class="table-toolbar" style="width:100%;margin:0;border:none;gap:8px">
+          <div class="search-wrap">
             <span class="material-icons-round">search</span>
             <input class="search-input" id="searchBox"
               placeholder="Search ${esc(config.label.toLowerCase())}…"
               value="${esc(search)}">
           </div>
           <button class="btn btn-secondary btn-sm" id="searchBtn">Search</button>
-          ${Object.values(filterState).some(v => v) || search ? `<button class="btn btn-secondary btn-sm" id="clearBtn" title="Clear all filters">
-            <span class="material-icons-round" style="font-size:14px">filter_alt_off</span>
-          </button>` : ''}
         </div>
       </div>
       <div class="table-wrap">${buildTable(key, config, data, showEdit, showDelete)}</div>
@@ -966,11 +960,6 @@ async function resourcePage(config) {
   });
   document.getElementById('searchBox').addEventListener('keydown', e => {
     if (e.key === 'Enter') { _search[key] = e.target.value.trim(); navigate(key); }
-  });
-  document.getElementById('clearBtn')?.addEventListener('click', () => {
-    _search[key] = '';
-    _filters[key] = {};
-    navigate(key);
   });
 }
 
@@ -1056,36 +1045,13 @@ function buildRow(key, config, item, showEdit, showDelete) {
   }
   acts += '</td>';
 
-  const skipDate = ['slides', 'testimonials', 'teachers'].includes(key);
+  const skipDate = ['slides', 'testimonials', 'teachers', 'gallery'].includes(key);
   return `<tr>${customCells}${badgeTd}${skipDate ? '' : dateTd}${acts}</tr>`;
 }
 
 // ── 13. FORM ───────────────────────────────────────────────────────
-const DOC_FIELD_NAMES = ['doc_aadhar', 'doc_birth', 'doc_father_aadhar', 'doc_mother_aadhar', 'doc_samagra'];
-const DOC_FIELD_TYPES = { doc_aadhar: 'student_aadhar', doc_birth: 'birth_cert', doc_father_aadhar: 'father_aadhar', doc_mother_aadhar: 'mother_aadhar', doc_samagra: 'samagra_id' };
-
-let _extraDocCounter = 0;
-window.addExtraDocRow = function () {
-  const container = document.getElementById('extraDocRows');
-  if (!container) return;
-  const idx = ++_extraDocCounter;
-  const row = document.createElement('div');
-  row.className = 'extra-doc-row';
-  row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px';
-  row.innerHTML = `
-    <input type="text" placeholder="Document name (e.g. TC, Medical Certificate…)"
-      style="padding:8px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;background:var(--card);color:var(--txt);outline:none;width:100%">
-    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp"
-      style="font-size:12px;padding:5px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--txt);width:100%">
-    <button type="button" onclick="removeExtraDocRow(this)"
-      style="display:flex;align-items:center;justify-content:center;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:6px;cursor:pointer;flex-shrink:0">
-      <span class="material-icons-round" style="font-size:16px">delete</span>
-    </button>`;
-  container.appendChild(row);
-};
-window.removeExtraDocRow = function (btn) {
-  btn.closest('.extra-doc-row')?.remove();
-};
+const DOC_FIELD_NAMES = ['doc_aadhar', 'doc_birth', 'doc_parent_id', 'doc_address', 'doc_other'];
+const DOC_FIELD_TYPES = { doc_aadhar: 'aadhar', doc_birth: 'birth_cert', doc_parent_id: 'parent_id', doc_address: 'address', doc_other: 'other' };
 
 function openForm(key, config, id) {
   const host = document.getElementById('formHost');
@@ -1111,18 +1077,6 @@ function openForm(key, config, id) {
               : item[f.name];
             return renderField(f, val);
           }).join('')}
-          ${key === 'students' ? `
-          <div class="col-full" id="extraDocsSection" style="margin-top:4px">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to right,var(--bg),transparent);border-radius:8px;border-left:3px solid var(--primary);margin-bottom:6px">
-              <div style="font-weight:700;font-size:11px;color:var(--primary);text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:6px">
-                <span class="material-icons-round" style="font-size:15px">add_circle_outline</span>Extra / More Documents
-              </div>
-              <button type="button" onclick="addExtraDocRow()" style="display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.3px">
-                <span class="material-icons-round" style="font-size:14px">add</span>Add Document
-              </button>
-            </div>
-            <div id="extraDocRows"></div>
-          </div>` : ''}
           <div class="form-actions col-full">
             <button type="submit" class="btn btn-primary" id="saveBtn">
               <span id="saveTxt">Save</span>
@@ -1140,7 +1094,22 @@ function openForm(key, config, id) {
   if (key === 'students' && isEdit) {
     api(`/students/${id}`).then(({ data: s }) => {
       const el = document.getElementById('existingDocsSection');
-      renderStudentDocuments(el, s);
+      if (!el || !s?.documents?.length) return;
+      el.innerHTML = `<div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px">
+        <div style="font-weight:700;font-size:12px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">
+          📎 Uploaded Documents (${s.documents.length})
+        </div>
+        ${s.documents.map(d => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px">
+            <span class="material-icons-round" style="color:var(--primary);font-size:20px">${(d.fileType||'').includes('pdf') ? 'picture_as_pdf' : 'image'}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600">${esc(d.label||d.docType)}</div>
+              <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase">${esc(d.docType||'')}</div>
+            </div>
+            <a href="${esc(d.url)}" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px">View</a>
+            ${canAdmin() ? `<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="deleteStudentDoc('${id}','${esc(d._id||'')}')">Delete</button>` : ''}
+          </div>`).join('')}
+      </div>`;
     }).catch(() => {});
   }
 
@@ -1160,73 +1129,32 @@ function openForm(key, config, id) {
         if (v instanceof File && !v.name) fd.delete(k);
       }
 
-
       // For students: extract doc uploads before main save
       const docFiles = {};
-      const extraDocFiles = []; // [{file, label}] for "More Documents" rows
       if (key === 'students') {
         DOC_FIELD_NAMES.forEach(n => {
           const inp = e.target.querySelector(`input[name="${n}"]`);
           if (inp?.files?.[0]) docFiles[n] = inp.files[0];
           fd.delete(n);
         });
-        // Collect extra document rows
-        document.querySelectorAll('.extra-doc-row').forEach(row => {
-          const fileInp  = row.querySelector('input[type="file"]');
-          const labelInp = row.querySelector('input[type="text"]');
-          const file = fileInp?.files?.[0];
-          if (file) extraDocFiles.push({ file, label: (labelInp?.value?.trim() || file.name) });
-        });
         // Also remove separator pseudo-fields
         for (const [k] of [...fd.entries()]) { if (k.startsWith('_s')) fd.delete(k); }
-        // For new student (lean create form): derive parentName & phone from father's details
-        if (!id) {
-          if (!fd.get('parentName') || !fd.get('parentName').trim()) {
-            const fn = (fd.get('fatherName') || '').trim();
-            if (fn) fd.set('parentName', fn);
-          }
-          if (!fd.get('phone') || !fd.get('phone').trim()) {
-            const fp = (fd.get('fatherPhone') || fd.get('motherPhone') || '').trim();
-            if (fp) fd.set('phone', fp);
-          }
-        }
-      }
-
-      if (key === 'students' && id) {
-        const oldAdmNo = String(item.admissionNumber || '').trim();
-        const newAdmNo = String(fd.get('admissionNumber') || '').trim();
-        if (fd.has('admissionNumber')) fd.set('admissionNumber', newAdmNo);
-        if (!newAdmNo) throw new Error('Admission Number cannot be empty');
-        if (oldAdmNo && newAdmNo !== oldAdmNo) {
-          const okToChange = confirm(`Are you sure you want to change Admission Number from ${oldAdmNo} to ${newAdmNo}?\n\nThis updates the same student record everywhere; it will not create a duplicate student.`);
-          if (!okToChange) {
-            btn.disabled = false; txt.style.display = ''; spin.style.display = 'none';
-            return;
-          }
-        }
       }
 
       const method   = id ? 'PATCH' : 'POST';
-      // Teacher creation uses dedicated onboard endpoint that returns credentials
-      const endpoint = (key === 'teachers' && !id)
-        ? '/teacher-admin/create'
-        : `${config.endpoint}${id ? '/' + id : ''}`;
+      const endpoint = `${config.endpoint}${id ? '/' + id : ''}`;
       const result   = await api(endpoint, { method, body: fd });
 
-      // Upload document files for students (fixed + extra)
-      const allDocUploads = [
-        ...Object.entries(docFiles).map(([n, file]) => ({ file, docType: DOC_FIELD_TYPES[n], label: file.name })),
-        ...extraDocFiles.map(({ file, label }) => ({ file, docType: 'Other', label }))
-      ];
-      if (key === 'students' && allDocUploads.length) {
+      // Upload document files for students
+      if (key === 'students' && Object.keys(docFiles).length) {
         const studentId = id || result?.data?._id || result?.data?.student?._id;
         if (studentId) {
           let docOk = 0, docFail = 0;
-          for (const { file, docType, label } of allDocUploads) {
+          for (const [n, file] of Object.entries(docFiles)) {
             const df = new FormData();
             df.append('document', file);
-            df.append('docType',  docType);
-            df.append('label',    label);
+            df.append('docType',  DOC_FIELD_TYPES[n]);
+            df.append('label',    file.name);
             await api(`/students/${studentId}/documents`, { method: 'POST', body: df })
               .then(() => docOk++).catch(() => docFail++);
           }
@@ -1236,22 +1164,7 @@ function openForm(key, config, id) {
       }
 
       host.innerHTML = '';
-      if (!allDocUploads.length) toast(`${config.label} ${id ? 'updated' : 'created'} successfully!`, 'success');
-
-      // Show parent credentials after new student creation
-      if (key === 'students' && !id && result?.parentCredentials?.isNew) {
-        showParentCredentialsModal({
-          ...result.parentCredentials,
-          admissionNumber: result.data?.admissionNumber,
-          rollNumber:      result.data?.rollNumber
-        });
-      }
-
-      // Show teacher credentials after new teacher creation
-      if (key === 'teachers' && !id && result?.credentials) {
-        showTeacherCredentialsModal(result.credentials);
-      }
-
+      if (!Object.keys(docFiles).length) toast(`${config.label} ${id ? 'updated' : 'created'} successfully!`, 'success');
       navigate(key);
     } catch (err) {
       msg.innerHTML = `<div class="alert alert-error"><span class="material-icons-round">error</span>${esc(err.message)}</div>`;
@@ -1269,75 +1182,13 @@ async function deleteStudentDoc(studentId, docId) {
     api(`/students/${studentId}`).then(({ data: s }) => {
       const el = document.getElementById('existingDocsSection');
       if (!el) return;
-      renderStudentDocuments(el, s);
+      if (!s?.documents?.length) { el.innerHTML = ''; return; }
+      // Re-render
+      el.querySelector('div') && (el.innerHTML = el.innerHTML); // trigger re-render via edit form reload
     }).catch(() => {});
   } catch (err) { toast(err.message, 'error'); }
 }
 window.deleteStudentDoc = deleteStudentDoc;
-
-function renderStudentDocuments(el, student) {
-  if (!el) return;
-  const files = [
-    ...(student?.photoUrl ? [{ id: 'student-photo', label: 'Student Photo', docType: 'Photo', url: student.photoUrl, fileType: 'image', isPhoto: true }] : []),
-    ...(student?.documents || []).filter(d => d?.url)
-  ];
-  if (!files.length) { el.innerHTML = ''; return; }
-
-  el.innerHTML = `<div style="margin-top:16px;border-top:1px solid var(--bd);padding-top:14px">
-    <div style="font-weight:700;font-size:12px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">
-      📎 Uploaded Documents (${files.length})
-    </div>
-    ${files.map(file => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px">
-        <span class="material-icons-round" style="color:var(--primary);font-size:20px">${(file.fileType || '').includes('pdf') ? 'picture_as_pdf' : 'image'}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600">${esc(file.label || file.docType || 'Document')}</div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase">${esc(file.docType || '')}</div>
-        </div>
-        <a href="${esc(file.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="font-size:11px">View</a>
-        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px" onclick="downloadStudentDocument('${student._id}','${file.id || file._id}')">Download</button>
-        ${canAdmin() && !file.isPhoto ? `<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="deleteStudentDoc('${student._id}','${esc(file._id || '')}')">Delete</button>` : ''}
-      </div>`).join('')}
-  </div>`;
-}
-
-function studentDownloadName(studentName, label, url) {
-  const safe = value => String(value || '').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
-  const base = [safe(studentName) || 'student', safe(label) || 'document'].join('-');
-  const extension = String(url || '').split('?')[0].match(/\.([a-z0-9]{2,5})$/i)?.[1];
-  return `${base}.${extension || 'download'}`;
-}
-
-async function downloadStudentDocument(studentId, documentId) {
-  try {
-    const { data: student } = await api(`/students/${studentId}`);
-    const file = documentId === 'student-photo'
-      ? { label: 'Student Photo', url: student.photoUrl }
-      : (student.documents || []).find(d => String(d._id) === String(documentId));
-    if (!file?.url) throw new Error('Document not found');
-
-    const link = document.createElement('a');
-    link.download = studentDownloadName(student.studentName, file.label || file.docType, file.url);
-    try {
-      const response = await fetch(file.url);
-      if (!response.ok) throw new Error('Download request failed');
-      link.href = URL.createObjectURL(await response.blob());
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(link.href);
-    } catch (_) {
-      // Some storage providers do not allow cross-origin file reads; let the browser download/open the original file instead.
-      link.href = file.url;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    }
-  } catch (err) { toast(err.message || 'Unable to download document', 'error'); }
-}
-window.downloadStudentDocument = downloadStudentDocument;
 
 function renderField(f, value) {
   const wrapCls = f.wide ? 'form-group col-full' : 'form-group';
@@ -1368,7 +1219,7 @@ function renderField(f, value) {
   if (f.type === 'file') {
     const preview = value ? `<img src="${esc(value)}" alt="" style="height:58px;margin-top:8px;border-radius:8px;object-fit:cover">` : '';
     return `<div class="${wrapCls}">${label}
-      <input id="ff_${f.name}" name="${f.name}" type="file" accept="image/*" class="form-input" style="padding:8px" ${f.multiple ? 'multiple' : ''}>
+      <input id="ff_${f.name}" name="${f.name}" type="file" accept="image/*" class="form-input" style="padding:8px">
       ${preview}
     </div>`;
   }
@@ -1423,111 +1274,13 @@ async function updateAdmStatus(id, status) {
 
 async function convertAdmission(admissionId) {
   if (!confirm('Convert this admission to an enrolled student?\n\nA student profile will be created.')) return;
-  const parentPassword = prompt('Set parent portal password to share privately with parents (min 6 characters):');
-  if (!parentPassword) return;
-  if (parentPassword.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
   try {
-    const { parentCredentials } = await api(`/students/convert-admission/${admissionId}`, { method: 'POST', body: JSON.stringify({ parentPassword }) });
+    await api(`/students/convert-admission/${admissionId}`, { method: 'POST' });
     toast('Student enrolled successfully!', 'success');
-    if (parentCredentials && parentCredentials.isNew) {
-      showParentCredentialsModal(parentCredentials);
-    }
     navigate('students');
   } catch (err) {
     toast(err.message, 'error');
   }
-}
-
-/* Shown right after enrollment: the parent-portal login just generated for
-   this family, so the admin can copy/share it immediately. */
-function showParentCredentialsModal({ studentId, portalEmail, password, admissionNumber, rollNumber }) {
-  const wrap = document.createElement('div');
-  wrap.className = 'modal-overlay';
-  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;overflow-y:auto';
-  wrap.innerHTML = `
-    <div class="card" style="max-width:440px;width:100%;padding:28px;text-align:center;border-radius:20px;margin:auto">
-      <div style="font-size:36px;margin-bottom:6px">🎉</div>
-      <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">Student Admission Successful</h3>
-      <p style="font-size:12px;color:var(--txt-sm);margin-bottom:18px;line-height:1.6">Share these details with the parent. <strong>Password can only be reset by admin.</strong></p>
-      <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:18px;border:1px solid rgba(0,0,0,.06);display:grid;gap:12px">
-        ${(studentId || admissionNumber) ? `<div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Student ID / Parent Username</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(studentId || admissionNumber)}</strong>
-        </div>` : ''}
-        ${rollNumber ? `<div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Roll Number</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(rollNumber)}</strong>
-        </div>` : ''}
-        ${portalEmail ? `<div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Contact Email</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(portalEmail)}</strong>
-        </div>` : ''}
-        <div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Password</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(password)}</strong>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" style="flex:1" id="pcCopyBtn">📋 Copy All</button>
-        <button class="btn btn-primary" style="flex:1" id="pcCloseBtn">Done</button>
-      </div>
-    </div>`;
-  document.body.appendChild(wrap);
-  wrap.querySelector('#pcCopyBtn').onclick = () => {
-    const lines = ['Vedantam Play School — Student Admission Details'];
-    if (studentId || admissionNumber) lines.push(`Student ID / Parent Username: ${studentId || admissionNumber}`);
-    if (rollNumber)      lines.push(`Roll No: ${rollNumber}`);
-    if (portalEmail) lines.push(`Contact Email: ${portalEmail}`);
-    lines.push(`Password: ${password}`, 'Note: Password can only be reset by admin.');
-    navigator.clipboard?.writeText(lines.join('\n'));
-    toast('Details copied to clipboard', 'success');
-  };
-  wrap.querySelector('#pcCloseBtn').onclick = () => wrap.remove();
-}
-
-/* Shown right after teacher creation: display credentials for the admin to share. */
-function showTeacherCredentialsModal({ name, employeeId, email, phone, password }) {
-  const wrap = document.createElement('div');
-  wrap.className = 'modal-overlay';
-  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
-  const loginId = email || phone || '';
-  wrap.innerHTML = `
-    <div class="card" style="max-width:420px;width:100%;padding:28px;text-align:center;border-radius:20px">
-      <div style="font-size:36px;margin-bottom:6px">👩‍🏫</div>
-      <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">Teacher Account Created</h3>
-      <p style="font-size:12px;color:var(--txt-sm);margin-bottom:18px;line-height:1.6">Share these credentials with <strong>${esc(name||'the teacher')}</strong>. <strong>They cannot change the password themselves</strong> — only admin can reset it.</p>
-      <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;font-family:monospace;font-size:13px;margin-bottom:18px;border:1px solid rgba(0,0,0,.06)">
-        ${employeeId ? `<div style="margin-bottom:10px">
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Employee ID</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(employeeId)}</strong>
-        </div>` : ''}
-        ${loginId ? `<div style="margin-bottom:10px">
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Login (Email / Phone)</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(loginId)}</strong>
-        </div>` : ''}
-        <div>
-          <div style="font-size:10px;color:var(--txt-sm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Password</div>
-          <strong style="font-size:14px;color:var(--primary)">${esc(password)}</strong>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary" style="flex:1" id="tcCopyBtn">📋 Copy Credentials</button>
-        <button class="btn btn-primary" style="flex:1" id="tcCloseBtn">Done</button>
-      </div>
-    </div>`;
-  document.body.appendChild(wrap);
-  wrap.querySelector('#tcCopyBtn').onclick = () => {
-    const text = [
-      'Vedantam Play School — Teacher Portal',
-      employeeId ? `Employee ID: ${employeeId}` : '',
-      loginId    ? `Login: ${loginId}` : '',
-      `Password: ${password}`,
-      'Note: Password can only be reset by admin.'
-    ].filter(Boolean).join('\n');
-    navigator.clipboard?.writeText(text);
-    toast('Credentials copied to clipboard', 'success');
-  };
-  wrap.querySelector('#tcCloseBtn').onclick = () => wrap.remove();
 }
 
 async function archiveStudent(id) {
@@ -1575,52 +1328,6 @@ function exportCSV(key, items) {
 }
 
 // ── 14. PARENTS PAGE ──────────────────────────────────────────────
-/* ════════════════════════════════════════════════════════════════════
-   MARKS MANAGEMENT — subjects are rows, current-class students columns
-   ════════════════════════════════════════════════════════════════════ */
-const MARKS_EXAMS = ['1st Term', '2nd Term', '3rd Term', 'Final/Annual Examination'];
-let _marksState = { subjects: [], students: [], results: [] };
-const marksKey = (subject, component = '') => `${subject}:${component || ''}`;
-function marksMax(subject) { return subject.components?.length ? subject.components.reduce((n, c) => n + Number(c.maxMarks || 0), 0) : Number(subject.maxMarks || 0); }
-function marksEntries(result) { return new Map((result?.marks || []).map(m => [marksKey(m.subject, m.component), m])); }
-async function marksPage() {
-  const area = document.getElementById('contentArea');
-  const [sessionsRes, activeRes] = await Promise.all([api('/academic-sessions?limit=100'), api('/academic-sessions/active').catch(() => ({ data: null }))]);
-  const sessions = sessionsRes.data || []; const active = activeRes.data;
-  const f = _filters.marks || {}; const session = f.session || active?._id || sessions[0]?._id || '';
-  const program = f.program || 'Play Group'; const examination = f.examination || MARKS_EXAMS[0];
-  area.innerHTML = `<div class="page-header"><div><div class="page-header-title">Marks Management</div><div class="page-header-sub">Enter assessment marks by class, session and examination.</div></div></div>
-    <div class="form-card"><div class="form-grid">
-      ${renderField({name:'marksSession',label:'Academic Session',type:'select',required:true,options:sessions.map(s => ({value:s._id,label:s.name}))},session)}
-      ${renderField({name:'marksProgram',label:'Class',type:'select',required:true,options:PROGRAMS},program)}
-      ${renderField({name:'marksExam',label:'Examination',type:'select',required:true,options:MARKS_EXAMS},examination)}
-    </div><div class="form-actions"><button class="btn btn-secondary" id="marksConfigure"><span class="material-icons-round">tune</span> Configure Subjects</button><button class="btn btn-secondary" id="marksExport"><span class="material-icons-round">download</span> Export CSV</button><button class="btn btn-primary" id="marksSave"><span class="material-icons-round">save</span> Save Draft</button><button class="btn btn-success" id="marksPublish"><span class="material-icons-round">publish</span> Publish Results</button></div></div><div id="marksGrid"><div class="loader-center"><span class="spin spin-lg"></span></div></div>`;
-  const update = () => { _filters.marks = { session: $('#marksSession').value, program: $('#marksProgram').value, examination: $('#marksExam').value }; marksPage(); };
-  ['marksSession','marksProgram','marksExam'].forEach(id => document.getElementById(id).addEventListener('change', update));
-  document.getElementById('marksConfigure').onclick = () => marksConfiguration(session, program, examination);
-  document.getElementById('marksSave').onclick = () => saveMarks(false);
-  document.getElementById('marksPublish').onclick = () => publishMarks();
-  document.getElementById('marksExport').onclick = () => exportMarksCsv();
-  await loadMarksGrid(session, program, examination);
-}
-async function loadMarksGrid(session, program, examination) {
-  const host = document.getElementById('marksGrid'); const { data } = await api(`/marks/grid?session=${encodeURIComponent(session)}&program=${encodeURIComponent(program)}&examination=${encodeURIComponent(examination)}`);
-  _marksState = { ...data, session, program, examination }; const subjects = data.configuration?.subjects || []; const students = data.students || [];
-  if (!subjects.length) { host.innerHTML = `<div class="empty-state"><span class="material-icons-round">tune</span><p class="empty-title">Set up assessments first</p><p class="empty-sub">Add subjects and their maximum marks for this class and examination.</p></div>`; return; }
-  if (!students.length) { host.innerHTML = `<div class="empty-state"><span class="material-icons-round">group_off</span><p class="empty-title">No active students in ${esc(program)}</p></div>`; return; }
-  const rows = subjects.flatMap(s => s.components?.length ? s.components.map(c => ({ subject:s, component:c, label:`${s.name} — ${c.name}`, max:c.maxMarks })) : [{ subject:s, component:null, label:s.name, max:s.maxMarks }]);
-  const resultByStudent = new Map((data.results || []).map(r => [String(r.student), r]));
-  const cell = (student, row) => { const entry = marksEntries(resultByStudent.get(String(student._id))).get(marksKey(row.subject._id, row.component?._id)); const val = entry?.status === 'entered' ? entry.value : ''; return `<div class="marks-cell"><input type="number" min="0" max="${row.max}" value="${val}" data-mark data-student="${student._id}" data-subject="${row.subject._id}" data-component="${row.component?._id || ''}" data-max="${row.max}" aria-label="${esc(row.label)} marks for ${esc(student.studentName)}"><select data-mark-status data-student="${student._id}" data-subject="${row.subject._id}" data-component="${row.component?._id || ''}"><option value="entered" ${!entry || entry.status === 'entered' ? 'selected':''}>Marks</option><option value="absent" ${entry?.status === 'absent' ? 'selected':''}>Absent</option><option value="pending" ${entry?.status === 'pending' ? 'selected':''}>Pending</option></select></div>`; };
-  host.innerHTML = `<div class="table-card marks-table-wrap"><table class="data-table marks-table"><thead><tr><th class="marks-subject">Subject / Assessment</th>${students.map(s => `<th><strong>${esc(s.studentName)}</strong><small>${esc(s.admissionNumber || s._id)}</small></th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr><th class="marks-subject">${esc(row.label)} <small>/ ${row.max}</small></th>${students.map(s => `<td>${cell(s,row)}</td>`).join('')}</tr>`).join('')}<tr class="marks-total"><th class="marks-subject">Total</th>${students.map(s => `<td data-total="${s._id}"></td>`).join('')}</tr><tr class="marks-total"><th class="marks-subject">Percentage</th>${students.map(s => `<td data-percent="${s._id}"></td>`).join('')}</tr></tbody></table></div><p class="marks-note">Blank marks are pending, not zero. “Absent” remains incomplete and cannot be published.</p>`;
-  host.querySelectorAll('[data-mark], [data-mark-status]').forEach(el => el.addEventListener('input', () => updateMarksTotals())); updateMarksTotals();
-}
-function collectMarks() { const records = _marksState.students.map(student => ({ student: student._id, marks: [] })); const record = new Map(records.map(r => [r.student, r])); document.querySelectorAll('[data-mark]').forEach(input => { const status = document.querySelector(`[data-mark-status][data-student="${input.dataset.student}"][data-subject="${input.dataset.subject}"][data-component="${input.dataset.component}"]`).value; record.get(input.dataset.student).marks.push({ subject:input.dataset.subject, component:input.dataset.component || undefined, value:input.value, status }); }); return records; }
-function updateMarksTotals() { const max = (_marksState.configuration.subjects || []).reduce((n,s) => n + marksMax(s), 0); collectMarks().forEach(r => { let total = 0; let complete = true; r.marks.forEach(m => { if (m.status !== 'entered' || m.value === '') complete=false; else total += Number(m.value); }); const t=document.querySelector(`[data-total="${r.student}"]`), p=document.querySelector(`[data-percent="${r.student}"]`); if(t)t.textContent=`${total}/${max}${complete?'':' · Incomplete'}`; if(p)p.textContent= max ? `${(total/max*100).toFixed(2)}%` : '—'; }); }
-async function saveMarks(confirmPublishedEdit) { const body = { session:_marksState.session, program:_marksState.program, examination:_marksState.examination, records:collectMarks(), confirmPublishedEdit }; try { await api('/marks/save',{method:'POST',body:JSON.stringify(body)}); toast('Draft marks saved', 'success'); await loadMarksGrid(_marksState.session,_marksState.program,_marksState.examination); } catch(e) { if (e.status===409 && confirm('These are published results. Confirm correction and save?')) return saveMarks(true); toast(e.message,'error'); } }
-async function publishMarks() { if (!confirm('Publish these completed results? Parents will be able to view them.')) return; try { await api('/marks/publish',{method:'POST',body:JSON.stringify(_marksState)}); toast('Results published for parents', 'success'); await loadMarksGrid(_marksState.session,_marksState.program,_marksState.examination); } catch(e) { toast(e.message,'error'); } }
-async function marksConfiguration(session, program, examination) { const { data } = await api(`/marks/configuration?session=${session}&program=${encodeURIComponent(program)}&examination=${encodeURIComponent(examination)}`); const subjects = data.subjects || []; const text = prompt('Subjects: one per line as Subject | Maximum, or Subject | Component:Maximum | Component:Maximum\nExample: English | Written:50 | Oral:50', subjects.map(s => s.components?.length ? `${s.name} | ${s.components.map(c=>`${c.name}:${c.maxMarks}`).join(' | ')}` : `${s.name} | ${s.maxMarks}`).join('\n')); if (text === null) return; try { const parsed = text.split('\n').filter(Boolean).map(line => { const bits=line.split('|').map(x=>x.trim()).filter(Boolean); const old=subjects.find(s=>s.name===bits[0]); const parts=bits.slice(1); const components=parts.filter(x=>x.includes(':')).map(x=>{const [name,maxMarks]=x.split(':');return {_id:old?.components?.find(c=>c.name===name)?._id,name,maxMarks:Number(maxMarks)};}); return components.length ? {_id:old?._id,name:bits[0],components} : {_id:old?._id,name:bits[0],maxMarks:Number(parts[0])}; }); await api('/marks/configuration',{method:'PUT',body:JSON.stringify({session,program,examination,subjects:parsed})}); toast('Assessment configuration saved'); await loadMarksGrid(session,program,examination); } catch(e) { toast(e.message,'error'); } }
-function exportMarksCsv() { const rows=[['S. No.','Admission No.','Student ID','Student Name','Class',...(_marksState.configuration.subjects||[]).map(s=>s.name),'Total Obtained','Maximum Total','Percentage']]; const entries=collectMarks(); entries.forEach((r,i)=>{const s=_marksState.students.find(x=>x._id===r.student); const vals=(_marksState.configuration.subjects||[]).map(sub=>r.marks.filter(m=>m.subject===sub._id&&m.status==='entered').reduce((n,m)=>n+Number(m.value||0),0)); const total=vals.reduce((n,v)=>n+v,0), max=(_marksState.configuration.subjects||[]).reduce((n,sub)=>n+marksMax(sub),0); rows.push([i+1,s.admissionNumber||'',s._id,s.studentName,s.program,...vals,total,max,max?`${(total/max*100).toFixed(2)}%`:'' ]);}); const blob=new Blob([rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n')],{type:'text/csv'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`marks-${_marksState.program}-${_marksState.examination}.csv`;a.click();URL.revokeObjectURL(a.href); }
-
 async function parentsPage() {
   const search = _search['parents'] || '';
   const params = new URLSearchParams({ limit: 100, sort: '-createdAt' });
@@ -1868,7 +1575,6 @@ async function feesPage() {
 
 async function renderFeePayments(el) {
   const { data } = await api('/fees/payments?limit=100&sort=-paymentDate');
-  const selectedClass = _filters.fees?.program || 'All Classes';
 
   const addBtn = canEdit() ? `<button class="btn btn-primary" id="addPaymentBtn">
     <span class="material-icons-round" style="font-size:18px">add</span> Record Payment
@@ -1879,15 +1585,7 @@ async function renderFeePayments(el) {
     <div class="card" style="margin-top:16px">
       <div class="card-head">
         <span class="card-title">Fee Payments (${data.length})</span>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="feesExportClass" class="filter-select" aria-label="Export class filter">
-            ${['All Classes','Play Group','Nursery','LKG','UKG'].map(cls => `<option value="${esc(cls)}" ${selectedClass === cls ? 'selected' : ''}>${esc(cls)}</option>`).join('')}
-          </select>
-          <button class="btn btn-secondary" id="exportFeesBtn">
-            <span class="material-icons-round" style="font-size:18px">download</span> Export Fees
-          </button>
-          ${addBtn}
-        </div>
+        <div style="display:flex;gap:8px">${addBtn}</div>
       </div>
       <div class="table-wrap">${buildPaymentsTable(data)}</div>
     </div>`;
@@ -1895,10 +1593,6 @@ async function renderFeePayments(el) {
   if (canEdit()) {
     document.getElementById('addPaymentBtn')?.addEventListener('click', () => openPaymentForm(null));
   }
-  document.getElementById('feesExportClass')?.addEventListener('change', e => {
-    (_filters.fees = _filters.fees || {}).program = e.target.value;
-  });
-  document.getElementById('exportFeesBtn')?.addEventListener('click', exportFeesReport);
 
   el.addEventListener('click', async e => {
     const btn = e.target.closest('[data-pay-action]');
@@ -1932,7 +1626,7 @@ function buildPaymentsTable(items) {
         <div class="td-sub">${esc(p.student?.admissionNumber || '')}</div>
       </td>
       <td>${esc(p.feeType || '—')}</td>
-      <td style="font-weight:600">${fmtCurrency(p.totalAmount)}</td>
+      <td style="font-weight:600">${fmtCurrency(p.amountDue)}</td>
       <td style="color:var(--green);font-weight:600">${fmtCurrency(p.amountPaid)}</td>
       <td style="color:var(--err)">${fmtCurrency(p.balance)}</td>
       <td><span class="badge ${statusCls}">${esc(p.status)}</span></td>
@@ -1962,34 +1656,25 @@ function buildPaymentsTable(items) {
 function openPaymentForm(id, item = {}) {
   const host = document.getElementById('paymentFormHost');
   const isEdit = !!id;
-  const feeTypes = ['Registration Fees', 'Admission Fees', 'Term 1 Fees', 'Term 2 Fees', 'Term 3 Fees'];
-  const payModes = ['Cash', 'Online', 'Cheque', 'Demand Draft', 'UPI'];
+  const feeTypes = ['Admission Fee', 'Monthly Fee', 'Transport Fee', 'Activity Fee', 'Annual Fee', 'Exam Fee', 'Other'];
+  const payModes = ['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'Online'];
 
   host.innerHTML = `
     <div class="form-card">
       <h2>${isEdit ? 'Edit' : 'Record'} Fee Payment</h2>
-      <p style="color:var(--txt-sm);font-size:13px;margin:0 0 14px">Search/select an existing student, then maintain fee details. Fees Due is calculated as Total Fees − Fees Paid.</p>
       <form id="paymentForm" novalidate>
         <div class="form-grid">
-          ${renderField({name:'studentSearch', label:'Search Student', type:'text', wide:true}, item.student?.studentName || '')}
-          <div class="col-full" id="studentSearchResults"></div>
-          ${renderField({name:'student', label:'Selected Student ID', type:'text', required:true, wide:true}, item.student?._id || item.student)}
+          ${renderField({name:'studentId', label:'Student ID (MongoDB)', type:'text', required:true, wide:true}, item.student?._id || item.student)}
           ${renderField({name:'feeType',   label:'Fee Type',            type:'select', required:true, options:feeTypes}, item.feeType)}
-          ${renderField({name:'month',     label:'Month', type:'select', options:['','January','February','March','April','May','June','July','August','September','October','November','December']}, item.month)}
-          ${renderField({name:'year',      label:'Year', type:'number'}, item.year || new Date().getFullYear())}
-          ${renderField({name:'baseAmount', label:'Total Fees (₹)',      type:'number', required:true}, item.baseAmount ?? item.totalAmount)}
-          ${renderField({name:'amountPaid',label:'Fees Paid (₹)',     type:'number', required:true}, item.amountPaid)}
-          ${renderField({name:'registrationFee', label:'Registration Fee (₹)', type:'number'}, item.registrationFee)}
-          ${renderField({name:'admissionFee', label:'Admission Fee (₹)', type:'number'}, item.admissionFee)}
-          ${renderField({name:'term1Fee', label:'Term 1 Fee (₹)', type:'number'}, item.term1Fee)}
-          ${renderField({name:'term2Fee', label:'Term 2 Fee (₹)', type:'number'}, item.term2Fee)}
-          ${renderField({name:'term3Fee', label:'Term 3 Fee (₹)', type:'number'}, item.term3Fee)}
+          ${renderField({name:'month',     label:'Month (e.g. June 2025)', type:'text'}, item.month)}
+          ${renderField({name:'amountDue', label:'Amount Due (₹)',      type:'number', required:true}, item.amountDue)}
+          ${renderField({name:'amountPaid',label:'Amount Paid (₹)',     type:'number', required:true}, item.amountPaid)}
           ${renderField({name:'paymentDate',label:'Payment Date',       type:'date',   required:true}, item.paymentDate ? new Date(item.paymentDate).toISOString().slice(0,10) : '')}
           ${renderField({name:'paymentMode',label:'Payment Mode',       type:'select', options:payModes}, item.paymentMode)}
           ${renderField({name:'transactionId',label:'Transaction / Ref No.',type:'text'}, item.transactionId)}
           ${renderField({name:'discount',  label:'Discount (₹)',        type:'number'}, item.discount)}
           ${renderField({name:'lateFee',   label:'Late Fee (₹)',        type:'number'}, item.lateFee)}
-          ${renderField({name:'notes',   label:'Remarks',             type:'textarea', wide:true}, item.notes)}
+          ${renderField({name:'remarks',   label:'Remarks',             type:'textarea', wide:true}, item.remarks)}
           <div class="form-actions col-full">
             <button type="submit" class="btn btn-primary" id="paySaveBtn">
               <span id="paySaveTxt">Save</span>
@@ -2004,8 +1689,6 @@ function openPaymentForm(id, item = {}) {
 
   host.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('payCancel').addEventListener('click', () => { host.innerHTML = ''; });
-  document.querySelector('[name="student"]')?.setAttribute('readonly', 'readonly');
-  document.querySelector('[name="studentSearch"]')?.addEventListener('input', debounce(searchFeeStudents, 250));
 
   document.getElementById('paymentForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -2015,11 +1698,6 @@ function openPaymentForm(id, item = {}) {
     btn.disabled = true; txt.style.display = 'none'; spin.style.display = '';
     try {
       const body = Object.fromEntries(new FormData(e.target));
-      delete body.studentSearch;
-      ['baseAmount','amountPaid','registrationFee','admissionFee','term1Fee','term2Fee','term3Fee','discount','lateFee','year'].forEach(k => {
-        if (body[k] === '') delete body[k];
-        else body[k] = Number(body[k]);
-      });
       const method   = id ? 'PATCH' : 'POST';
       const endpoint = id ? `/fees/payments/${id}` : '/fees/payments';
       await api(endpoint, { method, body: JSON.stringify(body) });
@@ -2031,61 +1709,6 @@ function openPaymentForm(id, item = {}) {
       btn.disabled = false; txt.style.display = ''; spin.style.display = 'none';
     }
   });
-}
-
-function debounce(fn, wait = 250) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), wait);
-  };
-}
-
-async function searchFeeStudents(e) {
-  const q = e.target.value.trim();
-  const results = document.getElementById('studentSearchResults');
-  if (!results) return;
-  if (q.length < 2) {
-    results.innerHTML = '<div style="font-size:12px;color:var(--txt-sm)">Type at least 2 characters to search existing students.</div>';
-    return;
-  }
-  try {
-    const { data } = await api(`/students?search=${encodeURIComponent(q)}&limit=8&sort=studentName`);
-    results.innerHTML = data.length ? data.map(s => `
-      <button type="button" class="btn btn-secondary btn-sm" style="margin:0 6px 6px 0" data-student-id="${esc(s._id)}" data-student-name="${esc(s.studentName)}">
-        ${esc(s.studentName)} · ${esc(s.admissionNumber || 'No ADM')} · ${esc(s.program || '')}
-      </button>
-    `).join('') : '<div style="font-size:12px;color:var(--txt-sm)">No students found.</div>';
-    results.querySelectorAll('[data-student-id]').forEach(btn => btn.addEventListener('click', () => {
-      document.querySelector('[name="student"]').value = btn.dataset.studentId;
-      document.querySelector('[name="studentSearch"]').value = btn.dataset.studentName;
-      results.innerHTML = `<div style="font-size:12px;color:var(--green)">Selected: ${esc(btn.dataset.studentName)}</div>`;
-    }));
-  } catch (err) {
-    results.innerHTML = `<div class="alert alert-error"><span class="material-icons-round">error</span>${esc(err.message)}</div>`;
-  }
-}
-
-async function exportFeesReport() {
-  const program = document.getElementById('feesExportClass')?.value || 'All Classes';
-  const qs = new URLSearchParams();
-  if (program && program !== 'All Classes') qs.set('program', program);
-  const res = await fetch(`${API}/fees/export${qs.toString() ? `?${qs}` : ''}`, {
-    headers: S.token ? { Authorization: `Bearer ${S.token}` } : {},
-    credentials: 'include'
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: `Export failed (${res.status})` }));
-    toast(err.message || 'Export failed', 'error');
-    return;
-  }
-  const blob = await res.blob();
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `Fees_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast('Fees Excel exported successfully', 'success');
 }
 
 async function renderFeeStructures(el) {
@@ -2152,7 +1775,7 @@ function buildStructuresTable(items) {
 
 function openStructureForm(id) {
   const host = document.getElementById('structFormHost');
-  const feeTypes  = ['Registration Fees', 'Admission Fees', 'Term 1 Fees', 'Term 2 Fees', 'Term 3 Fees'];
+  const feeTypes  = ['Admission Fee', 'Monthly Fee', 'Transport Fee', 'Activity Fee', 'Annual Fee', 'Exam Fee', 'Other'];
   const freqTypes = ['Monthly', 'Annual', 'One-time', 'Term-wise'];
 
   host.innerHTML = `
@@ -2263,76 +1886,61 @@ async function attendancePage() {
   await showTab('student-att');
 }
 
-const ATTENDANCE_CLASSES = ['Play Group', 'Nursery', 'LKG', 'UKG'];
+async function renderStudentAttendance(el, dateStr) {
+  const { data: students } = await api('/students?limit=200&sort=studentName');
+  const { data: attendanceData } = await api(`/attendance/students/date?date=${dateStr}`).catch(() => ({ data: { records: [] } }));
+  const attendance = attendanceData?.records || [];
 
-async function renderStudentAttendance(el, dateStr, programFilter) {
-  programFilter = programFilter || '';
+  const attMap = {};
+  attendance.forEach(a => { attMap[a.student?._id || a.student] = a.status; });
 
-  // Class selector + date always render first so the admin can pick a
-  // class even before any students have loaded.
   el.innerHTML = `
     <div class="card" style="margin-top:16px">
       <div class="card-head">
         <span class="card-title">Student Attendance</span>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="attClass" class="form-input" style="width:150px">
-            <option value="">All Classes</option>
-            ${ATTENDANCE_CLASSES.map(c => `<option value="${esc(c)}" ${programFilter === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
-          </select>
+        <div style="display:flex;gap:8px;align-items:center">
           <input type="date" id="attDate" class="form-input" style="width:160px" value="${dateStr}">
           <button class="btn btn-secondary btn-sm" id="loadAttBtn">Load</button>
           ${canEdit() ? `<button class="btn btn-primary btn-sm" id="saveAttBtn">Save Attendance</button>` : ''}
         </div>
       </div>
-      <div class="table-wrap" id="attTableWrap"><div class="loader-center"><span class="spin spin-lg"></span></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Student</th><th>Program</th><th>Present</th><th>Absent</th><th>Late</th><th>Holiday</th></tr></thead>
+          <tbody>
+            ${students.map((s, i) => {
+              const cur = attMap[s._id] || 'Present';
+              return `<tr>
+                <td style="font-size:12px;color:var(--txt-sm)">${i + 1}</td>
+                <td>
+                  <div class="td-main">${esc(s.studentName)}</div>
+                  <div class="td-sub">${esc(s.admissionNumber || '')}</div>
+                </td>
+                <td>${esc(s.program)}</td>
+                ${['Present','Absent','Late','Holiday'].map(st => `
+                  <td style="text-align:center">
+                    <input type="radio" name="att_${s._id}" value="${st}" ${cur === st ? 'checked' : ''}>
+                  </td>`).join('')}
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     </div>`;
 
-  document.getElementById('attClass').value = programFilter;
-
-  const qs = new URLSearchParams({ date: dateStr });
-  if (programFilter) qs.set('program', programFilter);
-  const { data: attendanceData } = await api(`/attendance/students/date?${qs.toString()}`).catch(() => ({ data: { records: [] } }));
-  const records = attendanceData?.records || []; // already sorted A-Z by studentName, one row per active student in the class
-
-  const tableWrap = document.getElementById('attTableWrap');
-  tableWrap.innerHTML = `
-    <table>
-      <thead><tr><th>Roll No</th><th>Admission No</th><th>Student</th><th>Class</th><th>Present</th><th>Absent</th><th>Late</th><th>Holiday</th></tr></thead>
-      <tbody>
-        ${records.length ? records.map(r => {
-          const s = r.student || {};
-          return `<tr>
-            <td style="font-size:12px;color:var(--txt-sm)">${esc(s.rollNumber || '—')}</td>
-            <td style="font-size:12px;color:var(--txt-sm)">${esc(s.admissionNumber || '—')}</td>
-            <td><div class="td-main">${esc(s.studentName || '')}</div></td>
-            <td>${esc(s.program || '')}</td>
-            ${['Present','Absent','Late','Holiday'].map(st => `
-              <td style="text-align:center">
-                <input type="radio" name="att_${s._id}" value="${st}" ${r.status === st ? 'checked' : ''}>
-              </td>`).join('')}
-          </tr>`;
-        }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--txt-sm);padding:24px">No students found${programFilter ? ` in ${esc(programFilter)}` : ''}.</td></tr>`}
-      </tbody>
-    </table>`;
-
   document.getElementById('loadAttBtn').addEventListener('click', () => {
-    renderStudentAttendance(el, document.getElementById('attDate').value, document.getElementById('attClass').value);
-  });
-  document.getElementById('attClass').addEventListener('change', () => {
-    renderStudentAttendance(el, document.getElementById('attDate').value, document.getElementById('attClass').value);
+    renderStudentAttendance(el, document.getElementById('attDate').value);
   });
 
   if (canEdit()) {
     document.getElementById('saveAttBtn')?.addEventListener('click', async () => {
-      const date    = document.getElementById('attDate').value;
-      const students = records.map(r => r.student).filter(Boolean);
-      const attRecords = students.map(s => {
+      const date     = document.getElementById('attDate').value;
+      const records  = students.map(s => {
         const radio = document.querySelector(`input[name="att_${s._id}"]:checked`);
         return { student: s._id, date, status: radio?.value || 'Present' };
       });
-      if (!attRecords.length) { toast('No students to save', 'error'); return; }
       try {
-        await api('/attendance/students', { method: 'POST', body: JSON.stringify({ date, records: attRecords }) });
+        await api('/attendance/students', { method: 'POST', body: JSON.stringify({ date, records }) });
         toast('Student attendance saved!', 'success');
       } catch (err) {
         toast(err.message, 'error');
@@ -3194,17 +2802,18 @@ async function profile() {
 function initLogin() {
   const pwInput = document.getElementById('loginPassword');
   const pwIcon  = document.getElementById('pwToggleIcon');
-  document.getElementById('pwToggle').addEventListener('click', () => {
+  bindOnce('pwToggle', 'click', () => {
+    if (!pwInput || !pwIcon) return;
     const show = pwInput.type === 'password';
     pwInput.type = show ? 'text' : 'password';
     pwIcon.textContent = show ? 'visibility_off' : 'visibility';
   });
 
-  document.getElementById('forgotBtn').addEventListener('click', () => {
+  bindOnce('forgotBtn', 'click', () => {
     toast('Please contact your system administrator to reset your password.', 'info');
   });
 
-  document.getElementById('loginForm').addEventListener('submit', async e => {
+  bindOnce('loginForm', 'submit', async e => {
     e.preventDefault();
     const errEl  = document.getElementById('loginError');
     const btnTxt = document.getElementById('loginBtnText');
@@ -3236,7 +2845,7 @@ function initLogin() {
 
 // ── 22. FORCE CHANGE PAGE ─────────────────────────────────────────
 function initForceChange() {
-  document.getElementById('forceChangeForm').addEventListener('submit', async e => {
+  bindOnce('forceChangeForm', 'submit', async e => {
     e.preventDefault();
     const errEl  = document.getElementById('forceChangeError');
     const btnTxt = document.getElementById('fcBtnText');
@@ -3278,12 +2887,12 @@ function bootAdmin() {
   renderSidebar();
   initGlobalSearch();
 
-  document.getElementById('menuBtn').addEventListener('click', openMobileSidebar);
-  document.getElementById('sidebarClose').addEventListener('click', closeMobileSidebar);
-  document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileSidebar);
+  bindOnce('menuBtn', 'click', openMobileSidebar);
+  bindOnce('sidebarClose', 'click', closeMobileSidebar);
+  bindOnce('sidebarBackdrop', 'click', closeMobileSidebar);
 
   // Single delegated handler for resource-row actions
-  document.getElementById('contentArea').addEventListener('click', e => {
+  bindOnce('contentArea', 'click', e => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const { action, id, status } = btn.dataset;
@@ -3302,7 +2911,7 @@ function bootAdmin() {
     if (action === 'setstatus') updateItemStatus(config.endpoint, id, status, key);
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
+  bindOnce('logoutBtn', 'click', async () => {
     try { await api('/auth/logout', { method: 'POST' }); } catch (_) { /* ignore */ }
     clearToken();
     showPage('loginPage');
@@ -3387,49 +2996,6 @@ async function openPrintUrl(apiPath) {
 }
 window.openPrintUrl = openPrintUrl;
 
-function studentIdDetailsText(s) {
-  return [
-    ['STUDENT NAME', s.studentName],
-    ['CLASS', [s.program, s.section ? `Section ${s.section}` : ''].filter(Boolean).join(' ')],
-    ['STUDENT ID', s._id],
-    ['ADMISSION NO', s.admissionNumber],
-    ['DATE OF BIRTH', s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('en-IN') : ''],
-    ["FATHER'S NAME", s.fatherName || s.parentName],
-    ['MOBILE NUMBER', s.fatherPhone || s.phone || s.motherPhone || s.guardianPhone],
-    ['ADDRESS', s.address]
-  ].map(([label, value]) => `${label}: ${value || '—'}`).join('\n');
-}
-
-function studentPhotoUrl(s) {
-  return s.photoUrl || (s.documents || []).find(d => d.docType === 'Student Photo' || d.category === 'Photo')?.url || '';
-}
-
-async function copyStudentIdDetails(id) {
-  try {
-    const { data: s } = await api(`/students/${id}`);
-    await navigator.clipboard.writeText(studentIdDetailsText(s));
-    toast('Student ID details copied');
-  } catch (err) { toast(err.message || 'Unable to copy details', 'error'); }
-}
-window.copyStudentIdDetails = copyStudentIdDetails;
-
-async function downloadStudentPhoto(id) {
-  try {
-    const { data: s } = await api(`/students/${id}`);
-    const url = studentPhotoUrl(s);
-    if (!url) { toast('No student photo found', 'warning'); return; }
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${(s.studentName || 'student').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'student'}-photo`;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch (err) { toast(err.message || 'Unable to download photo', 'error'); }
-}
-window.downloadStudentPhoto = downloadStudentPhoto;
-
 async function genStudentIdCard(id) {
   const idVal = id || document.getElementById('studentIdInput')?.value?.trim();
   if (!idVal) { toast('Enter an admission number or search above', 'warning'); return; }
@@ -3456,8 +3022,6 @@ async function searchStudentForId() {
     el.innerHTML = data.map(s => `
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)">
         <div style="flex:1;font-size:13px"><strong>${esc(s.studentName)}</strong> <span style="color:var(--txt-sm)">${esc(s.admissionNumber||'')} · ${esc(s.program)}</span></div>
-        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="copyStudentIdDetails('${s._id}')">Copy Details</button>
-        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="downloadStudentPhoto('${s._id}')">Download Photo</button>
         <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="openPrintUrl('/qr/student/${s._id}/id-card')">ID Card</button>
         <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="showStudentQR('${s._id}','${esc(s.studentName)}')">QR</button>
       </div>`).join('');
@@ -3721,7 +3285,7 @@ async function teacherPortalPage() {
     </div>
     <div class="alert alert-info" style="margin-bottom:16px">
       <span class="material-icons-round">info</span>
-      Set a password to activate a teacher's portal access. <strong>Teachers cannot change their own password</strong> — only admin can reset it here.
+      Set a temporary password to activate a teacher's portal access. The teacher must change it on first login.
     </div>
     <div class="card">
       ${!teachers.length
@@ -3908,93 +3472,6 @@ async function loadCheckIns() {
 }
 window.loadCheckIns = loadCheckIns;
 
-/* ══════════════════════════════════════════════════════════════════
-   LOGIN HISTORY
-   ══════════════════════════════════════════════════════════════════ */
-async function loginHistoryPage(page = 1) {
-  const area = document.getElementById('contentArea');
-  const portal = document.getElementById('lhPortalFilter')?.value || '';
-  try {
-    const qs = new URLSearchParams({ page, limit: 25, ...(portal ? { portal } : {}) });
-    const { data: items, pagination } = await api(`/security/login-history?${qs}`);
-
-    area.innerHTML = `
-      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <h2 style="font-size:17px;font-weight:700">Login History</h2>
-        <select id="lhPortalFilter" style="padding:7px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px">
-          <option value="">All Portals</option>
-          <option value="admin"  ${portal==='admin'?'selected':''}>Admin</option>
-          <option value="teacher"${portal==='teacher'?'selected':''}>Teacher</option>
-          <option value="parent" ${portal==='parent'?'selected':''}>Parent</option>
-        </select>
-      </div>
-      <div class="card">
-        ${!items.length
-          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">history</span><p class="empty-title">No login attempts recorded yet</p></div>`
-          : `<div class="table-wrap"><table>
-              <thead><tr><th>When</th><th>Portal</th><th>Identifier</th><th>Result</th><th>Reason</th><th>IP</th></tr></thead>
-              <tbody>${items.map(r => `
-                <tr>
-                  <td>${new Date(r.createdAt).toLocaleString('en-IN')}</td>
-                  <td><span class="badge badge-default">${esc(r.portal)}</span></td>
-                  <td>${esc(r.identifier || '')}</td>
-                  <td><span class="badge ${r.success ? 'badge-approved' : 'badge-rejected'}">${r.success ? 'Success' : 'Failed'}</span></td>
-                  <td style="font-size:12px;color:var(--txt-sm)">${esc(r.reason || '')}</td>
-                  <td style="font-size:12px;color:var(--txt-sm)">${esc(r.ipAddress || '')}</td>
-                </tr>`).join('')}
-              </tbody></table></div>`}
-        ${pagination ? `<div style="display:flex;justify-content:center;gap:8px;padding:14px">
-          <button class="btn btn-secondary" ${pagination.page<=1?'disabled':''} onclick="loginHistoryPage(${pagination.page-1})">Prev</button>
-          <span style="align-self:center;font-size:12px;color:var(--txt-sm)">Page ${pagination.page} of ${pagination.pages||1}</span>
-          <button class="btn btn-secondary" ${pagination.page>=(pagination.pages||1)?'disabled':''} onclick="loginHistoryPage(${pagination.page+1})">Next</button>
-        </div>` : ''}
-      </div>`;
-
-    document.getElementById('lhPortalFilter')?.addEventListener('change', () => loginHistoryPage(1));
-  } catch (err) {
-    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
-  }
-}
-window.loginHistoryPage = loginHistoryPage;
-
-/* ══════════════════════════════════════════════════════════════════
-   AUDIT LOGS
-   ══════════════════════════════════════════════════════════════════ */
-async function auditLogsPage(page = 1) {
-  const area = document.getElementById('contentArea');
-  try {
-    const qs = new URLSearchParams({ page, limit: 25 });
-    const { data: items, pagination } = await api(`/security/audit-logs?${qs}`);
-
-    area.innerHTML = `
-      <h2 style="font-size:17px;font-weight:700;margin-bottom:16px">Audit Logs</h2>
-      <div class="card">
-        ${!items.length
-          ? `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">fact_check</span><p class="empty-title">No admin actions recorded yet</p></div>`
-          : `<div class="table-wrap"><table>
-              <thead><tr><th>When</th><th>Admin</th><th>Method</th><th>Path</th><th>Status</th><th>IP</th></tr></thead>
-              <tbody>${items.map(r => `
-                <tr>
-                  <td>${new Date(r.createdAt).toLocaleString('en-IN')}</td>
-                  <td>${esc(r.adminName || '—')}</td>
-                  <td><span class="badge badge-default">${esc(r.method)}</span></td>
-                  <td style="font-size:12px;font-family:monospace">${esc(r.path)}</td>
-                  <td><span class="badge ${r.statusCode < 400 ? 'badge-approved' : 'badge-rejected'}">${r.statusCode}</span></td>
-                  <td style="font-size:12px;color:var(--txt-sm)">${esc(r.ipAddress || '')}</td>
-                </tr>`).join('')}
-              </tbody></table></div>`}
-        ${pagination ? `<div style="display:flex;justify-content:center;gap:8px;padding:14px">
-          <button class="btn btn-secondary" ${pagination.page<=1?'disabled':''} onclick="auditLogsPage(${pagination.page-1})">Prev</button>
-          <span style="align-self:center;font-size:12px;color:var(--txt-sm)">Page ${pagination.page} of ${pagination.pages||1}</span>
-          <button class="btn btn-secondary" ${pagination.page>=(pagination.pages||1)?'disabled':''} onclick="auditLogsPage(${pagination.page+1})">Next</button>
-        </div>` : ''}
-      </div>`;
-  } catch (err) {
-    area.innerHTML = `<div class="form-card"><div class="alert alert-error">${esc(err.message)}</div></div>`;
-  }
-}
-window.auditLogsPage = auditLogsPage;
-
 // ── 30. PARENT PORTAL ADMIN ───────────────────────────────────────
 async function parentPortalAdminPage() {
   const area = document.getElementById('contentArea');
@@ -4016,7 +3493,7 @@ async function parentPortalAdminPage() {
 
       <div class="alert alert-info" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
         <span class="material-icons-round">info</span>
-        First open Edit to verify/save the parent profile, then use Set Access to activate credentials.
+        Set a portal email and temporary password to activate a parent's portal access. Parents must change their password on first login.
       </div>
 
       <div class="card" id="ppList">
@@ -4033,8 +3510,7 @@ function renderPortalParentList(parents) {
   if (!parents.length) return `<div class="empty-state" style="padding:32px"><span class="material-icons-round empty-icon">family_restroom</span><p class="empty-title">No parents found</p></div>`;
   return parents.map(p => {
     const name     = esc(p.fatherName || p.motherName || 'Unknown');
-    const children = (p.students || []).map(s => `${esc(s.studentName)} (${esc(s.program || '')}${s.section ? ' '+esc(s.section) : ''})`).join(', ') || '—';
-    const profileOk = p.profileCompletion?.isComplete;
+    const children = (p.students || []).map(s => esc(s.studentName)).join(', ') || '—';
     return `
     <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bg)" data-ppname="${(p.fatherName||p.motherName||'').toLowerCase()}" data-ppemail="${(p.portalEmail||'').toLowerCase()}">
       <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#f97316,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">
@@ -4042,19 +3518,13 @@ function renderPortalParentList(parents) {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:13px">${name}</div>
-        <div style="font-size:11px;color:var(--txt-sm)">${esc(p.fatherPhone||p.motherPhone||p.guardianPhone||'')} · Children: ${children}</div>
-        <div style="font-size:11px;color:${profileOk ? 'var(--ok,#16a34a)' : 'var(--warn,#d97706)'}">Profile: ${profileOk ? 'Complete' : 'Incomplete'}${profileOk ? '' : ' — ' + esc((p.profileCompletion?.missingFields || []).join(', '))}</div>
-        ${(p.students || []).length ? `<div style="font-size:11px;color:var(--txt-sm);font-family:monospace">🆔 ${(p.students || []).map(s => esc(s.admissionNumber || '')).filter(Boolean).join(', ')}</div>` : ''}
-        ${p.isPortalActive && p.mustChangePassword ? `<div style="font-size:10px;color:var(--txt-sm)">🔑 Using a temporary password — use "Reset" to set a new one if it needs to be re-shared</div>` : ''}
-        ${p.autoGenerated ? `<div style="font-size:10px;color:var(--ok,#16a34a)">✨ Auto-generated at enrollment</div>` : ''}
+        <div style="font-size:11px;color:var(--txt-sm)">${esc(p.fatherPhone||p.motherPhone||'')} · Children: ${children}</div>
+        ${p.portalEmail ? `<div style="font-size:11px;color:var(--txt-sm);font-family:monospace">📧 ${esc(p.portalEmail)}</div>` : ''}
         ${p.lastLoginAt ? `<div style="font-size:10px;color:var(--txt-sm)">Last login: ${fmtDate(p.lastLoginAt)}</div>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
         <span class="badge ${p.isPortalActive ? 'badge-active' : 'badge-inactive'}">${p.isPortalActive ? 'Active' : 'Not Activated'}</span>
         <div style="display:flex;gap:4px;margin-top:4px">
-          <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px" onclick="editParentProfile('${p._id}')">
-            <span class="material-icons-round" style="font-size:13px">edit</span>Edit
-          </button>
           <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px" onclick="activateParentPortal('${p._id}','${name}')">
             <span class="material-icons-round" style="font-size:13px">key</span>Set Access
           </button>
@@ -4081,69 +3551,14 @@ function filterPortalParents(q) {
 }
 window.filterPortalParents = filterPortalParents;
 
-
-function parentProfileField(label, name, value = '', type = 'text') {
-  return `<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--txt)">${label}<input name="${name}" type="${type}" value="${esc(value || '')}" style="padding:8px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px"></label>`;
-}
-
-async function editParentProfile(id) {
-  try {
-    const { data: p } = await api(`/admin-parent-portal/${id}/profile`);
-    const studentRows = (p.students || []).map(s => `<tr><td>${esc(s.admissionNumber || '')}</td><td>${esc(s.studentName || '')}</td><td>${esc(s.program || '')}${s.section ? ' '+esc(s.section) : ''}</td><td style="font-family:monospace">${esc(s._id || '')}</td><td>${canEdit() ? `<button type="button" class="btn btn-danger btn-sm" onclick="unlinkPortalStudent('${p._id}','${s._id}')">Unlink</button>` : '—'}</td></tr>`).join('');
-    const modal = document.createElement('div');
-    modal.className = 'modal-backdrop';
-    modal.innerHTML = `<div class="modal" style="max-width:760px"><div class="modal-header"><h3>Parent Profile — Edit Information</h3><button class="icon-btn" onclick="this.closest('.modal-backdrop').remove()"><span class="material-icons-round">close</span></button></div>
-      <form id="parentProfileForm" class="modal-body" style="display:grid;gap:14px">
-        <div class="alert alert-info">Student links use immutable Student Internal ID. Admission Number can change without disconnecting portal access.</div>
-        <h4>Student Information</h4><div style="overflow:auto"><table class="data-table"><thead><tr><th>ADM. NO.</th><th>STUDENT NAME</th><th>CLASS</th><th>Student Internal ID</th><th>Action</th></tr></thead><tbody>${studentRows || '<tr><td colspan="5">No linked students</td></tr>'}</tbody></table></div><div class="alert alert-info" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>Fix wrong child links:</span><input id="linkStudentAdmNo" placeholder="Admission Number" style="padding:8px;border:1.5px solid var(--bd);border-radius:8px;min-width:180px"><button type="button" class="btn btn-secondary btn-sm" onclick="linkPortalStudent('${p._id}')">Link Student</button></div>
-        <h4>Parent / Guardian Information</h4><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
-          ${parentProfileField('PARENT/GUARDIAN NAME (Father)', 'fatherName', p.fatherName)}${parentProfileField('RELATION WITH STUDENT', 'guardianRelation', p.guardianRelation || 'Father')}${parentProfileField('MOBILE NUMBER', 'fatherPhone', p.fatherPhone)}${parentProfileField('ALTERNATE MOBILE NUMBER', 'motherPhone', p.motherPhone)}${parentProfileField('EMAIL', 'fatherEmail', p.fatherEmail)}${parentProfileField('Mother Name', 'motherName', p.motherName)}${parentProfileField('Guardian Name', 'guardianName', p.guardianName)}${parentProfileField('Guardian Phone', 'guardianPhone', p.guardianPhone)}${parentProfileField('City', 'city', p.city)}${parentProfileField('State', 'state', p.state)}${parentProfileField('Pincode', 'pincode', p.pincode)}
-        </div><label style="display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600">ADDRESS<textarea name="address" style="padding:8px;border:1.5px solid var(--bd);border-radius:8px;min-height:70px">${esc(p.address || '')}</textarea></label>
-        <h4>Portal Information</h4><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">${parentProfileField('USERNAME / LOGIN ID', 'portalUsername', (p.students || [])[0]?.admissionNumber || '', 'text')}<label>PORTAL ACCESS STATUS<br><span class="badge ${p.isPortalActive ? 'badge-active' : 'badge-inactive'}">${p.isPortalActive ? 'ON' : 'OFF'}</span></label><label>ACCOUNT STATUS<br><span class="badge ${p.isActive ? 'badge-active' : 'badge-inactive'}">${p.isActive ? 'Active' : 'Inactive'}</span></label></div>
-        ${p.profileCompletion?.isComplete ? '' : `<div class="alert alert-warning">Missing: ${esc((p.profileCompletion?.missingFields || []).join(', '))}</div>`}
-        <div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="btn btn-secondary" onclick="this.closest('.modal-backdrop').remove()">Cancel</button><button class="btn btn-primary">Save Profile</button></div>
-      </form></div>`;
-    document.body.appendChild(modal);
-    document.getElementById('parentProfileForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target); const body = Object.fromEntries(fd.entries()); delete body.portalUsername;
-      await api(`/admin-parent-portal/${id}/profile`, { method: 'PUT', body: JSON.stringify(body) });
-      toast('Parent profile saved. You can now set access when complete.', 'success');
-      modal.remove(); parentPortalAdminPage();
-    };
-  } catch (err) { toast(err.message, 'error'); }
-}
-window.editParentProfile = editParentProfile;
-
-async function linkPortalStudent(parentId) {
-  const input = document.getElementById('linkStudentAdmNo');
-  const admissionNumber = input?.value.trim();
-  if (!admissionNumber) { toast('Enter Admission Number to link student', 'warning'); return; }
-  if (!confirm(`Link student ${admissionNumber} to this parent? Existing wrong parent link will be removed.`)) return;
-  await api(`/admin-parent-portal/${parentId}/students/link`, { method: 'POST', body: JSON.stringify({ admissionNumber }) });
-  toast('Student linked to parent', 'success');
-  document.querySelector('.modal-backdrop')?.remove();
-  editParentProfile(parentId);
-  parentPortalAdminPage();
-}
-window.linkPortalStudent = linkPortalStudent;
-
-async function unlinkPortalStudent(parentId, studentId) {
-  if (!confirm('Unlink this student from the selected parent?')) return;
-  await api(`/admin-parent-portal/${parentId}/students/${studentId}`, { method: 'DELETE' });
-  toast('Student unlinked from parent', 'success');
-  document.querySelector('.modal-backdrop')?.remove();
-  editParentProfile(parentId);
-  parentPortalAdminPage();
-}
-window.unlinkPortalStudent = unlinkPortalStudent;
-
 async function activateParentPortal(id, name) {
-  const pw = prompt(`Set/reset parent portal password for ${name}:\nComplete and save the Parent Profile first. Username is the linked student's current Admission Number.\n(min 6 characters)`);
+  const email = prompt(`Set portal email for ${name}:`);
+  if (!email) return;
+  const pw = prompt(`Set temporary password for ${name}:\n(min 6 characters)`);
   if (!pw) return;
   if (pw.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
   try {
-    await api(`/admin-parent-portal/${id}/activate`, { method: 'POST', body: JSON.stringify({ password: pw }) });
+    await api(`/admin-parent-portal/${id}/activate`, { method: 'POST', body: JSON.stringify({ portalEmail: email, password: pw }) });
     toast(`Portal access set for ${name}. Share credentials securely.`, 'success');
     parentPortalAdminPage();
   } catch (err) { toast(err.message, 'error'); }

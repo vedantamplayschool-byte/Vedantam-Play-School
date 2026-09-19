@@ -71,8 +71,7 @@
     }
 
     /* ── SHELL ────────────────────────────────────────────────────── */
-    #parentShell { min-height: 100vh; }
-    .hidden { display: none !important; }
+    #parentShell { display: none; min-height: 100vh; }
 
     .topbar {
       background: var(--surface); border-bottom: 1px solid var(--bd);
@@ -223,7 +222,6 @@
       .main-col .topbar { position: sticky; top: 0; }
     }
   </style>
-  <link rel="stylesheet" href="css/vedantam-theme.css" />
 </head>
 <body>
 
@@ -239,8 +237,8 @@
     <div class="alert-err" id="loginError"></div>
     <form id="loginForm">
       <div class="form-group">
-        <label>Student ID</label>
-        <input type="text" name="identifier" placeholder="Enter Student ID (e.g. VPS2026001)" required autocomplete="username">
+        <label>Email / Phone</label>
+        <input type="text" name="identifier" placeholder="Enter registered email or phone" required autocomplete="username">
       </div>
       <div class="form-group">
         <label>Password</label>
@@ -253,29 +251,42 @@
     </form>
     <div class="back-link">
       <p>Contact school to activate portal access.</p>
-      <p style="margin-top:8px"><a href="index.html">← Back to School Website</a></p>
+      <p style="margin-top:8px"><a href="/">← Back to School Website</a></p>
     </div>
   </div>
 </div>
 
-<!-- ── ADMIN-MANAGED PASSWORD NOTICE ──────────────────────────────── -->
-<div id="forceChangePage" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;">
+<!-- ── FORCE CHANGE PASSWORD ──────────────────────────────────────── -->
+<div id="forceChangePage" style="display:none;min-height:100vh;background:linear-gradient(135deg,#f97316,#8b5cf6);align-items:center;justify-content:center;padding:24px;">
   <div class="login-card">
     <div class="login-logo">
-      <img src="logo.png" alt="Vedantam Play School" onerror="this.style.display='none'">
-      <h1>Password Managed by School</h1>
-      <p>Parent portal passwords are created and maintained only by the school administrator.</p>
+      <h1>Set Your Password</h1>
+      <p>Please create a new password to continue</p>
     </div>
-    <div class="alert-err" style="display:block;background:#fff7ed;border-color:#fed7aa;color:#9a3412">
-      If you forgot your password or need it changed, please contact the school administrator. Parents cannot reset or change passwords from this portal.
-    </div>
-    <button type="button" class="btn-primary" id="continueToPortalBtn">Continue to Portal</button>
-    <div class="back-link"><p style="margin-top:8px"><a href="index.html">← Back to School Website</a></p></div>
+    <div class="alert-err" id="fcError"></div>
+    <form id="forceChangeForm">
+      <div class="form-group">
+        <label>Current (Temporary) Password</label>
+        <input type="password" name="currentPassword" required autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" name="newPassword" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" name="confirmPassword" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-primary" id="fcBtn">
+        <span id="fcBtnText">Set Password</span>
+        <span class="spin" id="fcSpin" style="display:none"></span>
+      </button>
+    </form>
   </div>
 </div>
 
 <!-- ── PARENT SHELL ────────────────────────────────────────────────── -->
-<div id="parentShell" class="hidden">
+<div id="parentShell">
 
   <!-- Desktop sidebar -->
   <nav class="sidebar-nav" id="sidebarNav" style="display:none">
@@ -291,7 +302,6 @@
     <button class="snav-btn" data-page="attendance"><span class="material-icons-round">how_to_reg</span>Attendance</button>
     <button class="snav-btn" data-page="homework"><span class="material-icons-round">assignment</span>Homework</button>
     <button class="snav-btn" data-page="fees"><span class="material-icons-round">payments</span>Fee Details</button>
-    <button class="snav-btn" data-page="results"><span class="material-icons-round">school</span>Results</button>
     <button class="snav-btn" data-page="notices"><span class="material-icons-round">campaign</span>Notices</button>
     <button class="snav-btn" data-page="events"><span class="material-icons-round">event</span>Events</button>
     <button class="snav-btn" data-page="gallery"><span class="material-icons-round">photo_library</span>Gallery</button>

@@ -3,349 +3,254 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Panel — Vedantam Play School</title>
+  <title>Admin Dashboard | Vedantam Play School</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
   <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
 
-<!-- ── LOGIN ──────────────────────────────────── -->
-<div id="loginScreen" style="display:none">
-  <div class="login-card">
-    <div class="logo-wrap"><img src="logo.png" alt="Vedantam Play School" /></div>
-    <h1>Admin Login</h1>
-    <p>Vedantam Play School management portal</p>
-    <form id="loginForm" novalidate>
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required autocomplete="username" placeholder="admin@example.com" />
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" />
-      </div>
-      <button class="btn-login" type="submit">Sign In</button>
-      <div id="loginErr" class="login-err"></div>
-    </form>
-  </div>
-</div>
+  <!-- ============================================================
+       LOGIN PAGE
+       ============================================================ -->
+  <section id="loginPage" class="page" aria-label="Admin Login">
+    <div class="login-scene">
 
-<!-- ── APP ────────────────────────────────────── -->
-<div id="app" style="display:none">
-  <div class="app-inner">
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <img src="logo.png" alt="logo" />
-        <span>Vedantam<small>Play School</small></span>
-      </div>
-
-      <div class="nav-section">
-        <div class="nav-label">Overview</div>
-        <div class="nav-item active" data-section="dashboard"><span class="icon">📊</span> Dashboard</div>
-      </div>
-
-      <div class="nav-section">
-        <div class="nav-label">Content</div>
-        <div class="nav-item" data-section="teachers"><span class="icon">👩‍🏫</span> Teachers</div>
-        <div class="nav-item" data-section="gallery"><span class="icon">🖼️</span> Gallery</div>
-        <div class="nav-item" data-section="notices"><span class="icon">📋</span> Notices</div>
-        <div class="nav-item" data-section="events"><span class="icon">🎉</span> Events</div>
-        <div class="nav-item" data-section="testimonials"><span class="icon">💬</span> Testimonials</div>
-        <div class="nav-item" data-section="hero-slides"><span class="icon">🖥️</span> Hero Slides</div>
+      <div class="login-decor" aria-hidden="true">
+        <div class="decor-bubbles">
+          <div class="bubble b1"></div>
+          <div class="bubble b2"></div>
+          <div class="bubble b3"></div>
+          <div class="bubble b4"></div>
+          <div class="bubble b5"></div>
+        </div>
+        <div class="decor-content">
+          <img src="logo.png" alt="" class="decor-logo" />
+          <h2 class="decor-name">Vedantam Play School</h2>
+          <p class="decor-tag">Management System v2.0</p>
+          <div class="decor-features">
+            <div class="feat-item">
+              <span class="material-icons-round">verified_user</span>
+              Secure JWT Authentication
+            </div>
+            <div class="feat-item">
+              <span class="material-icons-round">dashboard</span>
+              Complete ERP Dashboard
+            </div>
+            <div class="feat-item">
+              <span class="material-icons-round">cloud_done</span>
+              Cloudinary Media Storage
+            </div>
+            <div class="feat-item">
+              <span class="material-icons-round">phone_android</span>
+              Fully Mobile Responsive
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="nav-section">
-        <div class="nav-label">Enquiries</div>
-        <div class="nav-item" data-section="admissions"><span class="icon">📝</span> Admissions</div>
-        <div class="nav-item" data-section="contacts"><span class="icon">✉️</span> Messages</div>
-        <div class="nav-item" data-section="newsletter"><span class="icon">📧</span> Newsletter</div>
+      <div class="login-panel">
+        <div class="login-card">
+          <div class="login-logo-wrap">
+            <img src="logo.png" alt="Vedantam Play School" class="login-logo" />
+          </div>
+          <h1 class="login-title">Welcome Back</h1>
+          <p class="login-sub">Sign in to your admin panel</p>
+
+          <form id="loginForm" novalidate autocomplete="on">
+            <div class="field-group">
+              <label for="loginEmail" class="field-label">Email Address</label>
+              <div class="input-wrap">
+                <span class="material-icons-round field-icon">email</span>
+                <input
+                  id="loginEmail"
+                  name="email"
+                  type="email"
+                  class="field-input"
+                  placeholder="admin@vedantam.edu.in"
+                  autocomplete="username"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="loginPassword" class="field-label">Password</label>
+              <div class="input-wrap">
+                <span class="material-icons-round field-icon">lock</span>
+                <input
+                  id="loginPassword"
+                  name="password"
+                  type="password"
+                  class="field-input"
+                  placeholder="Enter your password"
+                  autocomplete="current-password"
+                  required
+                />
+                <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password">
+                  <span class="material-icons-round" id="pwToggleIcon">visibility</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="login-row">
+              <label class="check-label">
+                <input type="checkbox" id="rememberMe" name="remember" />
+                <span class="check-box"></span>
+                <span>Remember me</span>
+              </label>
+              <button type="button" class="link-btn" id="forgotBtn">Forgot password?</button>
+            </div>
+
+            <div id="loginError" class="alert alert-error" style="display:none" role="alert"></div>
+
+            <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+              <span id="loginBtnText">Sign In</span>
+              <span id="loginSpinner" class="btn-loader" style="display:none">
+                <span class="spin"></span>
+              </span>
+            </button>
+          </form>
+        </div>
       </div>
 
-      <div class="nav-section">
-        <div class="nav-label">Academics</div>
-        <div class="nav-item" data-section="marks"><span class="icon">📚</span> Marks Management</div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FORCE CHANGE PASSWORD PAGE
+       ============================================================ -->
+  <section id="forceChangePage" class="page page-center" style="display:none" aria-label="Set New Password">
+    <div class="login-card force-card">
+      <div class="login-logo-wrap">
+        <img src="logo.png" alt="Vedantam Play School" class="login-logo" />
+      </div>
+      <div class="alert alert-warning">
+        <span class="material-icons-round">security</span>
+        <span>Security Notice: You must set a new password before accessing the dashboard.</span>
+      </div>
+      <h1 class="login-title">Set New Password</h1>
+      <p class="login-sub">Your temporary password must be changed to continue.</p>
+
+      <form id="forceChangeForm" novalidate>
+        <div class="field-group">
+          <label for="fcCurrent" class="field-label">Current Password</label>
+          <div class="input-wrap">
+            <span class="material-icons-round field-icon">lock</span>
+            <input id="fcCurrent" name="currentPassword" type="password" class="field-input"
+              placeholder="Your current/temporary password" autocomplete="current-password" required />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="fcNew" class="field-label">New Password</label>
+          <div class="input-wrap">
+            <span class="material-icons-round field-icon">lock_open</span>
+            <input id="fcNew" name="newPassword" type="password" class="field-input"
+              placeholder="Minimum 8 characters" minlength="8" autocomplete="new-password" required />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="fcConfirm" class="field-label">Confirm New Password</label>
+          <div class="input-wrap">
+            <span class="material-icons-round field-icon">lock_open</span>
+            <input id="fcConfirm" name="confirmPassword" type="password" class="field-input"
+              placeholder="Repeat new password" autocomplete="new-password" required />
+          </div>
+        </div>
+        <div id="forceChangeError" class="alert alert-error" style="display:none" role="alert"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="forceChangeBtn">
+          <span id="fcBtnText">Set Password &amp; Continue</span>
+          <span id="fcSpinner" class="btn-loader" style="display:none"><span class="spin"></span></span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ADMIN SHELL
+       ============================================================ -->
+  <div id="adminShell" class="admin-shell" style="display:none">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-head">
+        <a href="#dashboard" class="sidebar-brand" id="sidebarBrand">
+          <img src="logo.png" alt="" class="sidebar-logo" />
+          <div>
+            <div class="sidebar-school">Vedantam</div>
+            <div class="sidebar-sub">Play School</div>
+          </div>
+        </a>
+        <button class="sidebar-close-btn" id="sidebarClose" aria-label="Close navigation">
+          <span class="material-icons-round">close</span>
+        </button>
       </div>
 
-      <div class="sidebar-footer">
-        <button class="btn-logout" id="btnLogout">🚪 Sign Out</button>
+      <div class="sidebar-scroll">
+        <nav id="sidebarNav" class="sidebar-nav" aria-label="Main menu"></nav>
+      </div>
+
+      <div class="sidebar-foot">
+        <div class="sidebar-user" id="sidebarUser"></div>
+        <button class="sidebar-logout-btn" id="logoutBtn">
+          <span class="material-icons-round">logout</span>
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
 
-    <!-- Main -->
-    <div class="main">
+    <!-- MOBILE BACKDROP -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop" style="display:none" aria-hidden="true"></div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-wrap">
       <header class="topbar">
-        <h2 id="topbarTitle">Dashboard</h2>
-        <span class="admin-chip" id="adminName">Admin</span>
+        <div class="topbar-left">
+          <button class="menu-btn" id="menuBtn" aria-label="Open navigation">
+            <span class="material-icons-round">menu</span>
+          </button>
+          <div class="topbar-title" id="pageTitle">Dashboard</div>
+        </div>
+
+        <!-- GLOBAL SEARCH -->
+        <div class="search-global-wrap" role="search">
+          <div class="search-global-inner">
+            <span class="material-icons-round search-global-icon">search</span>
+            <input
+              type="search"
+              id="globalSearch"
+              class="search-global-input"
+              placeholder="Search students, parents, teachers…"
+              autocomplete="off"
+              aria-label="Global search"
+            />
+          </div>
+          <div id="searchDrop" class="search-drop" style="display:none" role="listbox" aria-label="Search results"></div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="topbar-avatar" id="topbarAvatar" title="My Profile" role="button" tabindex="0"></div>
+        </div>
       </header>
 
-      <div class="content">
-
-        <!-- Dashboard -->
-        <div class="panel" id="section-dashboard">
-          <div class="stats-grid">
-            <div class="stat-card"><div class="icon">📝</div><div class="label">Admissions</div><div class="value" id="statAdmissions">—</div></div>
-            <div class="stat-card"><div class="icon">✉️</div><div class="label">Messages</div><div class="value" id="statContacts">—</div></div>
-            <div class="stat-card"><div class="icon">👩‍🏫</div><div class="label">Teachers</div><div class="value" id="statTeachers">—</div></div>
-            <div class="stat-card"><div class="icon">🖼️</div><div class="label">Gallery</div><div class="value" id="statGallery">—</div></div>
-            <div class="stat-card"><div class="icon">📋</div><div class="label">Notices</div><div class="value" id="statNotices">—</div></div>
-            <div class="stat-card"><div class="icon">📧</div><div class="label">Subscribers</div><div class="value" id="statNewsletter">—</div></div>
-          </div>
-          <div class="table-wrap" style="padding:24px">
-            <h3 style="font-weight:900;margin-bottom:8px">Welcome back 👋</h3>
-            <p style="color:var(--muted)">Use the sidebar to manage school content, teachers, admissions, and enquiries. All changes reflect live on the website.</p>
-            <div style="margin-top:18px;padding:16px;background:#f0fbff;border-radius:12px;font-size:.88rem">
-              <strong>First time setup?</strong> If no admin exists, call <code>POST /api/v1/auth/bootstrap</code> with <code>name</code>, <code>email</code>, and <code>password</code> to create your first admin account.
-            </div>
-          </div>
+      <div id="contentArea" class="content-area" role="main" aria-live="polite" aria-atomic="false">
+        <div class="loader-center">
+          <span class="spin spin-lg"></span>
         </div>
-
-        <!-- Teachers -->
-        <div class="panel section-hidden" id="section-teachers">
-          <div class="section-head">
-            <h3>Teachers</h3>
-            <button class="btn btn-primary" data-add-section="teachers">+ Add Teacher</button>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search teachers…" data-search-section="teachers" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Photo</th><th>Name</th><th>Qualification</th><th>Experience</th><th>Active</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Gallery -->
-        <div class="panel section-hidden" id="section-gallery">
-          <div class="section-head">
-            <h3>Gallery</h3>
-            <button class="btn btn-primary" data-add-section="gallery">+ Add Photo</button>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search gallery…" data-search-section="gallery" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Image</th><th>Title</th><th>Category</th><th>Featured</th><th>Order</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Notices -->
-        <div class="panel section-hidden" id="section-notices">
-          <div class="section-head">
-            <h3>Notices</h3>
-            <button class="btn btn-primary" data-add-section="notices">+ Add Notice</button>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search notices…" data-search-section="notices" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Title</th><th>Priority</th><th>Published</th><th>Date</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Events -->
-        <div class="panel section-hidden" id="section-events">
-          <div class="section-head">
-            <h3>Events</h3>
-            <button class="btn btn-primary" data-add-section="events">+ Add Event</button>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search events…" data-search-section="events" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Image</th><th>Title</th><th>Event Date</th><th>Location</th><th>Published</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Testimonials -->
-        <div class="panel section-hidden" id="section-testimonials">
-          <div class="section-head">
-            <h3>Testimonials</h3>
-            <button class="btn btn-primary" data-add-section="testimonials">+ Add Testimonial</button>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search testimonials…" data-search-section="testimonials" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Parent</th><th>Student</th><th>Rating</th><th>Published</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Hero Slides -->
-        <div class="panel section-hidden" id="section-hero-slides">
-          <div class="section-head">
-            <h3>Hero Slides</h3>
-            <button class="btn btn-primary" data-add-section="hero-slides">+ Add Slide</button>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Image</th><th>Title</th><th>Badge</th><th>CTA</th><th>Active</th><th>Order</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Admissions -->
-        <div class="panel section-hidden" id="section-admissions">
-          <div class="section-head">
-            <h3>Admission Enquiries</h3>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search by name or phone…" data-search-section="admissions" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Student</th><th>Parent</th><th>Phone</th><th>Program</th><th>Status</th><th>Received</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Contacts -->
-        <div class="panel section-hidden" id="section-contacts">
-          <div class="section-head">
-            <h3>Contact Messages</h3>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search messages…" data-search-section="contacts" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Message</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Newsletter -->
-        <div class="panel section-hidden" id="section-newsletter">
-          <div class="section-head">
-            <h3>Newsletter Subscribers</h3>
-          </div>
-          <div class="toolbar">
-            <div class="search-box">🔍 <input placeholder="Search by email…" data-search-section="newsletter" /></div>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Email</th><th>Status</th><th>Subscribed</th><th>Actions</th></tr></thead>
-              <tbody><tr class="empty-row"><td colspan="4">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="pagination"></div>
-        </div>
-
-        <!-- Marks Management -->
-        <div class="panel section-hidden" id="section-marks">
-          <div class="section-head marks-heading">
-            <div>
-              <h3>Marks Management</h3>
-              <p class="panel-subtitle">Enter subject-wise marks for the selected class, session, and examination.</p>
-            </div>
-            <div class="marks-status" id="marksStatus">Not loaded</div>
-          </div>
-
-          <div class="marks-filters">
-            <div class="form-field">
-              <label for="marksSession">Academic Session</label>
-              <input id="marksSession" value="" placeholder="e.g. 2026-27" />
-            </div>
-            <div class="form-field">
-              <label for="marksClass">Class</label>
-              <select id="marksClass">
-                <option>Play Group</option><option>Nursery</option><option>LKG</option><option>UKG</option>
-              </select>
-            </div>
-            <div class="form-field">
-              <label for="marksExam">Examination</label>
-              <select id="marksExam">
-                <option>1st Term</option><option>2nd Term</option><option>3rd Term</option><option>Final / Annual Examination</option>
-              </select>
-            </div>
-            <button class="btn btn-primary marks-load-btn" id="loadMarksBtn">Load Marks</button>
-          </div>
-
-          <div class="marks-toolbar">
-            <div>
-              <strong id="marksSelectionLabel">Choose a class and examination</strong>
-              <span class="marks-help" id="marksStudentCount"></span>
-            </div>
-            <div class="marks-actions">
-              <button class="btn btn-outline btn-sm" id="configureSubjectsBtn" disabled>⚙ Configure Subjects</button>
-              <button class="btn btn-outline btn-sm" id="exportMarksBtn" disabled>⬇ Export CSV</button>
-              <button class="btn btn-primary btn-sm" id="saveMarksBtn" disabled>💾 Save Draft</button>
-              <button class="btn btn-primary btn-sm" id="publishMarksBtn" disabled>✓ Publish Result</button>
-            </div>
-          </div>
-
-          <div class="marks-empty" id="marksEmpty">
-            <div class="marks-empty-icon">📚</div>
-            <h3>Select a class to begin</h3>
-            <p>Students are loaded from the existing student records. No duplicate student records are created.</p>
-          </div>
-          <div class="marks-table-wrap" id="marksTableWrap" hidden>
-            <table class="data-table marks-table" id="marksTable"></table>
-          </div>
-          <div class="marks-legend">
-            <span><i class="legend-dot entered"></i> Entered</span>
-            <span><i class="legend-dot pending"></i> Pending</span>
-            <span><i class="legend-dot absent"></i> Absent</span>
-            <span class="marks-note">Blank fields remain pending and are not counted as zero.</span>
-          </div>
-        </div>
-
-      </div><!-- /content -->
-    </div><!-- /main -->
-  </div><!-- /app-inner -->
-</div><!-- /app -->
-
-<!-- ── MODAL ──────────────────────────────────── -->
-<div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal">
-    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
-    <h3 id="modalTitle">Form</h3>
-    <div id="modalBody"></div>
+      </div>
+    </main>
   </div>
-</div>
 
-<!-- ── CONFIRM ────────────────────────────────── -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <p id="confirmMsg">Are you sure?</p>
-    <div class="actions">
-      <button class="btn btn-outline" id="confirmNo">Cancel</button>
-      <button class="btn btn-danger" id="confirmYes">Delete</button>
-    </div>
-  </div>
-</div>
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<!-- ── TOAST ──────────────────────────────────── -->
-<div id="toast"></div>
-
-<script src="js/config.js"></script>
-<script src="js/admin.js"></script>
+  <!-- Versioned so browsers do not keep an older Admin bundle with the
+       pre-delegated Marks listener after a deployment. -->
+  <script src="js/api-config.js?v=20260919"></script>
+  <script src="js/admin.js?v=20260919"></script>
 </body>
 </html>

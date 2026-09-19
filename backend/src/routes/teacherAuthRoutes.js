@@ -19,10 +19,7 @@ r.post('/logout', teacherLogout);
 r.use(protectTeacher);
 r.get('/me',                       teacherMe);
 r.put('/profile',                  updateTeacherProfile);
-// Password change is admin-only — teachers use the password given by admin
-r.put('/change-password', (req, res) => {
-  res.status(403).json({ success: false, message: 'Password can only be changed by the school admin. Please contact admin to reset your password.' });
-});
+r.put('/change-password',          changeTeacherPassword);
 r.patch('/photo', upload.single('photo'), uploadTeacherPhoto);
 
 export default r;

@@ -17,9 +17,7 @@ export const env = {
   },
   maxFileSizeMb: Number(process.env.MAX_FILE_SIZE_MB || 5),
   adminEmail: process.env.ADMIN_EMAIL || '',
-  adminPassword: process.env.ADMIN_PASSWORD || '',
-  // Secret slug used to serve admin.html at a hidden URL instead of /admin.html
-  adminSecretPath: (process.env.ADMIN_SECRET_PATH || '').trim().replace(/^\/+|\/+$/g, '')
+  adminPassword: process.env.ADMIN_PASSWORD || ''
 };
 
 export const validateEnv = () => {

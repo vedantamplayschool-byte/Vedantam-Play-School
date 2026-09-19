@@ -1,7 +1,6 @@
 import { Router }         from 'express';
 import { protectTeacher } from '../middleware/teacherAuth.js';
 import { protect, authorize } from '../middleware/auth.js';
-import { upload }         from '../middleware/upload.js';
 import {
   checkIn, checkOut, todayStatus,
   myAttendanceHistory, adminCheckInList
@@ -9,9 +8,9 @@ import {
 
 const r = Router();
 
-// Teacher self-service routes — photo capture is optional (multipart 'photo' field)
-r.post('/checkin',  protectTeacher, upload.single('photo'), checkIn);
-r.post('/checkout', protectTeacher, upload.single('photo'), checkOut);
+// Teacher self-service routes
+r.post('/checkin',  protectTeacher, checkIn);
+r.post('/checkout', protectTeacher, checkOut);
 r.get('/status',    protectTeacher, todayStatus);
 r.get('/history',   protectTeacher, myAttendanceHistory);
 

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const PAYMENT_MODES   = ['Cash', 'Online', 'Cheque', 'Demand Draft', 'UPI'];
 const PAYMENT_STATUSES = ['Paid', 'Partial', 'Pending', 'Waived'];
-const FEE_TYPES        = ['Registration Fees', 'Admission Fees', 'Term 1 Fees', 'Term 2 Fees', 'Term 3 Fees'];
+const FEE_TYPES        = ['Admission', 'Monthly', 'Transport', 'Activity', 'Exam', 'Annual', 'Other'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 const schema = new mongoose.Schema(
@@ -27,11 +27,6 @@ const schema = new mongoose.Schema(
     totalAmount:      { type: Number, required: true },
     amountPaid:       { type: Number, required: true, default: 0 },
     balance:          { type: Number, default: 0 },
-    registrationFee:  { type: Number, default: 0, min: 0 },
-    admissionFee:     { type: Number, default: 0, min: 0 },
-    term1Fee:         { type: Number, default: 0, min: 0 },
-    term2Fee:         { type: Number, default: 0, min: 0 },
-    term3Fee:         { type: Number, default: 0, min: 0 },
 
     paymentDate:   { type: Date, default: Date.now },
     paymentMode:   { type: String, enum: PAYMENT_MODES, default: 'Cash' },
