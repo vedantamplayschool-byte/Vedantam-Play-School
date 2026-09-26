@@ -430,12 +430,12 @@ export const exportExamCsv = asyncHandler(async (req, res) => {
   const rows = await getSheetRows(exam);
   const csv = [
     ['School', 'Academic Session', 'Exam', 'Class', 'Student', 'Linked Student', 'Roll Number',
-      ...exam.subjects.map(subject => subject.name), 'Calculated Total', 'Percentage', 'Recorded Total', 'Warning'].map(csvCell).join(','),
+      ...exam.subjects.map(subject => subject.name), 'Calculated Total', 'Percentage'].map(csvCell).join(','),
     ...rows.map(row => [
       exam.schoolName, exam.academicSession, exam.examName, exam.program, row.studentName,
       row.linkedStudentName || '', row.rollNumber,
       ...exam.subjects.map(subject => row.marks[subject.key]?.markStatus === 'Absent' ? 'AB' : row.marks[subject.key]?.marks ?? ''),
-       row.calculatedTotal, `${row.percentage}%`, row.recordedTotal ?? '', row.totalMismatch ? 'Total mismatch' : row.needsReview ? 'Name review' : ''
+       row.calculatedTotal, `${row.percentage}%`
     ].map(csvCell).join(','))
   ].join('\r\n');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -455,10 +455,9 @@ export const printExam = asyncHandler(async (req, res) => {
   addExamTotals(exam);
   const rows = await getSheetRows(exam);
   const tableRows = rows.map((row, index) => `<tr>
-    <td>${index + 1}</td><td class="student">${htmlEscape(row.studentName)}${row.needsReview ? '<small>Review name/link</small>' : ''}</td>
+    <td>${index + 1}</td><td class="student">${htmlEscape(row.studentName)}</td>
     ${exam.subjects.map(subject => `<td>${row.marks[subject.key]?.markStatus === 'Absent' ? 'AB' : htmlEscape(row.marks[subject.key]?.marks ?? '')}</td>`).join('')}
-     <td>${row.calculatedTotal}</td><td>${row.percentage}%</td><td>${htmlEscape(row.recordedTotal ?? '')}</td>
-    <td>${row.totalMismatch ? 'Mismatch' : ''}</td>
+     <td>${row.calculatedTotal}</td><td>${row.percentage}%</td>
   </tr>`).join('');
   res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>${htmlEscape(exam.examName)} - ${htmlEscape(exam.program)}</title>
   <style>
@@ -472,7 +471,7 @@ export const printExam = asyncHandler(async (req, res) => {
   </style></head><body>
   <h1>${htmlEscape(exam.schoolName)}</h1><h2>${htmlEscape(exam.examName)} · ${htmlEscape(exam.program)} · ${htmlEscape(exam.academicSession)}</h2>
   <div class="meta"><span>Maximum Total: ${exam.subjects.reduce((sum, subject) => sum + subject.maxMarks, 0)}</span><span>Printed: ${new Date().toLocaleDateString('en-IN')}</span></div>
-   <table><thead><tr><th>#</th><th class="student">Student</th>${exam.subjects.map(subject => `<th>${htmlEscape(subject.name)}<br><small>/${subject.maxMarks}</small></th>`).join('')}<th>Calculated<br>Total</th><th>%</th><th>Recorded<br>Total</th><th>Review</th></tr></thead><tbody>${tableRows}</tbody></table>
+    <table><thead><tr><th>#</th><th class="student">Student</th>${exam.subjects.map(subject => `<th>${htmlEscape(subject.name)}<br><small>/${subject.maxMarks}</small></th>`).join('')}<th>Calculated<br>Total</th><th>%</th></tr></thead><tbody>${tableRows}</tbody></table>
   <button class="print" onclick="window.print()">Print / Save PDF</button></body></html>`);
 });
 
