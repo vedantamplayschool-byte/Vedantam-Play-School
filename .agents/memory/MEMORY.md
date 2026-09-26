@@ -6,3 +6,4 @@
 - [Admin UI enum alignment rules](admin-ui-enum-alignment.md) — Notice.priority = Low/Normal/High; TeacherAttendance.status includes 'Half Day'. Mongoose rejects mismatched values silently.
 - [Admission ↔ Enquiry dual-write](admission-enquiry-dual-write.md) — createAdmission upserts an Enquiry record (fire-and-forget) so admin Enquiries tab shows public form submissions.
 - [v2.5 auth & print-URL decisions](v25-decisions.md) — Teacher JWT type field, fetch+blob for print routes, PDF upload field names.
+- [Unlinked marks index behavior](student-mark-index-null.md) — sparse indexes still index explicit nulls; use a type-based partial index for unlinked imported marks.

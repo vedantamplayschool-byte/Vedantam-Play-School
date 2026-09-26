@@ -281,6 +281,7 @@ async function getSheetRows(exam) {
 
   return [...grouped.values()].map(row => {
     row.calculatedTotal = marksTotal(exam.subjects, row.marks);
+    row.percentage = exam.maxTotal ? Number(((row.calculatedTotal / exam.maxTotal) * 100).toFixed(2)) : 0;
     row.totalMismatch = totalMismatch(row.recordedTotal, row.calculatedTotal);
     return row;
   }).sort((a, b) => String(a.rollNumber || '9999').localeCompare(String(b.rollNumber || '9999'), undefined, { numeric: true }) || a.studentName.localeCompare(b.studentName));
@@ -355,16 +356,17 @@ export const saveExamSheet = asyncHandler(async (req, res) => {
         : 'Present';
       const raw = input.marks ?? input.value;
       const marks = status === 'Absent' || raw === '' || raw == null ? null : Number(raw);
+      const originalStudentName = String(record.originalStudentName || studentNameSnapshot).trim();
       const filter = {
         exam: exam._id,
         subjectKey: subject.key,
-        ...(student ? { student: student._id } : { studentNameSnapshot })
+        ...(student ? { student: student._id } : { studentNameSnapshot: originalStudentName })
       };
       if (marks == null && status === 'Present') {
         await StudentMark.deleteOne(filter);
         continue;
       }
-      if (!Number.isFinite(marks) || marks < 0 || marks > subject.maxMarks) {
+      if (status === 'Present' && (!Number.isFinite(marks) || marks < 0 || marks > subject.maxMarks)) {
         throw invalid(`${subject.name}: enter a number from 0 to ${subject.maxMarks}, or AB`);
       }
       const existing = await StudentMark.findOne(filter).lean();
@@ -424,15 +426,16 @@ export const deleteExamStudent = asyncHandler(async (req, res) => {
 export const exportExamCsv = asyncHandler(async (req, res) => {
   const exam = await Exam.findById(req.params.examId).lean();
   if (!exam) throw notFound('Exam not found');
+  addExamTotals(exam);
   const rows = await getSheetRows(exam);
   const csv = [
     ['School', 'Academic Session', 'Exam', 'Class', 'Student', 'Linked Student', 'Roll Number',
-      ...exam.subjects.map(subject => subject.name), 'Calculated Total', 'Recorded Total', 'Warning'].map(csvCell).join(','),
+      ...exam.subjects.map(subject => subject.name), 'Calculated Total', 'Percentage', 'Recorded Total', 'Warning'].map(csvCell).join(','),
     ...rows.map(row => [
       exam.schoolName, exam.academicSession, exam.examName, exam.program, row.studentName,
       row.linkedStudentName || '', row.rollNumber,
       ...exam.subjects.map(subject => row.marks[subject.key]?.markStatus === 'Absent' ? 'AB' : row.marks[subject.key]?.marks ?? ''),
-      row.calculatedTotal, row.recordedTotal ?? '', row.totalMismatch ? 'Total mismatch' : row.needsReview ? 'Name review' : ''
+       row.calculatedTotal, `${row.percentage}%`, row.recordedTotal ?? '', row.totalMismatch ? 'Total mismatch' : row.needsReview ? 'Name review' : ''
     ].map(csvCell).join(','))
   ].join('\r\n');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -449,11 +452,12 @@ const htmlEscape = value => String(value ?? '').replace(/[&<>'"]/g, char => ({
 export const printExam = asyncHandler(async (req, res) => {
   const exam = await Exam.findById(req.params.examId).lean();
   if (!exam) throw notFound('Exam not found');
+  addExamTotals(exam);
   const rows = await getSheetRows(exam);
   const tableRows = rows.map((row, index) => `<tr>
     <td>${index + 1}</td><td class="student">${htmlEscape(row.studentName)}${row.needsReview ? '<small>Review name/link</small>' : ''}</td>
     ${exam.subjects.map(subject => `<td>${row.marks[subject.key]?.markStatus === 'Absent' ? 'AB' : htmlEscape(row.marks[subject.key]?.marks ?? '')}</td>`).join('')}
-    <td>${row.calculatedTotal}</td><td>${htmlEscape(row.recordedTotal ?? '')}</td>
+     <td>${row.calculatedTotal}</td><td>${row.percentage}%</td><td>${htmlEscape(row.recordedTotal ?? '')}</td>
     <td>${row.totalMismatch ? 'Mismatch' : ''}</td>
   </tr>`).join('');
   res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>${htmlEscape(exam.examName)} - ${htmlEscape(exam.program)}</title>
@@ -468,7 +472,7 @@ export const printExam = asyncHandler(async (req, res) => {
   </style></head><body>
   <h1>${htmlEscape(exam.schoolName)}</h1><h2>${htmlEscape(exam.examName)} · ${htmlEscape(exam.program)} · ${htmlEscape(exam.academicSession)}</h2>
   <div class="meta"><span>Maximum Total: ${exam.subjects.reduce((sum, subject) => sum + subject.maxMarks, 0)}</span><span>Printed: ${new Date().toLocaleDateString('en-IN')}</span></div>
-  <table><thead><tr><th>#</th><th class="student">Student</th>${exam.subjects.map(subject => `<th>${htmlEscape(subject.name)}<br><small>/${subject.maxMarks}</small></th>`).join('')}<th>Calculated<br>Total</th><th>Recorded<br>Total</th><th>Review</th></tr></thead><tbody>${tableRows}</tbody></table>
+   <table><thead><tr><th>#</th><th class="student">Student</th>${exam.subjects.map(subject => `<th>${htmlEscape(subject.name)}<br><small>/${subject.maxMarks}</small></th>`).join('')}<th>Calculated<br>Total</th><th>%</th><th>Recorded<br>Total</th><th>Review</th></tr></thead><tbody>${tableRows}</tbody></table>
   <button class="print" onclick="window.print()">Print / Save PDF</button></body></html>`);
 });
 

@@ -2082,7 +2082,7 @@ async function marksManagementPage() {
           <table class="marks-wide-table">
             <thead><tr><th>#</th><th class="student-col">Student</th><th>Roll</th>
               ${exam.subjects.map(subject => `<th>${esc(subject.name)}<br><small>/${subject.maxMarks}</small></th>`).join('')}
-              <th>Calc.<br>Total</th><th>Recorded<br>Total</th><th>Review</th><th>Action</th></tr></thead>
+               <th>Calc.<br>Total</th><th>%</th><th>Recorded<br>Total</th><th>Review</th><th>Action</th></tr></thead>
             <tbody>
               ${state.rows.length ? state.rows.map((row, index) => `<tr data-mark-row="${index}">
                 <td>${index + 1}</td>
@@ -2099,7 +2099,8 @@ async function marksManagementPage() {
                   const value = mark.markStatus === 'Absent' ? 'AB' : mark.marks ?? '';
                   return `<td><input class="form-input mark-cell" data-mark-row="${index}" data-mark-subject="${subject.key}" value="${esc(value)}" placeholder="0–${subject.maxMarks}" ${canEdit() ? '' : 'disabled'}></td>`;
                 }).join('')}
-                <td><strong>${row.calculatedTotal ?? 0}</strong></td>
+                 <td><strong>${row.calculatedTotal ?? 0}</strong></td>
+                 <td>${row.percentage ?? 0}%</td>
                 <td>${row.recordedTotal == null ? '—' : row.recordedTotal}</td>
                 <td>${row.totalMismatch ? `<span class="badge badge-rejected" title="Calculated total differs from handwritten total">Mismatch</span>` : row.needsReview ? `<span class="badge badge-pending">Review</span>` : '<span style="color:var(--ok)">✓</span>'}</td>
                 <td>${canAdmin() && (row.student || row.studentName) ? `<button class="btn btn-danger btn-sm" data-mark-delete-row="${index}" title="Delete this exam row"><span class="material-icons-round" style="font-size:14px">delete</span></button>` : '—'}</td>
@@ -2108,7 +2109,7 @@ async function marksManagementPage() {
           </table>
         </div>
         <div class="card-body" style="font-size:12px;color:var(--txt-sm)">
-          <strong>Data notes:</strong> AB is stored as Absent and remains AB on screen/export. “Mismatch” compares the recorded handwritten total with the calculated numeric total. “Review” marks a name that could not be safely matched to an existing student.
+           <strong>Data notes:</strong> AB is stored as Absent and remains AB on screen/export. Percentage is calculated from the numeric marks and exam maximum. “Mismatch” compares the recorded handwritten total with the calculated numeric total. “Review” marks a name that could not be safely matched to an existing student.
         </div>
       </div>`;
   };
@@ -2153,6 +2154,7 @@ async function marksManagementPage() {
       const records = state.rows.map((row, index) => ({
         student: row.student || undefined,
         studentName: document.querySelector(`[data-mark-name="${index}"]`)?.value.trim() || row.studentName,
+        originalStudentName: row.studentName,
         rollNumber: row.rollNumber,
         subjects: Object.fromEntries(state.exam.subjects.map(subject => {
           const input = document.querySelector(`[data-mark-row="${index}"][data-mark-subject="${subject.key}"]`);
